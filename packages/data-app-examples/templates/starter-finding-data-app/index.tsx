@@ -123,7 +123,7 @@ const breakdown = displayChoice({
   presentation: { control: 'widget' },
 });
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
-const operations = dataApp.defineOperations({
+export const operations = dataApp.defineOperations({
   sampleTotal: dataApp.defineOperation({
     filters: { period },
     policy,
@@ -202,9 +202,7 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(
-  operations.createDataClient({ execution: 'browser' })
-);
+const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
 const emptyFallback = {
   title: 'No samples in this period',
@@ -337,5 +335,7 @@ function App() {
     </DataApp>
   );
 }
-injectDataAppStyles();
-mountDataApp({ app: dataApp, component: App });
+if (typeof document !== 'undefined') {
+  injectDataAppStyles();
+  mountDataApp({ app: dataApp, component: App });
+}

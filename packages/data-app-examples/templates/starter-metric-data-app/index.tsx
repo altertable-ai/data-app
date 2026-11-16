@@ -67,7 +67,7 @@ const groupName = choiceFilter({
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }
-const operations = dataApp.defineOperations({
+export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -119,9 +119,7 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(
-  operations.createDataClient({ execution: 'browser' })
-);
+const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
@@ -229,5 +227,7 @@ function App() {
     </DataApp>
   );
 }
-injectDataAppStyles();
-mountDataApp({ app: dataApp, component: App });
+if (typeof document !== 'undefined') {
+  injectDataAppStyles();
+  mountDataApp({ app: dataApp, component: App });
+}

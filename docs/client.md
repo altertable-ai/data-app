@@ -38,39 +38,33 @@ entry for public codes and request IDs. Pass an abort signal to cancel a request
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
 
-## Browser-owned operations for bundle apps
+## Bound operations in hosted and local apps
 
-Bundle apps can bind their operation registry to the app and select browser
-execution explicitly. The registry supplies its filters:
+Bind operations to the app's query registry. The client derives its filters and
+uses the installed iframe bridge in hosted apps or HTTP in local directory apps:
 
 ```ts
 // ... app declared with defineDataApp(), operations created with dataApp.defineOperation()
 const operations = dataApp.defineOperations({ sampleCountsByGroup });
-const client = operations.createDataClient({ execution: 'browser' });
+const client = operations.createDataClient();
 const response = await client.query('sampleCountsByGroup', { groupName: '' });
 ```
 
-Operations run in the browser and query through the host's `data:sql` route.
-The trusted bootstrap installs the bridge before app execution. A custom runtime
-must install it first or supply an authorized `lakehouse` adapter.
+In hosted apps, `client.query()` executes the operation's `run()` in the iframe.
+Each `run()` call to its named `query()` helper sends the registered query ID,
+resolved parameter values, and row limit through `data:query`. The backend uses
+the query ID from `defineDataApp({ queries })` to execute the saved SQL. The
+trusted bootstrap installs the bridge before app execution.
 
-Do not combine `operations` with `transport`, `endpoint`, or `fetch`. Browser
-policy bounds app requests; the [host SQL handler](embed.md#sql-query-route)
-must independently enforce access and resource limits.
-
-For server-owned operations, register the same registry in the backend and use
-`operations.createDataClient({ execution: 'server' })` in the browser. Its `query()` sends a named operation and
-input through the installed iframe transport's `data:query` route, or through
-HTTP when no iframe transport is installed. The backend must own and authorize
-operation execution. A single-file hosted app needs a hosting build that
-registers its operation code on the backend before choosing this mode.
+In local directory apps, `client.query()` posts the operation name and input to
+`/api/data/:operation`. Bun executes `run()` there. The app code needs no
+execution option when moving between these environments.
 
 ## Iframe transport
 
-`createDataClient<typeof operations>({ filters, transport })` accepts a `DataTransport`. Without an explicit
-transport, endpoint, or Fetch implementation, it discovers an installed iframe
-transport before falling back to HTTP. Explicit endpoint/Fetch options select
-HTTP. `createHttpTransport()` provides the underlying operation delivery adapter.
+`createDataClient<typeof operations>({ filters, transport })` accepts a
+`DataTransport` for custom HTTP operation delivery. Without it, the client uses
+`/api/data/:operation`. `createHttpTransport()` provides the underlying adapter.
 
 A URL-hosted app configures trust and installs the bridge before mounting:
 

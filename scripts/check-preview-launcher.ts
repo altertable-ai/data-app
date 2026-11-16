@@ -83,7 +83,7 @@ export async function checkPreviewLauncher(runtimeDirectory: string) {
     function source(title: string) {
       return `import { defineDataApp } from '@altertable/data-app';
 import { mountDataApp } from '@altertable/data-app-react';
-const app = defineDataApp({ title: 'Launcher', description: 'Packed preview', scope: { organization: 'demo', environment: 'test' }, queries: {} });
+const app = defineDataApp({ title: 'Launcher', description: 'Packed preview', scope: { organization: 'demo', environment: 'test' }, queries: { ready: { statement: 'SELECT $ready AS ready', params: { ready: { type: 'number' } }, projections: { ready: { type: 'number' } } } } });
 mountDataApp({ app, component: () => <h1>${title}</h1> });`;
     }
     await writeFile(file, source('Packed launcher'));
@@ -120,11 +120,11 @@ mountDataApp({ app, component: () => <h1>${title}</h1> });`;
           const bundle = await (await fetch(new URL('/bundle.js', url))).text();
           assert(!bundle.includes('launcher-token'));
           assert(!bundle.includes('Wrong source dependency'));
-          const query = await fetch(new URL('/api/sql', url), {
+          const query = await fetch(new URL('/api/query', url), {
             method: 'POST',
             headers: { origin: new URL(url).origin },
             body: JSON.stringify({
-              statement: 'SELECT $ready AS ready',
+              queryId: 'ready',
               limit: 1,
               params: { ready: 1 },
             }),
@@ -214,7 +214,7 @@ console.log('Caller retained control');
       assert(stderr.includes(message), stderr);
     }
     console.log(
-      'Packed preview launcher: rendered external TSX, pinned resolution, proxy SQL, reload, explicit stop, and SIGINT/SIGTERM cleanup verified.'
+      'Packed preview launcher: rendered external TSX, pinned resolution, registered queries, reload, explicit stop, and SIGINT/SIGTERM cleanup verified.'
     );
   } finally {
     await browser?.close();

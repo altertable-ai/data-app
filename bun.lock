@@ -53,6 +53,7 @@
       },
       "dependencies": {
         "@altertable/data-app": "0.77.0",
+        "@altertable/data-app-manifest": "0.77.0",
         "@altertable/lakehouse": "0.4.1",
         "get-tsconfig": "4.14.3",
       },

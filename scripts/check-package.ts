@@ -63,11 +63,14 @@ async function install(directory: string, dependencies: string[]) {
   return names;
 }
 
-function excludes(names: Set<string>, forbidden: string[]) {
+function excludes(
+  names: Set<string>,
+  forbidden: string[],
+  allowManifest = false
+) {
   for (const name of [
     ...forbidden,
-    'typescript',
-    '@altertable/data-app-manifest',
+    ...(allowManifest ? [] : ['typescript', '@altertable/data-app-manifest']),
   ])
     assert(!names.has(name), `Unexpected installed dependency: ${name}`);
 }
@@ -184,7 +187,7 @@ try {
         'createDataHandler',
         'createIframeTransport',
         'createMessageRouter',
-        'sqlQueryRoute',
+        'registeredQueryRoute',
         'AnnotationBar',
         'startDataAppBootstrap',
       ])
@@ -561,14 +564,21 @@ if (!html.includes('Authoring only') || !html.includes('>0<')) throw new Error('
     authoring
   );
   const bunOnly = join(temporary, 'bun-only');
-  excludes(await install(bunOnly, [archive(''), archive('-bun')]), [
-    '@altertable/data-app-embed',
-    ...uiDependencies.filter(
-      name => !['@altertable/lakehouse', 'get-tsconfig'].includes(name)
-    ),
-    'react',
-    'react-dom',
-  ]);
+  const bunNames = await install(bunOnly, [archive(''), archive('-bun')]);
+  excludes(
+    bunNames,
+    [
+      '@altertable/data-app-embed',
+      ...uiDependencies.filter(
+        name => !['@altertable/lakehouse', 'get-tsconfig'].includes(name)
+      ),
+      'react',
+      'react-dom',
+    ],
+    true
+  );
+  assert(bunNames.has('@altertable/data-app-manifest'));
+  assert(bunNames.has('typescript'));
   await run(
     [
       'bun',
@@ -667,8 +677,10 @@ export { DataAppBridge };
   );
   await writeFile(
     join(temporary, 'preview-app.tsx'),
-    `import { MetricWidget } from '@altertable/data-app-react/ui';
+    `import { defineDataApp } from '@altertable/data-app';
+import { MetricWidget } from '@altertable/data-app-react/ui';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
+defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'demo', environment: 'test' }, queries: { ready: { statement: 'SELECT 1', params: {}, projections: { ready: { type: 'number' } } } } });
 document.title = 'Packed preview';
 console.log(MetricWidget, DataAppBridge);\n`
   );
@@ -695,12 +707,12 @@ try {
   if (!page.ok || !(await page.text()).includes('<script>')) throw new Error('Packed preview host is unavailable');
   const bundle = await fetch(new URL('/bundle.js', preview.url));
   if (!bundle.ok || !(await bundle.text()).includes('Packed preview')) throw new Error('Packed preview bundle is unavailable');
-  const query = await fetch(new URL('/api/sql', preview.url), {
+  const query = await fetch(new URL('/api/query', preview.url), {
     method: 'POST',
     headers: { origin: preview.url.origin },
-    body: JSON.stringify({ statement: 'SELECT 1', limit: 1 }),
+    body: JSON.stringify({ queryId: 'ready', limit: 1 }),
   });
-  if (!query.ok) throw new Error('Packed preview SQL is unavailable');
+  if (!query.ok) throw new Error('Packed preview query is unavailable');
   await query.json();
 } finally { await preview.stop(); }
 `

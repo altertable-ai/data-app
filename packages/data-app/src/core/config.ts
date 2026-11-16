@@ -10,7 +10,7 @@ import {
   type WithFilterInput,
 } from '../authoring/contract.ts';
 import { createDataClient, type DataClient } from '../client/data-client.ts';
-import type { DataTransport } from '../client/transport.ts';
+import { getDataAppTransport } from '../client/iframe.ts';
 import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
 import {
@@ -20,7 +20,7 @@ import {
   type SourceDimensionFilter,
 } from './dimension-source.ts';
 import type { FilterInput } from './operation-filters.ts';
-import type { DataOperations, Lakehouse } from './operation-types.ts';
+import type { DataOperations } from './operation-types.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,
@@ -54,17 +54,8 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
 
 export type DataAppOperationRegistry<Operations extends DataOperations> =
   Operations & {
-    /** Choose whether the server or browser executes the named operations. */
-    createDataClient(
-      options:
-        | { execution: 'browser'; lakehouse?: Lakehouse }
-        | {
-            execution: 'server';
-            transport?: DataTransport;
-            endpoint?: string;
-            fetch?: typeof fetch;
-          }
-    ): DataClient<Operations>;
+    /** Use the installed iframe bridge in a hosted app, or HTTP locally. */
+    createDataClient(): DataClient<Operations>;
   };
 
 /** An app declaration with operations bound to its query registry. */
@@ -154,29 +145,19 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
         ...operations,
       } as DataAppOperationRegistry<DataOperations>;
       Object.setPrototypeOf(registry, {
-        createDataClient(options: {
-          execution: 'browser' | 'server';
-          lakehouse?: Lakehouse;
-          transport?: DataTransport;
-          endpoint?: string;
-          fetch?: typeof fetch;
-        }) {
-          if (options.execution === 'browser')
+        createDataClient() {
+          if (typeof window !== 'undefined' && getDataAppTransport())
             return (
               createDataClient as (
                 options: object
               ) => DataClient<DataOperations>
             )({
               operations,
-              lakehouse: options.lakehouse,
             });
           return (
             createDataClient as (options: object) => DataClient<DataOperations>
           )({
             filters,
-            transport: options.transport,
-            endpoint: options.endpoint,
-            fetch: options.fetch,
           });
         },
       });

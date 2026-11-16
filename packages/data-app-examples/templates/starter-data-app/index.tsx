@@ -15,7 +15,7 @@ import {
 import { parseCount, searchFilter } from '@altertable/data-app/contract';
 import { formatMetric } from '@altertable/data-app/format';
 
-const dataApp = defineDataApp({
+export const dataApp = defineDataApp({
   title: 'Sample counts',
   description: 'Explore sample counts by group.',
   scope: { organization: 'demo', environment: 'sample' },
@@ -49,7 +49,7 @@ WHERE $groupName = '' OR group_name = $groupName`,
 // Declare each filter once; operations list the filters they read, and views,
 // controls, and scope derive from them.
 const groupName = searchFilter({ key: 'group', label: 'Group' });
-const operations = dataApp.defineOperations({
+export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -86,9 +86,7 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(
-  operations.createDataClient({ execution: 'browser' })
-);
+const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
@@ -193,5 +191,7 @@ function App() {
     </DataApp>
   );
 }
-injectDataAppStyles();
-mountDataApp({ app: dataApp, component: App });
+if (typeof document !== 'undefined') {
+  injectDataAppStyles();
+  mountDataApp({ app: dataApp, component: App });
+}

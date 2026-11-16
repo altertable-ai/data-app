@@ -11,7 +11,7 @@ describe('authoring', () => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests: {
-      statement: string;
+      queryId: string;
       limit: number;
       host: boolean;
       params: { groupName: string; limit: number };
@@ -21,7 +21,7 @@ describe('authoring', () => {
     let gate = new Promise<void>(resolve => {
       release = resolve;
     });
-    await page.route('**/api/sql', async route => {
+    await page.route('**/api/query', async route => {
       const payload = route.request().postDataJSON();
       requests.push({
         ...payload,
@@ -289,11 +289,11 @@ describe('authoring', () => {
       )
       .toBe(true);
     // Each widget runs its own query through the host, capped by its operation policy.
-    const countRequests = requests.filter(request =>
-      request.statement.includes('ORDER BY group_name')
+    const countRequests = requests.filter(
+      request => request.queryId === 'sampleCountsByGroup'
     );
-    const totalRequests = requests.filter(request =>
-      request.statement.includes('SUM(sample_count)')
+    const totalRequests = requests.filter(
+      request => request.queryId === 'sampleTotal'
     );
     expect(countRequests.length).toBeGreaterThan(0);
     expect(totalRequests.length).toBeGreaterThan(0);
@@ -318,7 +318,7 @@ describe('authoring', () => {
 
   test('hosted initial query error recovers by retry', async ({ page }) => {
     let fail = true;
-    await page.route('**/api/sql', async route => {
+    await page.route('**/api/query', async route => {
       if (fail) await route.fulfill({ status: 503, json: failure });
       else await route.continue();
     });

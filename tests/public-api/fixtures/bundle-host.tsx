@@ -1,7 +1,6 @@
 import {
   createNavigationHandler,
   createExternalLinkHandler,
-  createSqlQueryHandler,
   type DataAppActions,
   type DataAppDiagnostic,
   type DataAppLogger,
@@ -16,8 +15,8 @@ import {
   createMessageRouter,
   openExternalLinkRoute,
   defineMessageRoute,
-  sqlQueryRoute,
   DataSourceError,
+  MessageRoutingError,
 } from '@altertable/data-app/contract';
 import {
   useReducer,
@@ -230,7 +229,6 @@ function Host() {
   const router = createMessageRouter(
     {
       ...bridgeRoutes,
-      'data:sql': sqlQueryRoute,
       'navigation:openExternal': openExternalLinkRoute,
       'export:csv': fileRoute,
       'export:zip': fileRoute,
@@ -254,21 +252,21 @@ function Host() {
         setEchoRequests(value => value + 1);
         return { period, version };
       },
-      'data:query': ({ operation, input }, { signal }) =>
+      'data:operation': ({ operation, input }, { signal }) =>
         forward(operation, input, signal),
       'navigation:update': createNavigationHandler(),
-      'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal, params }) {
-          const response = await fetch('/api/sql', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit, params }),
-            signal,
-          });
-          if (!response.ok) throw new DataSourceError('unavailable');
-          return response.json();
-        },
-      })),
+      async 'data:query'({ queryId, limit, params }, { signal }) {
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ queryId, limit, params }),
+          signal,
+        });
+        if (response.status === 404)
+          throw new MessageRoutingError('forbidden', 'Query not registered.');
+        if (!response.ok) throw new DataSourceError('unavailable');
+        return response.json();
+      },
       'navigation:openExternal': openExternalLink,
       'export:csv': download,
       'export:zip': download,

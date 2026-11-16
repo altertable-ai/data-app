@@ -21,6 +21,7 @@ import layoutHost from '@/dev/fixtures/layout-host.html';
 import layout from '@/dev/fixtures/layout.html';
 import styleStress from '@/dev/fixtures/style-stress.html';
 import styles from '@/dev/fixtures/styles.html';
+import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
@@ -272,7 +273,7 @@ Bun.serve({
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
-    if (path === '/api/sql') {
+    if (path === '/api/query') {
       const delay = isDevelopment
         ? Number(
             new URL(
@@ -282,14 +283,28 @@ Bun.serve({
         : 0;
       if (delay > 0) await Bun.sleep(Math.min(delay, 30_000));
       const query = (await request.json()) as {
-        statement: string;
+        queryId: string;
         limit: number;
         params?: QueryParameters;
       };
+      const statement =
+        (
+          hostedStarterApp.queries as Readonly<
+            Record<string, { statement: string } | undefined>
+          >
+        )[query.queryId]?.statement ??
+        (query.queryId === 'connection'
+          ? 'SELECT 1 AS connection_check'
+          : undefined);
+      if (!statement)
+        return Response.json(
+          { error: 'Unknown registered query' },
+          { status: 404 }
+        );
       if (lakehouse) {
         try {
           const { columns, rows, queryId } = await lakehouse.queryAll(
-            query.statement,
+            statement,
             { limit: query.limit, signal: request.signal, params: query.params }
           );
           return Response.json({ columns, rows, queryId });
@@ -308,11 +323,11 @@ Bun.serve({
         }
       }
       if (
-        query.statement.trim().startsWith('WITH sample_counts(') &&
+        statement.trim().startsWith('WITH sample_counts(') &&
         query.limit === 10
       ) {
         const rows = fixtureDatabase
-          .query(query.statement)
+          .query(statement)
           .values(
             Object.fromEntries(
               Object.entries(query.params ?? {}).map(([key, value]) => [
@@ -327,10 +342,7 @@ Bun.serve({
           queryId: 'sample-query',
         });
       }
-      if (
-        query.statement !== 'SELECT 1 AS connection_check' ||
-        query.limit !== 1
-      )
+      if (statement !== 'SELECT 1 AS connection_check' || query.limit !== 1)
         return Response.json(
           { error: 'Unexpected SQL request' },
           { status: 400 }

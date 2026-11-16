@@ -36,7 +36,7 @@ Exact entries must be bare HTTP(S) origins. Keep an exact origin first for the
 default parent.
 
 The Worker sets CSP and trusted frame ancestors. Data queries use the
-[host's authorized SQL route](embed.md#sql-query-route); the Worker does not
+[host's registered query route](embed.md#registered-query-route); the Worker does not
 execute queries.
 
 For file-based deployment tools such as Terraform, copy the resolved asset

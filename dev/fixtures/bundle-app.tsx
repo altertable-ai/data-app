@@ -15,11 +15,7 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import {
-  connectionCheck,
-  searchFilter,
-  type ConnectionOperation,
-} from '@altertable/data-app/contract';
+import { connectionCheck, searchFilter } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
@@ -132,10 +128,12 @@ function App() {
       </button>
       <button
         onClick={() => {
-          void createDataClient<{
-            forbidden: ConnectionOperation;
-          }>()
-            .query('forbidden', {})
+          void bridge.lakehouse
+            .queryAll('', {
+              name: 'forbidden',
+              limit: 1,
+              signal: new AbortController().signal,
+            })
             .catch(error =>
               setResult(
                 JSON.stringify({

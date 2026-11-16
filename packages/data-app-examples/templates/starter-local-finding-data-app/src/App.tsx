@@ -8,14 +8,10 @@ import {
   VisualizationWidget,
 } from '@altertable/data-app-react';
 import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
-import { operationFilters } from '#app/filters.ts';
-import type { operations } from '#app/operations.ts';
-const { defineView } = createDataHooks(
-  createDataClient<typeof operations>({ filters: operationFilters })
-);
+import { operations } from '#app/operations.ts';
+const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
 const emptyFallback = {
   title: 'No samples in this period',

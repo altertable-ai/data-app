@@ -174,41 +174,32 @@ Use `defineDataQueryRoute(operationContracts)` for typed named operations or
 `dataAppRoutes` for generic operation and navigation routes. Handlers must
 validate operations, authorize data access, and enforce backend query limits.
 
-## SQL query route
+## Registered query route
 
-Hosts serving browser-owned operations register `sqlQueryRoute` explicitly:
+Hosts serving browser-owned operations register `registeredQueryRoute`:
 
 ```ts
 import {
   createMessageRouter,
-  sqlQueryRoute,
+  registeredQueryRoute,
 } from '@altertable/data-app/contract';
-import { createSqlQueryHandler } from '@altertable/data-app-embed';
 
 const router = createMessageRouter(
-  { 'data:sql': sqlQueryRoute },
+  { 'data:query': registeredQueryRoute },
   {
-    'data:sql': createSqlQueryHandler(async (query, { signal }) => {
-      return authorizedLakehouseForCurrentViewer(query, signal);
-    }),
+    'data:query': async ({ queryId, params, limit }, { signal }) =>
+      runRegisteredQueryForCurrentViewer({ queryId, params, limit, signal }),
   }
 );
 // Supply router.dispatch as the shell's onMessage handler.
 ```
 
-The host supplies `authorizedLakehouseForCurrentViewer()`. Its backend must enforce
-viewer/dataset permissions, permitted query behavior, maximum rows, execution
-time, concurrency, and response size independently of browser policy. Route
-validation is not SQL authorization. `createSqlQueryHandler()` calls authorization
-for each query, forwards cancellation, and preserves `DataSourceError` reasons
-as public `source_*` errors with request IDs. Authorization failures return
-`forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
-public failures with `MessageRoutingError`.
-
-The SQL route carries `{ statement, limit, params? }` and returns column
-metadata and row arrays; see `SqlQueryInput` and `QueryResult` in the
-[API reference](../REFERENCE.md). Keep SQL and parameters unchanged.
-For server-owned named operations, use `dataAppRoutes` and `data:query` instead.
+The host resolves `queryId` against the app's saved `defineDataApp({ queries })`
+registry and runs that SQL with the supplied parameter values. It must enforce
+viewer permissions, maximum rows, execution time, concurrency, and response size.
+The route carries `{ queryId, limit, params? }` and returns column metadata and
+row arrays; see `RegisteredQueryInput` and `QueryResult` in the
+[API reference](../REFERENCE.md). Unknown IDs must fail before execution.
 
 ## Parent presentation
 

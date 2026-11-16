@@ -65,9 +65,9 @@ test('app operation registry derives filters and supports both delivery modes', 
     }),
   });
   expect(Object.keys(operations)).toEqual(['salesByRegion']);
-  expect(
-    operations.createDataClient({ execution: 'server' }).filters.salesByRegion
-  ).toEqual({ region });
+  expect(operations.createDataClient().filters.salesByRegion).toEqual({
+    region,
+  });
   const handler = createDataHandler(operations, async () => ({
     lakehouse: {
       async queryAll() {
@@ -98,8 +98,9 @@ test('app operation registry derives filters and supports both delivery modes', 
       queryIds: [],
     },
   }));
-  const serverClient = operations.createDataClient({
-    execution: 'server',
+  const listedOperations = { salesByRegion: operations.salesByRegion };
+  const serverClient = createDataClient<typeof listedOperations>({
+    filters: { salesByRegion: { region } },
     transport,
   });
   expect(
@@ -114,10 +115,11 @@ test('app operation registry derives filters and supports both delivery modes', 
     undefined
   );
 
-  const browserClient = operations.createDataClient({
-    execution: 'browser',
+  const browserClient = createDataClient({
+    operations: listedOperations,
     lakehouse: {
-      async queryAll(statement, { params }) {
+      async queryAll(statement, { name, params }) {
+        expect(name).toBe('salesSql');
         expect(statement).toBe(
           'SELECT total FROM sales WHERE region = $region'
         );

@@ -1,9 +1,10 @@
 import { existsSync, statSync, watch, type FSWatcher } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
+import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import {
   DataSourceError,
-  sqlQueryRoute,
+  registeredQueryRoute,
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import {
@@ -69,6 +70,7 @@ export async function serveAppFile({
   /** Bundle like the hosted runtime: one classic script with its styles injected. */
   async function buildApp(): Promise<{
     bundle: Bundle;
+    queries?: Readonly<Record<string, string>>;
     inputFiles: string[];
     directories: string[];
   }> {
@@ -154,12 +156,34 @@ export async function serveAppFile({
       const script = result.outputs.find(output => output.path.endsWith('.js'));
       if (!script) throw new Error('App build did not produce JavaScript.');
       const javascript = await script.text();
+      const extraction = extractDataAppManifest(await Bun.file(appFile).text());
+      const declaredQueries = extraction.manifest?.queries ?? {};
+      if (
+        !declaredQueries ||
+        typeof declaredQueries !== 'object' ||
+        Array.isArray(declaredQueries)
+      )
+        throw new Error('App manifest must declare queries.');
+      const queries: Record<string, string> = {};
+      for (const [id, definition] of Object.entries(declaredQueries)) {
+        if (
+          !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(id) ||
+          !definition ||
+          typeof definition !== 'object' ||
+          Array.isArray(definition) ||
+          typeof definition.statement !== 'string' ||
+          !definition.statement.trim()
+        )
+          throw new Error(`Invalid registered query: ${id}.`);
+        queries[id] = definition.statement;
+      }
       const stylesheet = result.outputs.find(output =>
         output.path.endsWith('.css')
       );
       if (!stylesheet)
         return {
           bundle: { javascript },
+          queries,
           inputFiles: [...inputFiles],
           directories: [...directories],
         };
@@ -171,6 +195,7 @@ export async function serveAppFile({
         bundle: {
           javascript: `${javascript}\n{ const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style); }`,
         },
+        queries,
       };
     } catch (error) {
       const errors: unknown[] =
@@ -193,6 +218,7 @@ export async function serveAppFile({
 
   const initialBuild = await buildApp();
   let currentBundle = initialBuild.bundle;
+  let currentQueries = initialBuild.queries ?? {};
   let watchedFiles = new Set(initialBuild.inputFiles);
   if ('error' in currentBundle) console.error(currentBundle.error);
 
@@ -209,6 +235,7 @@ export async function serveAppFile({
           const result = await buildApp();
           if (stopped) return;
           currentBundle = result.bundle;
+          if (result.queries) currentQueries = result.queries;
           watchedFiles = new Set(result.inputFiles);
           if ('error' in currentBundle) console.error(currentBundle.error);
           else console.log(`Rebuilt ${appFile}`);
@@ -277,7 +304,7 @@ export async function serveAppFile({
         server.timeout(request, 0);
         return reload.connect(request);
       }
-      if (path === '/api/sql' && request.method === 'POST') {
+      if (path === '/api/query' && request.method === 'POST') {
         const origin = request.headers.get('origin');
         const site = request.headers.get('sec-fetch-site');
         if (
@@ -288,15 +315,18 @@ export async function serveAppFile({
         let query;
         try {
           const body = await readRequestBody(request, 100_000);
-          query = sqlQueryRoute.input(JSON.parse(body));
+          query = registeredQueryRoute.input(JSON.parse(body));
         } catch (error) {
           if (error instanceof RequestBodyTooLargeError)
             return Response.json({ reason: 'query_rejected' }, { status: 413 });
           return Response.json({ reason: 'query_rejected' }, { status: 400 });
         }
+        const statement = currentQueries[query.queryId];
+        if (!statement)
+          return Response.json({ reason: 'query_rejected' }, { status: 404 });
         try {
           return Response.json(
-            await lakehouse.queryAll(query.statement, {
+            await lakehouse.queryAll(statement, {
               limit: query.limit,
               params: query.params,
               signal: request.signal,

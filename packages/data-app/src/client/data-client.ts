@@ -4,7 +4,10 @@ import { withDimensionSelectors } from '../core/dimension-source.ts';
 import type { DimensionOption } from '../core/dimension.ts';
 import { facetSource, type FacetFilter } from '../core/facets.ts';
 import { invariant } from '../core/invariant.ts';
-import { defineDataQueryRoute, MessageRoutingError } from '../core/messages.ts';
+import {
+  defineDataOperationRoute,
+  MessageRoutingError,
+} from '../core/messages.ts';
 import { combineOperationFilters } from '../core/operation-filters.ts';
 import type {
   DataQueryBody,
@@ -18,7 +21,7 @@ import {
 import type { IsUnion, KnownRecord } from '../core/queries.ts';
 import { randomUuid } from '../core/uuid.ts';
 import { appDiagnostics } from './diagnostics.ts';
-import { getDataAppTransport, localFrameBridge } from './iframe.ts';
+import { getDataAppTransport } from './iframe.ts';
 import { createHttpTransport, DataAppError } from './transport.ts';
 import type { DataTransport } from './transport.ts';
 export type { InputOf, OutputOf } from '../core/operation-types.ts';
@@ -161,7 +164,7 @@ export type DataClientOptions<Operations extends DataOperations> =
     ) &
     CheckedFacets<Operations>;
 
-const dataQueryRoute = defineDataQueryRoute();
+const dataOperationRoute = defineDataOperationRoute();
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 /** Named clients derive data from the declared operations' run return types. */
@@ -193,20 +196,17 @@ export function createDataClient<Operations extends DataOperations>(
     });
   const filters = Object.freeze({ ...options.filters });
   const http = createHttpTransport(options);
-  const useHttp = options.endpoint !== undefined || options.fetch !== undefined;
 
   return typedClient<Operations>({
     filters,
     async query(name, input, { signal } = {}) {
-      const transport =
-        options.transport ??
-        (useHttp ? http : (localFrameBridge()?.transport ?? http));
+      const transport = options.transport ?? http;
       const response = await transport(name, input, signal);
       const ok = response.status >= 200 && response.status < 300;
       let body: Omit<DataResponse<OutputOf<Operations[typeof name]>>, 'input'>;
       try {
         // The envelope is validated here; the shared operation contract owns data.
-        body = dataQueryRoute.output(response, { operation: name, input })
+        body = dataOperationRoute.output(response, { operation: name, input })
           .body as typeof body;
       } catch (error) {
         if (signal?.aborted) throw error;

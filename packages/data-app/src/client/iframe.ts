@@ -4,12 +4,10 @@ import {
   PARENT_PARAM,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
-  type TransportResponse,
 } from '../core/bridge.ts';
 import { type Lakehouse } from '../core/contract.ts';
 import {
-  defineDataQueryRoute,
-  sqlQueryRoute,
+  registeredQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '../core/messages.ts';
@@ -264,19 +262,11 @@ export function createIframeTransport({
   }
 
   const messages = createMessageClient(
-    { 'data:query': defineDataQueryRoute(), 'data:sql': sqlQueryRoute },
+    {
+      'data:query': registeredQueryRoute,
+    },
     requestMessage
   );
-
-  function queryOperation(
-    operation: string,
-    input: unknown,
-    signal?: AbortSignal
-  ): Promise<TransportResponse> {
-    return messages
-      .request('data:query', { operation, input }, { signal })
-      .catch(rethrowDataMessageError);
-  }
 
   function disconnect() {
     if (sessionId) send('disconnect', {});
@@ -314,13 +304,17 @@ export function createIframeTransport({
     diagnostics: appDiagnostics,
     logger,
     request: requestMessage,
-    transport: queryOperation,
     lakehouse: {
-      queryAll(statement, { limit, signal, params }) {
+      queryAll(_statement, { name, limit, signal, params }) {
+        if (!name) throw new Error('A registered query name is required.');
         return messages
           .request(
-            'data:sql',
-            { statement, limit, ...(params === undefined ? {} : { params }) },
+            'data:query',
+            {
+              queryId: name,
+              limit,
+              ...(params === undefined ? {} : { params }),
+            },
             { signal }
           )
           .catch(rethrowDataMessageError);
@@ -379,10 +373,9 @@ export type IframeTransport = ReturnType<typeof createIframeTransport>;
 
 const bridgeKey = Symbol.for('altertable.localFrameBridge');
 const installedKey = Symbol.for('altertable.installedTransport');
-type LocalBridge = Pick<
-  ReturnType<typeof createIframeTransport>,
-  'transport'
-> & { connect?: () => Promise<ReturnType<typeof createIframeTransport>> };
+type LocalBridge = Partial<Pick<IframeTransport, 'request'>> & {
+  connect?: () => Promise<IframeTransport>;
+};
 type FrameWindow = Window & {
   [bridgeKey]?: LocalBridge;
   [installedKey]?: ReturnType<typeof createIframeTransport>;
@@ -446,38 +439,7 @@ export function localFrameBridge(window?: Window): LocalBridge | undefined {
     return connection;
   }
 
-  const proxy: LocalBridge = {
-    async transport(operation, input, signal) {
-      signal?.throwIfAborted();
-      const attempt = getConnection();
-      let abort: (() => void) | undefined;
-      try {
-        const bridge = signal
-          ? await Promise.race([
-              attempt,
-              new Promise<never>((_, reject) => {
-                const requestSignal = signal;
-
-                function handleAbort() {
-                  reject(requestSignal.reason);
-                }
-
-                abort = handleAbort;
-                requestSignal.addEventListener('abort', handleAbort, {
-                  once: true,
-                });
-              }),
-            ])
-          : await attempt;
-        signal?.throwIfAborted();
-
-        return bridge.transport(operation, input, signal);
-      } finally {
-        if (abort) signal?.removeEventListener('abort', abort);
-      }
-    },
-    connect: getConnection,
-  };
+  const proxy: LocalBridge = { connect: getConnection };
   frame[bridgeKey] = proxy;
   // Static mounting still verifies eagerly, without an unhandled rejection.
   void getConnection().catch(() => {});

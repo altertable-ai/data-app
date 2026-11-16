@@ -37,7 +37,7 @@ describe('export', () => {
       release = resolve;
     });
     let fail = false;
-    await page.route('**/api/sql', async route => {
+    await page.route('**/api/query', async route => {
       await gate;
       if (fail)
         await route.fulfill({ status: 503, json: { error: 'Unavailable' } });

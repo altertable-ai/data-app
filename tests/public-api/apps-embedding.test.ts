@@ -486,7 +486,7 @@ for (const source of ['bundle', 'packaged', 'url']) {
           } catch {
             return true;
           }
-        }, new URL('/api/sql', page.url()).href)
+        }, new URL('/api/query', page.url()).href)
       ).toBe(true);
     }
     await app.getByRole('button', { name: 'Query', exact: true }).click();

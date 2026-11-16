@@ -109,6 +109,7 @@ function createOperationLakehouse(
       let result;
       try {
         result = await source.queryAll(statement, {
+          ...(options.name === undefined ? {} : { name: options.name }),
           limit,
           ...(options.params === undefined ? {} : { params: options.params }),
           signal: querySignal,

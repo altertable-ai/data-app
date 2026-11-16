@@ -2,17 +2,16 @@ import {
   createDataAppRepairSession,
   createNavigationHandler,
   createExternalLinkHandler,
-  createSqlQueryHandler,
   type DataAppStatus,
 } from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
-  DataSourceError,
+  MessageRoutingError,
   createMessageRouter,
   openExternalLinkRoute,
   defineMessageRoute,
   navigationUpdateRoute,
-  sqlQueryRoute,
+  registeredQueryRoute,
 } from '@altertable/data-app/contract';
 import { downloadBlob } from '@altertable/data-app/internal';
 import { StrictMode, useEffect, useState } from 'react';
@@ -42,30 +41,28 @@ function download({ filename, blob }: { filename: string; blob: Blob }) {
 
 const router = createMessageRouter(
   {
-    'data:sql': sqlQueryRoute,
+    'data:query': registeredQueryRoute,
     'navigation:update': navigationUpdateRoute,
     'navigation:openExternal': openExternalLinkRoute,
     'export:csv': fileExportRoute,
     'export:zip': fileExportRoute,
   },
   {
-    'data:sql': createSqlQueryHandler(async () => ({
-      async queryAll(statement, { limit, signal, params }) {
-        const response = await fetch('/api/sql', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ statement, limit, params }),
-          signal,
-        });
-        const body = await response.json();
-        if (!response.ok)
-          throw new DataSourceError(
-            body.reason ?? 'unavailable',
-            response.status
-          );
-        return body;
-      },
-    })),
+    async 'data:query'({ queryId, limit, params }, { signal }) {
+      const response = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ queryId, limit, params }),
+        signal,
+      });
+      const body = await response.json();
+      if (!response.ok)
+        throw new MessageRoutingError(
+          `source_${body.reason ?? 'unavailable'}`,
+          'The query could not be completed.'
+        );
+      return body;
+    },
     'navigation:update': createNavigationHandler(),
     'navigation:openExternal': openExternalLink,
     'export:csv': download,

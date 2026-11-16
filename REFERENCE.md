@@ -395,7 +395,7 @@ DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
 DataAppOperationRegistry (type, @altertable/data-app, @altertable/data-app/config): <Operations>
-DataAppOperationRegistry.createDataClient: (options: { execution: 'browser'; lakehouse?: Lakehouse | undefined; } | { execution: 'server'; transport?: DataTransport | undefined; endpoint?: string | undefined; fetch?: typeof fetch | undefined; }) => DataClient<...> — Choose whether the server or browser executes the named operations.
+DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Use the installed iframe bridge in a hosted app, or HTTP locally.
 DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode

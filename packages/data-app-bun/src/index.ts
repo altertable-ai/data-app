@@ -1,3 +1,4 @@
+import type { DataAppOperationRegistry } from '@altertable/data-app';
 /**
  * Bun local-development serving and server-only lakehouse access.
  * @module @altertable/data-app-bun
@@ -20,14 +21,14 @@ import {
 
 /** Serve one app on localhost through the CLI's lakehouse proxy during development.
  * Hosted servers must authorize every viewer and must use `createDataHandler` directly. */
-export function serveLocalApp({
+export function serveLocalApp<const Operations extends DataOperations>({
   page,
   operations,
   title,
   port = Number(process.env.PORT ?? 25837),
 }: {
   page: Bun.HTMLBundle;
-  operations: DataOperations;
+  operations: Operations | DataAppOperationRegistry<Operations>;
   title: string;
   port?: number;
 }) {

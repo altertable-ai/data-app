@@ -6,14 +6,10 @@ import {
   Stack,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
-import { operationFilters } from '#app/filters.ts';
-import type { operations } from '#app/operations.ts';
-const { defineView } = createDataHooks(
-  createDataClient<typeof operations>({ filters: operationFilters })
-);
+import { operations } from '#app/operations.ts';
+const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',

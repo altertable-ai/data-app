@@ -152,21 +152,21 @@ export function createMessageRouter<const Routes extends MessageRoutes>(
   return { dispatch };
 }
 
-export type DataQueryRoute<Operations extends OperationContracts> =
+export type DataOperationRoute<Operations extends OperationContracts> =
   MessageRoute<DataQueryInput<Operations>, TransportResponse> & {
     operations: Operations | undefined;
   };
 export type MessageOutput<Route extends MessageRoutes[string], Input> =
-  Route extends DataQueryRoute<infer Operations>
+  Route extends DataOperationRoute<infer Operations>
     ? Input extends { operation: infer Name extends keyof Operations }
       ? TransportResponse<DataQueryBody<OutputOf<Operations[Name]>>>
       : never
     : ReturnType<Route['output']>;
 
 /** Omit contracts only in generic hosts such as the CLI shell, where Bun validates operations. */
-export function defineDataQueryRoute<
+export function defineDataOperationRoute<
   Operations extends OperationContracts = OperationContracts,
->(operations?: Operations): DataQueryRoute<Operations> {
+>(operations?: Operations): DataOperationRoute<Operations> {
   return {
     operations,
     input(value) {
@@ -269,41 +269,41 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
-export type SqlQueryInput = {
-  statement: string;
+export type RegisteredQueryInput = {
+  queryId: string;
   limit: number;
   params?: QueryParameters;
 };
 
-/** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
-export const sqlQueryRoute = /* @__PURE__ */ defineMessageRoute({
-  input(value: unknown): SqlQueryInput {
+/** Run a SQL query already registered by the app's defineDataApp manifest. */
+export const registeredQueryRoute = /* @__PURE__ */ defineMessageRoute({
+  input(value: unknown): RegisteredQueryInput {
     if (!value || typeof value !== 'object')
-      throw new Error('Invalid SQL query.');
+      throw new Error('Invalid registered query.');
     const query = value as {
-      statement?: unknown;
+      queryId?: unknown;
       limit?: unknown;
       params?: unknown;
     };
     if (
-      typeof query.statement !== 'string' ||
-      !query.statement.trim() ||
+      typeof query.queryId !== 'string' ||
+      !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(query.queryId) ||
       typeof query.limit !== 'number' ||
       !Number.isSafeInteger(query.limit) ||
       query.limit < 1 ||
       (query.params !== undefined && !isQueryParameters(query.params))
     )
-      throw new Error('Invalid SQL query.');
+      throw new Error('Invalid registered query.');
 
     return {
-      statement: query.statement,
+      queryId: query.queryId,
       limit: query.limit,
       ...(query.params === undefined
         ? {}
         : { params: query.params as QueryParameters }),
     };
   },
-  output(value: unknown, input: SqlQueryInput): QueryResult {
+  output(value: unknown, input: RegisteredQueryInput): QueryResult {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid query result.');
     const result = value as QueryResult;
@@ -333,6 +333,7 @@ export const sqlQueryRoute = /* @__PURE__ */ defineMessageRoute({
 });
 
 export const dataAppRoutes = {
-  'data:query': /* @__PURE__ */ defineDataQueryRoute(),
+  'data:operation': /* @__PURE__ */ defineDataOperationRoute(),
+  'data:query': registeredQueryRoute,
   'navigation:update': navigationUpdateRoute,
 };

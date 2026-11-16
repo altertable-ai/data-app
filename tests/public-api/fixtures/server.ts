@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite';
 
 import { serveLocalApp } from '@altertable/data-app-bun';
 
+import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
@@ -155,12 +156,20 @@ const server = Bun.serve({
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
-    if (url.pathname === '/api/sql') {
-      const { statement, limit, params } = (await request.json()) as {
-        statement: string;
+    if (url.pathname === '/api/query') {
+      const { queryId, limit, params } = (await request.json()) as {
+        queryId: string;
         limit: number;
         params?: Record<string, string | number>;
       };
+      const statement =
+        (
+          hostedStarterApp.queries as Readonly<
+            Record<string, { statement: string } | undefined>
+          >
+        )[queryId]?.statement ??
+        (queryId === 'connection' ? 'SELECT 1 AS connection_check' : undefined);
+      if (!statement) return new Response('Unknown query', { status: 404 });
       if (statement.trim().startsWith('WITH sample_counts(')) {
         const query = database.query(statement);
         return Response.json({

@@ -4,7 +4,7 @@ import { operationFilters } from '#app/filters.ts';
 import { dataApp } from '#config';
 // One query per widget: each section loads its own result when it nears the viewport.
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
-export const operations = {
+export const operations = dataApp.defineOperations({
   sampleTotal: dataApp.defineOperation({
     filters: operationFilters.sampleTotal,
     policy,
@@ -65,4 +65,4 @@ export const operations = {
       }));
     },
   }),
-};
+});

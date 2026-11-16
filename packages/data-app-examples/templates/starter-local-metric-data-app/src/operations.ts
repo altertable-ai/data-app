@@ -7,7 +7,7 @@ import { dataApp } from '#config';
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }
-export const operations = {
+export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: operationFilters.sampleCountsByGroup,
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -40,4 +40,4 @@ export const operations = {
       }));
     },
   }),
-};
+});

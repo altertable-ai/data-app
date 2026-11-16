@@ -45,8 +45,11 @@ function Host() {
   };
   const forward = createHttpTransport();
   const router = createMessageRouter(bridgeRoutes, {
-    'data:query'({ operation, input }, { signal }) {
+    'data:operation'({ operation, input }, { signal }) {
       return forward(operation, input, signal);
+    },
+    'data:query'() {
+      return { columns: [], rows: [] };
     },
     'navigation:update': createNavigationHandler(),
     'test:wait'(_input, { signal }) {

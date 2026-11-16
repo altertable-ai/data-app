@@ -20,21 +20,19 @@ in `defineDataApp()`. When using bound `<DataApp>`, follow its current
 
 Keep the starter's client, style injection, and mounting code. The current
 single-file starter collects the operations with `dataApp.defineOperations()`
-and selects browser execution with `operations.createDataClient({ execution:
-'browser' })`. Its host supplies the SQL route; no bootstrap or message routes
-are needed in app code. A hosting build that registers operations on the backend
-can use `operations.createDataClient({ execution: 'server' })` and the named
-`data:query` route instead.
+and uses `operations.createDataClient()`. The operation's `run()` executes in
+the iframe and sends its registered query IDs and parameter values through
+`data:query`; no bootstrap or message routes are needed in app code.
 
 ## Convert a local data app
 
 1. Combine the app's filters, operations, data context, views, any presentation
    and export features, app declaration, and browser entry into one `index.tsx`, following the
    [single-file starter](app-authoring.md#use-release-matched-starters).
-2. Collect the operations with `dataApp.defineOperations()` and select browser
-   execution with `operations.createDataClient({ execution: 'browser' })`. The
-   registry supplies the operations' filters, so drop the `filters` option. See
-   [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
+2. Collect the operations with `dataApp.defineOperations()` and use
+   `operations.createDataClient()`. The registry supplies the operations'
+   filters, so drop the `filters` option. See
+   [bound operations](client.md#bound-operations-in-hosted-and-local-apps)
    for execution through the host.
 3. Remove the Bun server, HTML, server adapters, credentials, and relative or
    app-alias imports. Rewrite any operation that depends on server-only code

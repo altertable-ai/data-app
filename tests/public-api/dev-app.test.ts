@@ -107,7 +107,7 @@ test('dev:file refuses to start without a data app file', async () => {
   expect(absent.output()).toContain('/private/tmp/no-such-app.tsx');
 });
 
-test('dev:file bundles an app outside the checkout and proxies its SQL', async () => {
+test('dev:file bundles an app outside the checkout and runs a registered query', async () => {
   const directory = await temporaryDirectory();
   const entry = join(directory, 'index.tsx');
   await writeFile(
@@ -117,7 +117,7 @@ const dataApp = defineDataApp({
   title: 'Dev file marker',
   description: 'Local file dev.',
   scope: { organization: 'demo', environment: 'local' },
-  queries: {},
+  queries: { ready: { statement: 'SELECT $ready AS ready', params: { ready: { type: 'number' } }, projections: { ready: { type: 'number' } } } },
 });
 console.log(dataApp.title);
 `
@@ -144,14 +144,14 @@ console.log(dataApp.title);
 
   const page = await fetch(server.url);
   const bundle = await fetch(new URL('/bundle.js', server.url));
-  const query = await fetch(new URL('/api/sql', server.url), {
+  const query = await fetch(new URL('/api/query', server.url), {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       origin: new URL(server.url).origin,
     },
     body: JSON.stringify({
-      statement: 'SELECT $ready AS ready',
+      queryId: 'ready',
       limit: 1,
       params: { ready: 1 },
     }),
@@ -478,7 +478,7 @@ mountDataApp({ app, component: App });
   }
 });
 
-test('dev:file handles SQL body-limit responses and downloads exported blobs through its host', async () => {
+test('dev:file handles registered-query body limits and downloads exported blobs through its host', async () => {
   const directory = await temporaryDirectory();
   const entry = join(directory, 'index.tsx');
   await writeFile(
@@ -487,11 +487,11 @@ test('dev:file handles SQL body-limit responses and downloads exported blobs thr
 import { defineDataApp } from '@altertable/data-app';
 import { mountDataApp } from '@altertable/data-app-react';
 import { getDataAppTransport } from '@altertable/data-app/client';
-const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
+const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: { ready: { statement: 'SELECT 1', params: {}, projections: { ready: { type: 'number' } } } } });
 function App() {
   return <>
     <button onClick={async () => {
-      try { await getDataAppTransport().lakehouse.queryAll('SELECT 1', { limit: 1 }); }
+      try { await getDataAppTransport().lakehouse.queryAll('SELECT 1', { name: 'ready', limit: 1 }); }
       catch (error) { document.querySelector('output').textContent = error.code; }
     }}>Run query</button>
     <output aria-label="Query error" />
@@ -506,9 +506,13 @@ mountDataApp({ app, component: App });
   try {
     const page = await browser.newPage();
     // Exercise the HTTP byte limit independently of the bridge's smaller payload limit.
-    await page.route('**/api/sql', route =>
+    await page.route('**/api/query', route =>
       route.continue({
-        postData: JSON.stringify({ statement: 'é'.repeat(50_000), limit: 1 }),
+        postData: JSON.stringify({
+          queryId: 'ready',
+          limit: 1,
+          params: { marker: 'é'.repeat(50_000) },
+        }),
       })
     );
     await page.goto(server.url);
@@ -534,7 +538,13 @@ mountDataApp({ app, component: App });
 test('dev:file queries the lakehouse with CLI credential names and reports its target', async () => {
   const directory = await temporaryDirectory();
   const entry = join(directory, 'index.tsx');
-  await writeFile(entry, "document.title = 'credentials';\n");
+  await writeFile(
+    entry,
+    `import { defineDataApp } from '@altertable/data-app';
+defineDataApp({ title: 'Credentials', description: 'Credentials', scope: { organization: 'test', environment: 'test' }, queries: { ready: { statement: 'SELECT 1 AS ready', params: {}, projections: { ready: { type: 'number' } } } } });
+document.title = 'credentials';
+`
+  );
   let authorization: string | undefined;
   const api = createServer(async (request, response) => {
     for await (const _chunk of request);
@@ -555,13 +565,13 @@ test('dev:file queries the lakehouse with CLI credential names and reports its t
     ALTERTABLE_DATA_PROXY_URL: '',
     ALTERTABLE_DATA_PROXY_TOKEN: '',
   });
-  const query = await fetch(new URL('/api/sql', server.url), {
+  const query = await fetch(new URL('/api/query', server.url), {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       origin: new URL(server.url).origin,
     },
-    body: JSON.stringify({ statement: 'SELECT 1 AS ready', limit: 1 }),
+    body: JSON.stringify({ queryId: 'ready', limit: 1 }),
   });
 
   expect(query.status, server.output()).toBe(200);
@@ -836,7 +846,13 @@ mountDataApp({ app, component: App });
 test('the public Bun preview serves injected data and rejects foreign requests', async () => {
   const directory = await temporaryDirectory();
   const file = join(directory, 'index.tsx');
-  await writeFile(file, "document.title = 'Public preview';\n");
+  await writeFile(
+    file,
+    `import { defineDataApp } from '@altertable/data-app';
+defineDataApp({ title: 'Public preview', description: 'Public preview', scope: { organization: 'test', environment: 'test' }, queries: { marker: { statement: 'SELECT $marker', params: { marker: { type: 'string' } }, projections: { marker: { type: 'string' } } } } });
+document.title = 'Public preview';
+`
+  );
   const command = run([
     '--eval',
     `
@@ -857,12 +873,12 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
   const [url] = await waitForOutput(command, /http:\/\/127\.0\.0\.1:\d+\//);
   const origin = new URL(url!).origin;
   const body = JSON.stringify({
-    statement: 'SELECT $marker',
+    queryId: 'marker',
     limit: 1,
     params: { marker: 'injected' },
   });
-  const sqlUrl = new URL('/api/sql', url);
-  const accepted = await fetch(sqlUrl, {
+  const queryUrl = new URL('/api/query', url);
+  const accepted = await fetch(queryUrl, {
     method: 'POST',
     headers: { origin },
     body,
@@ -874,23 +890,31 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
     queryId: 'injected',
   });
   const overhead = new TextEncoder().encode(
-    JSON.stringify({ statement: '', limit: 1 })
+    JSON.stringify({ queryId: 'marker', limit: 1, params: { marker: '' } })
   ).byteLength;
   const remaining = 100_000 - overhead;
-  const statement =
+  const marker =
     'é'.repeat(Math.floor(remaining / 2)) + 'a'.repeat(remaining % 2);
-  const boundary = JSON.stringify({ statement, limit: 1 });
+  const boundary = JSON.stringify({
+    queryId: 'marker',
+    limit: 1,
+    params: { marker },
+  });
   expect(new TextEncoder().encode(boundary).byteLength).toBe(100_000);
-  const boundaryResponse = await fetch(sqlUrl, {
+  const boundaryResponse = await fetch(queryUrl, {
     method: 'POST',
     headers: { origin },
     body: boundary,
   });
   expect(boundaryResponse.status).toBe(200);
   await boundaryResponse.arrayBuffer();
-  const oversized = JSON.stringify({ statement: statement + 'a', limit: 1 });
+  const oversized = JSON.stringify({
+    queryId: 'marker',
+    limit: 1,
+    params: { marker: marker + 'a' },
+  });
   expect(oversized.length).toBeLessThan(100_000);
-  const oversizedResponse = await fetch(sqlUrl, {
+  const oversizedResponse = await fetch(queryUrl, {
     method: 'POST',
     headers: { origin },
     body: oversized,
@@ -899,7 +923,7 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
   expect(await oversizedResponse.json()).toEqual({ reason: 'query_rejected' });
   const earlyRejection = await new Promise<number>((done, reject) => {
     const request = httpRequest(
-      sqlUrl,
+      queryUrl,
       { method: 'POST', headers: { origin } },
       response => {
         response.resume();
@@ -922,7 +946,7 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
   ];
   for (const headers of foreignHeaders)
     expect(
-      (await fetch(sqlUrl, { method: 'POST', headers, body })).status
+      (await fetch(queryUrl, { method: 'POST', headers, body })).status
     ).toBe(403);
   const rebound = await new Promise<number>((done, reject) => {
     const request = httpRequest(
@@ -938,12 +962,12 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
   });
   expect(rebound).toBe(403);
   expect(
-    (await fetch(sqlUrl, { method: 'POST', headers: { origin }, body: '{' }))
+    (await fetch(queryUrl, { method: 'POST', headers: { origin }, body: '{' }))
       .status
   ).toBe(400);
   expect(
     (
-      await fetch(sqlUrl, {
+      await fetch(queryUrl, {
         method: 'POST',
         headers: { origin },
         body: 'x'.repeat(100_001),

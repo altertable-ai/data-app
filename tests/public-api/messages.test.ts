@@ -1,16 +1,11 @@
-import {
-  createNavigationHandler,
-  createSqlQueryHandler,
-} from '@altertable/data-app-embed';
+import { createNavigationHandler } from '@altertable/data-app-embed';
 import { createMessageClient } from '@altertable/data-app/client';
 import {
   createMessageRouter,
   defineMessageRoute,
-  defineDataQueryRoute,
+  defineDataOperationRoute,
+  registeredQueryRoute,
   navigationUpdateRoute,
-  MessageRoutingError,
-  sqlQueryRoute,
-  DataSourceError,
 } from '@altertable/data-app/contract';
 import { expect, test } from 'vitest';
 
@@ -77,7 +72,7 @@ test('typed routes validate both boundaries and reject unknown routes before inv
 });
 
 test('an operation message client validates input and the response envelope and preserves public errors', async () => {
-  const route = defineDataQueryRoute({
+  const route = defineDataOperationRoute({
     count: { input: number },
   });
   const envelope = {
@@ -89,23 +84,23 @@ test('an operation message client validates input and the response envelope and 
   };
   let response: unknown = { status: 200, body: envelope };
   const client = createMessageClient(
-    { 'data:query': route },
+    { 'data:operation': route },
     async () => response
   );
   await expect(
-    client.request('data:query', { operation: 'count', input: 1 })
+    client.request('data:operation', { operation: 'count', input: 1 })
   ).resolves.toEqual(response);
   await expect(
     // @ts-expect-error JavaScript callers can still send an unknown operation.
-    client.request('data:query', { operation: 'missing', input: 1 })
+    client.request('data:operation', { operation: 'missing', input: 1 })
   ).rejects.toMatchObject({ code: 'invalid_payload' });
   await expect(
     // @ts-expect-error JavaScript callers can still supply an invalid input.
-    client.request('data:query', { operation: 'count', input: '1' })
+    client.request('data:operation', { operation: 'count', input: '1' })
   ).rejects.toMatchObject({ code: 'invalid_payload' });
   response = { status: 200, body: { ...envelope, queryIds: 'q1' } };
   await expect(
-    client.request('data:query', { operation: 'count', input: 1 })
+    client.request('data:operation', { operation: 'count', input: 1 })
   ).rejects.toMatchObject({ code: 'invalid_response' });
   response = {
     status: 403,
@@ -118,7 +113,7 @@ test('an operation message client validates input and the response envelope and 
     },
   };
   await expect(
-    client.request('data:query', { operation: 'count', input: 1 })
+    client.request('data:operation', { operation: 'count', input: 1 })
   ).rejects.toMatchObject({
     code: 'forbidden',
     message: 'Denied',
@@ -208,163 +203,29 @@ test('routing checks cancellation before and after handlers', async () => {
   ).toMatchObject({ name: 'AbortError' });
 });
 
-test('a SQL message client rejects malformed requests and malformed upstream results', async () => {
-  const input = { statement: 'SELECT 1', limit: 1 };
-  const result = { columns: [{ name: 'n' }], rows: [[1]], queryId: 'q' };
-  let response: unknown = result;
-  const router = createMessageRouter(
-    { 'data:sql': sqlQueryRoute },
-    { 'data:sql': () => response as typeof result }
-  );
-  const client = createMessageClient({ 'data:sql': sqlQueryRoute }, message =>
-    router.dispatch(message, context())
-  );
-  await expect(client.request('data:sql', input)).resolves.toEqual(result);
-  for (const payload of [
-    null,
-    {},
-    { statement: '', limit: 1 },
-    { statement: 'SELECT 1', limit: 0 },
-    { statement: 'SELECT 1', limit: 1.5 },
-    { statement: 'SELECT 1', limit: Number.MAX_SAFE_INTEGER + 1 },
-    { statement: 'SELECT $value', limit: 1, params: { value: [] } },
-    { statement: 'SELECT $value', limit: 1, params: null },
-  ]) {
-    await expect(
-      router.dispatch({ route: 'data:sql', payload }, context())
-    ).rejects.toMatchObject({ code: 'invalid_payload' });
-  }
-  for (const body of [
-    null,
-    { ...result, rows: [[1], [2]] },
-    { ...result, rows: [['wrong', 'width']] },
-    { ...result, columns: [{}] },
-    { ...result, queryId: 1 },
-  ]) {
-    response = body;
-    await expect(client.request('data:sql', input)).rejects.toMatchObject({
-      code: 'invalid_response',
-    });
-  }
-});
-
-test('SQL host authorizes each request, preserves source errors, and hides private failures', async () => {
-  let authorizations = 0;
-  const router = createMessageRouter(
-    { 'data:sql': sqlQueryRoute },
-    {
-      'data:sql': createSqlQueryHandler(async ({ statement }, { signal }) => {
-        authorizations++;
-        expect(signal.aborted).toBe(false);
-        if (statement === 'denied') throw new Error('private auth');
-        return {
-          async queryAll(_, options) {
-            expect(options.signal).toBe(signal);
-            if (statement === 'busy') throw new DataSourceError('rate_limited');
-            throw new Error('private query');
-          },
-        };
-      }),
-    }
-  );
-  const ctx = context();
-  for (const [statement, code] of [
-    ['denied', 'forbidden'],
-    ['busy', 'source_rate_limited'],
-    ['failure', 'query_failed'],
-  ]) {
-    const error = await router
-      .dispatch({ route: 'data:sql', payload: { statement, limit: 1 } }, ctx)
-      .catch(error => error);
-    expect(error).toBeInstanceOf(MessageRoutingError);
-    if (!(error instanceof MessageRoutingError))
-      throw new Error('Expected a public routing error.');
-    expect(error.code).toBe(code);
-    expect(error.requestId).toEqual(expect.any(String));
-    expect(error.message).not.toContain('private');
-  }
-  expect(authorizations).toBe(3);
-  const cancelled = new AbortController();
-  cancelled.abort();
-  const error = await router
-    .dispatch(
-      { route: 'data:sql', payload: { statement: 'busy', limit: 1 } },
-      { signal: cancelled.signal }
-    )
-    .catch(error => error);
-  expect(error).toMatchObject({ name: 'AbortError' });
-  expect(authorizations).toBe(3);
-});
-
-test('SQL host authentication failures give browser viewers actionable messages', async () => {
-  for (const reason of ['unauthorized', 'forbidden'] as const) {
-    const handler = createSqlQueryHandler(async () => ({
-      async queryAll() {
-        throw new DataSourceError(reason);
-      },
-    }));
-    const error = await handler(
-      { statement: 'SELECT 1', limit: 1 },
-      context()
-    ).catch(error => error);
-    expect(error.message).not.toMatch(/altertable|profile|CLI/);
-    expect(error).toMatchObject({
-      code: `source_${reason}`,
-      message: expect.stringContaining('app owner'),
-    });
-  }
-});
-
-test('SQL host failures keep lakehouse details for host logs, not viewers', async () => {
-  const detail = 'Parser Error: syntax error at or near "CAST"';
-  const handler = createSqlQueryHandler(async () => ({
-    async queryAll() {
-      throw new DataSourceError('query_rejected', undefined, {
-        cause: new Error(detail),
-      });
-    },
-  }));
-  const error = await handler(
-    { statement: 'SELECT 22 CAST(1 AS INT)', limit: 1 },
-    context()
-  ).catch((error: unknown) => error);
-  expect(error).toBeInstanceOf(MessageRoutingError);
-  if (!(error instanceof MessageRoutingError)) throw error;
-  expect(error.code).toBe('source_query_rejected');
-  expect(error.message).not.toContain(detail);
-  expect(error.cause).toBeInstanceOf(DataSourceError);
-  if (!(error.cause instanceof DataSourceError)) throw error.cause;
-  expect(error.cause.cause).toMatchObject({ message: detail });
-});
-
-test('SQL delivery forwards statements and parameters unchanged through host authorization', async () => {
+test('registered query messages carry an ID and parameters without SQL', async () => {
   const input = {
-    statement: 'SELECT $value',
-    limit: 1,
-    params: { value: "raw\n' $value" },
+    queryId: 'salesByRegion',
+    limit: 5,
+    params: { region: 'EU' },
   };
-  let calls = 0;
+  const result = { columns: [{ name: 'total' }], rows: [[42]], queryId: 'q1' };
   const router = createMessageRouter(
-    { 'data:sql': sqlQueryRoute },
-    {
-      'data:sql': createSqlQueryHandler(async (query, { signal }) => {
-        expect(query).toEqual(input);
-        return {
-          async queryAll(statement, options) {
-            calls++;
-            expect(statement).toBe(input.statement);
-            expect(options).toEqual({ limit: 1, params: input.params, signal });
-            return {
-              columns: [{ name: 'value' }],
-              rows: [[input.params.value]],
-            };
-          },
-        };
-      }),
-    }
+    { 'data:query': registeredQueryRoute },
+    { 'data:query': () => result }
   );
-  expect(
-    await router.dispatch({ route: 'data:sql', payload: input }, context())
-  ).toMatchObject({ rows: [[input.params.value]] });
-  expect(calls).toBe(1);
+  const client = createMessageClient(
+    { 'data:query': registeredQueryRoute },
+    message => router.dispatch(message, context())
+  );
+  await expect(client.request('data:query', input)).resolves.toEqual(result);
+  for (const payload of [
+    { statement: 'SELECT 1', limit: 1 },
+    { queryId: '', limit: 1 },
+    { queryId: 'salesByRegion', limit: 0 },
+    { queryId: 'salesByRegion', limit: 1, params: { region: [] } },
+  ])
+    await expect(
+      router.dispatch({ route: 'data:query', payload }, context())
+    ).rejects.toMatchObject({ code: 'invalid_payload' });
 });

@@ -100,11 +100,11 @@ export class DataSourceError extends Error {
 export {
   createMessageRouter,
   defineMessageRoute,
-  defineDataQueryRoute,
+  defineDataOperationRoute,
   MessageRoutingError,
   dataAppRoutes,
   navigationUpdateRoute,
-  sqlQueryRoute,
+  registeredQueryRoute,
 } from './messages.ts';
 export type {
   MessageContext,
@@ -119,9 +119,9 @@ export type {
   OperationContracts,
   DataQueryInput,
   DataQueryBody,
-  DataQueryRoute,
+  DataOperationRoute,
   NavigationUpdate,
-  SqlQueryInput,
+  RegisteredQueryInput,
 } from './messages.ts';
 export type { TransportResponse } from './bridge.ts';
 
