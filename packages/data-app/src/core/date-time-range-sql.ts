@@ -1,6 +1,25 @@
 import { serializeDateTimeRange } from './date-time-range-value.ts';
-import type { DateTimeRange } from './date-time-range.ts';
+import type {
+  DateTimeRange,
+  ResolvedDateTimeRange,
+} from './date-time-range.ts';
 import { invariant } from './invariant.ts';
+
+/** Bind a resolved filter range as timestamp strings for literal DuckDB SQL.
+ * Dates carry reporting-zone wall-clock fields in UTC; omit `Z` for TIMESTAMP casts. */
+export function resolvedDateTimeRangeParams<const Prefix extends string>(
+  range: ResolvedDateTimeRange,
+  prefix: Prefix
+): Record<`${Prefix}_from` | `${Prefix}_to`, string> {
+  invariant(
+    /^[A-Za-z_][A-Za-z0-9_]*$/.test(prefix),
+    'Use a SQL parameter name.'
+  );
+  return {
+    [`${prefix}_from`]: range.from.toISOString().slice(0, -1),
+    [`${prefix}_to`]: range.to.toISOString().slice(0, -1),
+  } as Record<`${Prefix}_from` | `${Prefix}_to`, string>;
+}
 
 /** DuckDB timestamp expressions using the query session's timezone for relative anchors.
  * Absolute fields remain UTC-rebased TIMESTAMP values. Start is inclusive, end exclusive.
@@ -19,10 +38,7 @@ export function dateTimeRangeSql(
     params: { [parameter]: serializeDateTimeRange(range) },
   };
 }
-export function boundExpression(
-  parameter: string,
-  bound: 'from' | 'to'
-): string {
+function boundExpression(parameter: string, bound: 'from' | 'to'): string {
   const json = `$${parameter}`;
   const path = `$.${bound}`;
   const anchor = `json_extract_string(${json}, '${path}.anchor')`;

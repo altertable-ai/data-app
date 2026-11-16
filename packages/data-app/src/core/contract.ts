@@ -171,4 +171,7 @@ export type {
   RelativeDateTime,
 } from '../authoring/contract.ts';
 
-export { dateTimeRangeSql } from '../authoring/contract.ts';
+export {
+  dateTimeRangeSql,
+  resolvedDateTimeRangeParams,
+} from '../authoring/contract.ts';

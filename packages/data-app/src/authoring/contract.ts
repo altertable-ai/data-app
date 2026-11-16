@@ -441,4 +441,7 @@ export type {
   RelativeDateTime,
 } from '../core/date-time-range.ts';
 
-export { dateTimeRangeSql } from '../core/date-time-range-sql.ts';
+export {
+  dateTimeRangeSql,
+  resolvedDateTimeRangeParams,
+} from '../core/date-time-range-sql.ts';

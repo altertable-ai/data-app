@@ -9,7 +9,10 @@ import {
   mountDataApp,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import { dateTimeRangeFilter } from '@altertable/data-app/contract';
+import {
+  dateTimeRangeFilter,
+  resolvedDateTimeRangeParams,
+} from '@altertable/data-app/contract';
 
 const period = dateTimeRangeFilter({
   key: 'period',
@@ -28,13 +31,21 @@ const dataApp = defineDataApp({
   scope: { organization: 'test', environment: 'test' },
   queries: {
     current: {
-      statement: 'SELECT 12 AS count WHERE $window.from < $window.to',
-      params: { window: { type: 'dateTimeRange' } },
+      statement:
+        'SELECT 12 AS count WHERE CAST($window_from AS TIMESTAMP) < CAST($window_to AS TIMESTAMP)',
+      params: {
+        window_from: { type: 'string' },
+        window_to: { type: 'string' },
+      },
       projections: { count: { type: 'number' } },
     },
     previous: {
-      statement: 'SELECT 6 AS count WHERE $window.from < $window.to',
-      params: { window: { type: 'dateTimeRange' } },
+      statement:
+        'SELECT 6 AS count WHERE CAST($window_from AS TIMESTAMP) < CAST($window_to AS TIMESTAMP)',
+      params: {
+        window_from: { type: 'string' },
+        window_to: { type: 'string' },
+      },
       projections: { count: { type: 'number' } },
     },
   },
@@ -43,9 +54,15 @@ const events = dataApp.defineOperation({
   filters: { period },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }, input) {
-    const current = await query('current', { window: input.period.range });
+    const current = await query(
+      'current',
+      resolvedDateTimeRangeParams(input.period.range, 'window')
+    );
     const previous = input.period.comparison
-      ? await query('previous', { window: input.period.comparison })
+      ? await query(
+          'previous',
+          resolvedDateTimeRangeParams(input.period.comparison, 'window')
+        )
       : null;
     return {
       current: current.rows[0]!.count,
@@ -57,8 +74,12 @@ const client = createDataClient({
   operations: { events },
   lakehouse: {
     async queryAll(statement, { params }) {
-      if (!statement.includes('WITH RECURSIVE') || !params?.window)
-        throw new Error('Datetime parameter not compiled');
+      if (
+        !statement.includes('CAST($window_from AS TIMESTAMP)') ||
+        !params?.window_from ||
+        !params?.window_to
+      )
+        throw new Error('Datetime bounds not bound');
       return {
         columns: [{ name: 'count' }],
         rows: [[statement.includes('SELECT 12') ? 12 : 6]],

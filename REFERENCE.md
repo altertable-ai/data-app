@@ -1321,8 +1321,8 @@ QueryDefinitions (type, @altertable/data-app, @altertable/data-app/config, @alte
 QueryField (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract)
 QueryField.type: keyof QueryValues
 QueryField.nullable?: boolean
-QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar, datetime-range, or dimension parameters with optional fallback values.
-QueryParameter.type: 'dimension' [variant 1 of 10] — A dimension filter's `DimensionSelection`; `$name.matches(column)` is true for the rows it keeps, including missing-value and exclusion semantics.
+QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar, datetime-range, or dimension parameters with optional fallback values. Structured values bind as JSON; statements use DuckDB SQL to read their fields.
+QueryParameter.type: 'dimension' [variant 1 of 10] — A dimension filter's `DimensionSelection`, bound as validated JSON.
 QueryParameter.valueType: 'number' | 'string' [variant 1 of 10]
 QueryParameter.nullable?: false [variants 1, 2, 3, 4, 5, 6 of 10]
 QueryParameter.type: 'dateTimeRange' [variant 2 of 10]
@@ -1389,9 +1389,10 @@ resolveDateTimeRange (function, @altertable/data-app/contract): (value: DateTime
 resolveDateTimeRange.value.from?: AbsoluteOrRelativeDateTime | null — Inclusive start; null or omitted means unbounded.
 resolveDateTimeRange.value.to?: AbsoluteOrRelativeDateTime | null — Exclusive end; null or omitted means now.
 resolveDateTimeRange.now.…: plus props inherited from built-in
-ResolvedDateTimeRange (type, @altertable/data-app/contract): Bounded, resolved wall-clock dates encoded in UTC, with an exclusive end.
-ResolvedDateTimeRange.from: Date
-ResolvedDateTimeRange.to: Date
+ResolvedDateTimeRange (type, @altertable/data-app/contract): = props listed as resolvedDateTimeRangeParams.range.* — Bounded, resolved wall-clock dates encoded in UTC, with an exclusive end.
+resolvedDateTimeRangeParams (function, @altertable/data-app/contract): <const Prefix extends string>(range: ResolvedDateTimeRange, prefix: Prefix): Record<`${Prefix}_from` | `${Prefix}_to`, string> — Bind a resolved filter range as timestamp strings for literal DuckDB SQL. Dates carry reporting-zone wall-clock fields in UTC; omit `Z` for TIMESTAMP casts.
+resolvedDateTimeRangeParams.range.from: Date
+resolvedDateTimeRangeParams.range.to: Date
 RetentionChart (component, @altertable/data-app-react/ui): (props: RetentionChartProps) — Query-defined retention curves with count inspection and dotted incomplete periods. Rates are not recomputed from counts. Compose inside VisualizationWidget.
 RetentionChart.ariaLabel: string — Accessible measure and scope description.
 RetentionChart.unit: string — Population unit, such as users or sessions.

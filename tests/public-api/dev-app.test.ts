@@ -843,6 +843,21 @@ mountDataApp({ app, component: App });
   }
 });
 
+test('dev:file rejects SDK-only SQL syntax before registering a query', async () => {
+  const directory = await temporaryDirectory();
+  const file = join(directory, 'index.tsx');
+  await writeFile(
+    file,
+    `import { defineDataApp } from '@altertable/data-app';
+defineDataApp({ title: 'Invalid SQL', description: 'Invalid SQL', scope: { organization: 'test', environment: 'test' }, queries: { events: { statement: 'SELECT $period.from', params: { period: { type: 'dateTimeRange' } }, projections: { start: { type: 'string' } } } } });
+`
+  );
+  const server = await startFile(file);
+  const bundle = await fetch(new URL('/bundle.js', server.url));
+  expect(bundle.status).toBe(500);
+  expect(await bundle.text()).toContain('SDK-only SQL syntax $period.from');
+});
+
 test('the public Bun preview serves injected data and rejects foreign requests', async () => {
   const directory = await temporaryDirectory();
   const file = join(directory, 'index.tsx');

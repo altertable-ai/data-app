@@ -69,27 +69,28 @@ function App() {
 | `numberFilter()`, `booleanFilter()`                    | `NumberSelection`, `BooleanSelection`          |
 | `dateTimeRangeFilter()`                                | `{ range, comparison }` of resolved dates      |
 
-Pass values to declared query parameters; never interpolate them into SQL. Date
-ranges bind as [`dateTimeRange` parameters](contract.md#bind-date-ranges). A
-dimension selection binds whole to a `{ type: 'dimension', valueType }`
-parameter; `$country.matches(column)` keeps the selected rows, including
-multiple members, missing values, and exclusion:
+Pass values to declared query parameters; never interpolate them into SQL. Bind
+date filter bounds as [separate timestamp parameters](contract.md#bind-date-ranges).
+Write DuckDB SQL directly. For a single selected country, bind its value as a
+string parameter:
 
 ```ts
 // ... in defineDataApp({ queries })
 revenueByCampaign: {
   statement: `SELECT o.campaign, sum(o.amount) AS revenue
     FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
-    WHERE $country.matches(c.country)
+    WHERE c.country = $country
     GROUP BY o.campaign`,
-  params: { country: { type: 'dimension', valueType: 'string' } },
+  params: { country: { type: 'string' } },
   projections: { campaign: { type: 'string' }, revenue: { type: 'number' } },
 },
-// ... in the operation: query('revenueByCampaign', { country: input.country })
+// ... in the operation: query('revenueByCampaign', { country: selectedCountry })
 ```
 
-Dimension, number, and boolean selections support `{ kind: 'all' }`. Offer only
-predicates the registered query supports.
+For multiple values, missing values, or exclusion, bind a validated selection
+and express its semantics with DuckDB JSON and list functions in the SQL. Dimension,
+number, and boolean selections support `{ kind: 'all' }`. Offer only predicates
+the registered query supports.
 
 ## Categorical dimensions
 
@@ -208,6 +209,7 @@ period, time zone, and metric comparisons:
 import {
   dateTimeRangeFilter,
   dateTimeRangePresets,
+  resolvedDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 
 const period = dateTimeRangeFilter({
@@ -222,10 +224,10 @@ const dailyCounts = dataApp.defineOperation({
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, { period, groupName }) {
     const current = await query('dailyCounts', {
-      period: period.range,
+      ...resolvedDateTimeRangeParams(period.range, 'period'),
       groupName,
     });
-    // ... query { period: period.comparison } when it is not null
+    // ... query with resolvedDateTimeRangeParams(period.comparison, 'period') when it is not null
     return current.rows;
   },
 });
@@ -233,8 +235,8 @@ const dailyCounts = dataApp.defineOperation({
 
 - `run()` receives `{ range, comparison }` with resolved dates. Ranges include
   `from` and exclude `to`: September 24–30 queries `2026-09-24T00:00:00Z`
-  through `2026-10-01T00:00:00Z`. Bind them to a
-  [`dateTimeRange` parameter](contract.md#bind-date-ranges).
+  through `2026-10-01T00:00:00Z`. Bind them as
+  [separate timestamp parameters](contract.md#bind-date-ranges).
 - A range that runs past now ends at now: today picked in the calendar queries
   midnight through the current time.
 - `comparison: 'off'` or `'on'` offers the previous-period toggle, starting in

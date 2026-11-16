@@ -106,8 +106,7 @@ export type DataAppDefinition<
  * references, and callbacks. Extraction reads literals without executing app code.
  * TypeScript and runtime query rules own configuration validation.
  *
- * Scalar placeholders pass to the backend. Datetime-range bound references ($period.from/to)
- * expand to DuckDB timestamp expressions while the range is bound as JSON.
+ * Statements use DuckDB SQL and bound parameters without SDK-only SQL syntax.
  * Declare each parameter's type and optional defaultValue.
  * Values are scalars or declared datetime ranges, never SQL fragments or identifiers.
  * Host queryParams supply protected values; callers cannot override them.

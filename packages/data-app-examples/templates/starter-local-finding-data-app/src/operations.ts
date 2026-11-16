@@ -1,4 +1,7 @@
-import { parseCount } from '@altertable/data-app/contract';
+import {
+  parseCount,
+  resolvedDateTimeRangeParams,
+} from '@altertable/data-app/contract';
 
 import { operationFilters } from '#app/filters.ts';
 import { dataApp } from '#config';
@@ -9,9 +12,15 @@ export const operations = dataApp.defineOperations({
     filters: operationFilters.sampleTotal,
     policy,
     async run({ query }, { period }) {
-      const current = await query('sampleTotal', { period: period.range });
+      const current = await query(
+        'sampleTotal',
+        resolvedDateTimeRangeParams(period.range, 'period')
+      );
       const previous = period.comparison
-        ? await query('sampleTotal', { period: period.comparison })
+        ? await query(
+            'sampleTotal',
+            resolvedDateTimeRangeParams(period.comparison, 'period')
+          )
         : null;
       return {
         current: parseCount(current.rows[0]!.sample_count),
@@ -28,7 +37,10 @@ export const operations = dataApp.defineOperations({
         from: period.comparison?.from ?? period.range.from,
         to: period.range.to,
       };
-      const result = await query('samplesOverTime', { period: range, grain });
+      const result = await query('samplesOverTime', {
+        ...resolvedDateTimeRangeParams(range, 'period'),
+        grain,
+      });
       return result.rows.map(row => ({
         periodStart: row.period_start,
         sampleCount: parseCount(row.sample_count),
@@ -40,7 +52,7 @@ export const operations = dataApp.defineOperations({
     policy,
     async run({ query }, { period, breakdown }) {
       const result = await query('samplesByMember', {
-        period: period.range,
+        ...resolvedDateTimeRangeParams(period.range, 'period'),
         breakdown,
       });
       return result.rows.map(row => ({
@@ -54,7 +66,7 @@ export const operations = dataApp.defineOperations({
     policy,
     async run({ query }, { period, grain, breakdown }) {
       const result = await query('sampleRows', {
-        period: period.range,
+        ...resolvedDateTimeRangeParams(period.range, 'period'),
         grain,
         breakdown,
       });

@@ -10,6 +10,7 @@ import {
 import {
   readRequestBody,
   RequestBodyTooLargeError,
+  unsupportedParameterReference,
 } from '@altertable/data-app/internal';
 import { type BunPlugin } from 'bun';
 import {
@@ -175,6 +176,11 @@ export async function serveAppFile({
           !definition.statement.trim()
         )
           throw new Error(`Invalid registered query: ${id}.`);
+        const unsupported = unsupportedParameterReference(definition.statement);
+        if (unsupported)
+          throw new Error(
+            `Query ${id} uses SDK-only SQL syntax ${unsupported}. Write DuckDB SQL with bound parameters instead.`
+          );
         queries[id] = definition.statement;
       }
       const stylesheet = result.outputs.find(output =>

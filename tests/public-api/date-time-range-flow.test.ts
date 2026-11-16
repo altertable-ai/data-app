@@ -8,6 +8,7 @@ import {
   formatDateTimeBound,
   serializeDateTimeRange,
   dateTimeRangeSql,
+  resolvedDateTimeRangeParams,
   resolveDateTimeRange,
   type DateTimeRange,
 } from '@altertable/data-app/contract';
@@ -59,7 +60,7 @@ test('datetime variables preserve relative intent and restore absolute values ac
   expect(serializeDateTimeRange(relative)).toBe(JSON.stringify(relative));
 });
 
-test('an operation receives a resolved date range that a registered query binds without app conversion', async () => {
+test('an operation binds resolved date filter bounds as DuckDB timestamp parameters', async () => {
   const period = dateTimeRangeFilter({ key: 'period', defaultValue: '7d' });
   const app = defineDataApp({
     title: 'Datetime',
@@ -67,8 +68,12 @@ test('an operation receives a resolved date range that a registered query binds 
     scope: { organization: 'test', environment: 'test' },
     queries: {
       events: {
-        statement: 'SELECT $period.from AS start, $period.to AS end',
-        params: { period: { type: 'dateTimeRange' } },
+        statement:
+          'SELECT CAST($period_from AS TIMESTAMP) AS start, CAST($period_to AS TIMESTAMP) AS end',
+        params: {
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
+        },
         projections: { start: { type: 'string' }, end: { type: 'string' } },
       },
     },
@@ -77,7 +82,12 @@ test('an operation receives a resolved date range that a registered query binds 
     filters: { period },
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }, { period }) {
-      return (await query('events', { period: period.range })).rows;
+      return (
+        await query(
+          'events',
+          resolvedDateTimeRangeParams(period.range, 'period')
+        )
+      ).rows;
     },
   });
   let sent: { statement: string; params: unknown } | undefined;
@@ -97,11 +107,11 @@ test('an operation receives a resolved date range that a registered query binds 
     period: period.request({ range: relative }),
   });
   expect(result.data).toEqual([{ start: 'start', end: 'end' }]);
-  expect(sent?.statement).not.toContain('$period.from');
-  const bound = JSON.parse((sent!.params as { period: string }).period);
-  expect(new Date(bound.to).getTime() - new Date(bound.from).getTime()).toBe(
-    7 * 86_400_000
-  );
+  expect(sent?.statement).toBe(app.queries.events.statement);
+  const bound = sent!.params as { period_from: string; period_to: string };
+  expect(
+    new Date(bound.period_to).getTime() - new Date(bound.period_from).getTime()
+  ).toBe(7 * 86_400_000);
   const { input } = operation;
   const absolute = {
     period: {
@@ -123,8 +133,8 @@ test('an operation receives a resolved date range that a registered query binds 
   ).toThrow();
 });
 
-test('query expansion leaves literals, comments, quoted identifiers, and other parameters intact', () => {
-  const statement = `SELECT '$period.from' AS "a$period.to", $$ $period.from $$ AS literal, $period.from AS bound, $count AS count -- $period.to\n/* outer /* $period.from */ comment */`;
+test('query registry rejects SDK-only SQL syntax while ignoring literals and comments', () => {
+  const statement = `SELECT '$period.from' AS "a$period.to", $$ $period.from $$ AS literal, $count AS count -- $period.to\n/* outer /* $period.from */ comment */`;
   const app = defineDataApp({
     title: 'Quoted',
     description: 'Quoted SQL',
@@ -140,16 +150,47 @@ test('query expansion leaves literals, comments, quoted identifiers, and other p
       },
     },
   });
-  expect(app.queries.events.statement).toContain("'$period.from'");
-  expect(app.queries.events.statement).toContain('$$ $period.from $$');
-  expect(app.queries.events.statement).toContain(
-    '/* outer /* $period.from */ comment */'
-  );
-  expect(app.queries.events.statement).toContain('$count AS count');
-  expect(app.queries.events.statement).not.toContain('$period.from AS bound');
+  expect(app.queries.events.statement).toBe(statement);
+  for (const syntax of [
+    '$period.from',
+    '$period.to',
+    '$country.matches(c.country)',
+  ])
+    expect(() =>
+      defineDataApp({
+        title: 'Invalid',
+        description: 'Invalid SQL',
+        scope: { organization: 'test', environment: 'test' },
+        queries: {
+          events: {
+            statement: `SELECT ${syntax} AS bound`,
+            params: {},
+            projections: { bound: { type: 'string' } },
+          },
+        },
+      })
+    ).toThrow('SDK-only SQL syntax');
 });
 
 test('SQL helpers produce parameterized bounds and reject unsafe structured values', () => {
+  expect(
+    resolvedDateTimeRangeParams(
+      {
+        from: new Date('2026-01-01T16:00:00.000Z'),
+        to: new Date('2026-01-02T16:00:00.000Z'),
+      },
+      'period'
+    )
+  ).toEqual({
+    period_from: '2026-01-01T16:00:00.000',
+    period_to: '2026-01-02T16:00:00.000',
+  });
+  expect(() =>
+    resolvedDateTimeRangeParams(
+      { from: new Date(), to: new Date() },
+      'period); DROP TABLE events'
+    )
+  ).toThrow();
   const compiled = dateTimeRangeSql(relative);
   expect(JSON.parse(compiled.params.period!)).toEqual(relative);
   expect(compiled.from).toContain("INTERVAL '1 DAY'");
@@ -225,7 +266,7 @@ test('absolute query defaults remain dates, are snapshotted, and bind without ca
     scope: { organization: 'test', environment: 'test' },
     queries: {
       events: {
-        statement: String.raw`SELECT E'escaped\' $period.from' AS text, $period.from AS start`,
+        statement: String.raw`SELECT E'escaped\' $period.from' AS text, $period AS start`,
         params: {
           period: {
             type: 'dateTimeRange',
@@ -274,7 +315,7 @@ test('literal ISO query defaults survive manifest extraction and hydrate before 
     scope: { organization: 'test', environment: 'test' },
     queries: {
       events: {
-        statement: 'SELECT $period.from AS start, $period.to AS end',
+        statement: 'SELECT $period AS start',
         params: {
           period: {
             type: 'dateTimeRange' as const,
@@ -377,7 +418,7 @@ test('HTTP host datetime parameters decode validated JSON and remain protected f
     scope: { organization: 'test', environment: 'test' },
     queries: {
       events: {
-        statement: 'SELECT $period.from AS start',
+        statement: 'SELECT $period AS start',
         params: { period: { type: 'dateTimeRange' } },
         projections: { start: { type: 'string' } },
       },
@@ -446,7 +487,7 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
     scope: { organization: 'test', environment: 'test' },
     queries: {
       events: {
-        statement: 'SELECT $period.from AS start',
+        statement: 'SELECT $period AS start',
         params: { period: { type: 'dateTimeRange' } },
         projections: { start: { type: 'string' } },
       },

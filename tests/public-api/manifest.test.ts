@@ -342,22 +342,30 @@ test('extracts the Finding exploration declaration', async () => {
     scope: { organization: 'demo', environment: 'sample' },
     // One query per widget.
     queries: {
-      sampleTotal: { params: { period: { type: 'dateTimeRange' } } },
+      sampleTotal: {
+        params: {
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
+        },
+      },
       samplesOverTime: {
         params: {
-          period: { type: 'dateTimeRange' },
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },
         },
       },
       samplesByMember: {
         params: {
-          period: { type: 'dateTimeRange' },
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
           breakdown: { type: 'string', defaultValue: 'segment' },
         },
       },
       sampleRows: {
         params: {
-          period: { type: 'dateTimeRange' },
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },
           breakdown: { type: 'string', defaultValue: 'segment' },
         },

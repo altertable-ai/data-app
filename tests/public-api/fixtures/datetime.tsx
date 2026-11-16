@@ -30,7 +30,7 @@ const app = defineDataApp({
   scope: { organization: 'test', environment: 'test' },
   queries: {
     events: {
-      statement: 'SELECT $period.from AS start, $period.to AS end',
+      statement: 'SELECT $period AS selection',
       params: { period: { type: 'dateTimeRange' } },
       projections: { selection: { type: 'string' } },
     },
@@ -82,11 +82,8 @@ const client = createDataClient({
   operations: { events },
   lakehouse: {
     async queryAll(statement, { params }) {
-      if (
-        statement.includes('$period.from') ||
-        !statement.includes('WITH RECURSIVE')
-      )
-        throw new Error('Range not compiled');
+      if (statement !== app.queries.events.statement)
+        throw new Error('Query SQL changed after registration');
       return { columns: [{ name: 'selection' }], rows: [[params?.period]] };
     },
   },

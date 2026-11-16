@@ -12,8 +12,11 @@ export const dataApp = defineDataApp({
       statement: `
 SELECT COALESCE(SUM(sample_count), 0) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to`,
-      params: { period: { type: 'dateTimeRange' } },
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)`,
+      params: {
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
+      },
     },
     samplesOverTime: {
       projections: {
@@ -24,10 +27,11 @@ WHERE sample_date >= $period.from AND sample_date < $period.to`,
 SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY period_start LIMIT 200`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
       },
     },
@@ -40,10 +44,11 @@ GROUP BY ALL ORDER BY period_start LIMIT 200`,
 SELECT CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY sample_count DESC LIMIT 50`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         breakdown: { type: 'string', defaultValue: 'segment' },
       },
     },
@@ -58,10 +63,11 @@ SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
         breakdown: { type: 'string', defaultValue: 'segment' },
       },

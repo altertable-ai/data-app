@@ -84,9 +84,9 @@ Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
 ### Bind date ranges
 
-Declare `{ type: 'dateTimeRange' }` and pass a date filter's `range` or
-`comparison`. Reference its bounds as `$period.from` (inclusive) and
-`$period.to` (exclusive):
+The date filter supplies resolved `Date` bounds. Bind them as two string parameters
+and cast them to timezone-free DuckDB timestamps. Keep the start inclusive and
+the end exclusive:
 
 ```ts
 const dataApp = defineDataApp({
@@ -95,9 +95,13 @@ const dataApp = defineDataApp({
     dailyOrders: {
       statement: `SELECT CAST(ordered_at AS DATE) AS day, count(*) AS orders
         FROM orders
-        WHERE ordered_at >= $period.from AND ordered_at < $period.to
+        WHERE ordered_at >= CAST($period_from AS TIMESTAMP)
+          AND ordered_at < CAST($period_to AS TIMESTAMP)
         GROUP BY day ORDER BY day`,
-      params: { period: { type: 'dateTimeRange' } },
+      params: {
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
+      },
       projections: {
         day: { type: 'string' },
         orders: { type: 'number' },
@@ -105,10 +109,15 @@ const dataApp = defineDataApp({
     },
   },
 });
+
+// In the operation, import resolvedDateTimeRangeParams from
+// @altertable/data-app/contract:
+// query('dailyOrders', resolvedDateTimeRangeParams(period.range, 'period'))
 ```
 
 Date filters pass resolved bounds in their `timeZone`, encoded as UTC wall-clock
 fields: 4 PM in the reporting zone is 16:00Z. SQL bounds are therefore
 timezone-free timestamps; interpret timestamp-with-timezone columns in that same
-zone. Coverage and duration limits live on the
+zone. Removing `Z` from the bound ISO strings preserves those wall-clock fields
+when DuckDB casts them to `TIMESTAMP`. Coverage and duration limits live on the
 [date filter](filters.md#date-ranges).

@@ -18,6 +18,7 @@ import {
   dateTimeRangeFilter,
   displayChoice,
   parseCount,
+  resolvedDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 // One query per widget: each section loads its own result when it nears the viewport.
 const dataApp = defineDataApp({
@@ -32,8 +33,11 @@ const dataApp = defineDataApp({
       statement: `
 SELECT COALESCE(SUM(sample_count), 0) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to`,
-      params: { period: { type: 'dateTimeRange' } },
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)`,
+      params: {
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
+      },
     },
     samplesOverTime: {
       projections: {
@@ -44,10 +48,11 @@ WHERE sample_date >= $period.from AND sample_date < $period.to`,
 SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY period_start LIMIT 200`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
       },
     },
@@ -60,10 +65,11 @@ GROUP BY ALL ORDER BY period_start LIMIT 200`,
 SELECT CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY sample_count DESC LIMIT 50`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         breakdown: { type: 'string', defaultValue: 'segment' },
       },
     },
@@ -78,10 +84,11 @@ SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= $period.from AND sample_date < $period.to
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
 GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
       params: {
-        period: { type: 'dateTimeRange' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
         breakdown: { type: 'string', defaultValue: 'segment' },
       },
@@ -128,9 +135,15 @@ export const operations = dataApp.defineOperations({
     filters: { period },
     policy,
     async run({ query }, { period }) {
-      const current = await query('sampleTotal', { period: period.range });
+      const current = await query(
+        'sampleTotal',
+        resolvedDateTimeRangeParams(period.range, 'period')
+      );
       const previous = period.comparison
-        ? await query('sampleTotal', { period: period.comparison })
+        ? await query(
+            'sampleTotal',
+            resolvedDateTimeRangeParams(period.comparison, 'period')
+          )
         : null;
       return {
         current: parseCount(current.rows[0]!.sample_count),
@@ -147,7 +160,10 @@ export const operations = dataApp.defineOperations({
         from: period.comparison?.from ?? period.range.from,
         to: period.range.to,
       };
-      const result = await query('samplesOverTime', { period: range, grain });
+      const result = await query('samplesOverTime', {
+        ...resolvedDateTimeRangeParams(range, 'period'),
+        grain,
+      });
       return result.rows.map(row => ({
         periodStart: row.period_start,
         sampleCount: parseCount(row.sample_count),
@@ -159,7 +175,7 @@ export const operations = dataApp.defineOperations({
     policy,
     async run({ query }, { period, breakdown }) {
       const result = await query('samplesByMember', {
-        period: period.range,
+        ...resolvedDateTimeRangeParams(period.range, 'period'),
         breakdown,
       });
       return result.rows.map(row => ({
@@ -173,7 +189,7 @@ export const operations = dataApp.defineOperations({
     policy,
     async run({ query }, { period, grain, breakdown }) {
       const result = await query('sampleRows', {
-        period: period.range,
+        ...resolvedDateTimeRangeParams(period.range, 'period'),
         grain,
         breakdown,
       });

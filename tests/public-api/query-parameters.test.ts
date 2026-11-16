@@ -153,8 +153,14 @@ test('a dimension filter binds its selection and matches rows in SQL', async () 
     scope: { organization: 'demo', environment: 'test' },
     queries: {
       orders: {
-        statement:
-          'SELECT count(*) AS orders FROM orders o JOIN customers c ON c.id = o.customer_id WHERE $country.matches(c.country)',
+        statement: `SELECT count(*) AS orders FROM orders o JOIN customers c ON c.id = o.customer_id
+WHERE (CASE json_extract_string($country, '$.kind')
+  WHEN 'all' THEN TRUE
+  WHEN 'include' THEN CASE WHEN c.country IS NULL THEN CAST(json_extract($country, '$.missing') AS BOOLEAN)
+    ELSE list_contains(CAST(json_extract($country, '$.values') AS VARCHAR[]), c.country) END
+  WHEN 'exclude' THEN CASE WHEN c.country IS NULL THEN NOT CAST(json_extract($country, '$.missing') AS BOOLEAN)
+    ELSE NOT list_contains(CAST(json_extract($country, '$.values') AS VARCHAR[]), c.country) END
+END)`,
         params: { country: { type: 'dimension', valueType: 'string' } },
         projections: { orders: { type: 'number' } },
       },
@@ -195,8 +201,5 @@ test('a dimension filter binds its selection and matches rows in SQL', async () 
     },
     { country: JSON.stringify({ kind: 'all' }) },
   ]);
-  expect(delivered[0]!.statement).not.toContain('$country.matches');
-  expect(delivered[0]!.statement).toContain(
-    "list_contains(CAST(json_extract($country, '$.values') AS VARCHAR[]), c.country)"
-  );
+  expect(delivered[0]!.statement).toBe(dimensions.queries.orders.statement);
 });

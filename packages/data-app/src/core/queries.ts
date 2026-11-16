@@ -6,11 +6,8 @@ import type { DateTimeRange } from './date-time-range.ts';
 import type { DimensionSelection } from './dimension.ts';
 import { invariant } from './invariant.ts';
 import type { QueryResult } from './operation-types.ts';
-import {
-  expandParameterReferences,
-  type StructuredParameter,
-} from './parameter-sql.ts';
 import { isRecord } from './record.ts';
+import { unsupportedParameterReference } from './parameter-sql.ts';
 
 export const MAX_QUERY_ROWS = 10_000;
 
@@ -35,12 +32,10 @@ export type QueryRow<Projections extends QueryProjections> = {
 
 export type QueryParameterValue = string | number | boolean | null;
 /** Typed scalar, datetime-range, or dimension parameters with optional fallback values.
- * Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive),
- * and a dimension selection as `$name.matches(column)`. */
+ * Structured values bind as JSON; statements use DuckDB SQL to read their fields. */
 export type QueryParameter =
   | {
-      /** A dimension filter's `DimensionSelection`; `$name.matches(column)` is true
-       * for the rows it keeps, including missing-value and exclusion semantics. */
+      /** A dimension filter's `DimensionSelection`, bound as validated JSON. */
       type: 'dimension';
       valueType: 'string' | 'number';
       nullable?: false;
@@ -251,6 +246,11 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
           !!name.trim() && !!query.statement.trim(),
           'Queries need a name and SQL statement.'
         );
+        const unsupported = unsupportedParameterReference(query.statement);
+        invariant(
+          !unsupported,
+          `Query ${name} uses SDK-only SQL syntax ${unsupported}. Write DuckDB SQL with bound parameters instead.`
+        );
         const params = Object.freeze(
           Object.fromEntries(
             Object.entries(query.params).map(([key, declaration]) => {
@@ -306,16 +306,7 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
         return [
           name,
           Object.freeze({
-            statement: expandParameterReferences(
-              query.statement,
-              new Map(
-                Object.entries(query.params).flatMap(([key, p]) =>
-                  p.type === 'dateTimeRange' || p.type === 'dimension'
-                    ? [[key, p as StructuredParameter]]
-                    : []
-                )
-              )
-            ),
+            statement: query.statement,
             params,
             projections: Object.freeze(
               Object.fromEntries(
