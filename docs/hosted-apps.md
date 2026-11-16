@@ -32,7 +32,7 @@ the iframe and sends its registered query IDs and parameter values through
 2. Collect the operations with `dataApp.defineOperations()` and use
    `operations.createDataClient()`. The registry supplies the operations'
    filters, so drop the `filters` option. See
-   [bound operations](client.md#bound-operations-in-hosted-and-local-apps)
+   [hosted operations](client.md#hosted-operations)
    for execution through the host.
 3. Remove the Bun server, HTML, server adapters, credentials, and relative or
    app-alias imports. Rewrite any operation that depends on server-only code

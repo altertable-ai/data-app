@@ -170,9 +170,9 @@ const router = createMessageRouter(routes, {
 `router.dispatch()` validates route input and output. Use `MessageRoutingError`
 for intentional public failures; other handler errors are hidden.
 
-Use `defineDataQueryRoute(operationContracts)` for typed named operations or
-`dataAppRoutes` for generic operation and navigation routes. Handlers must
-validate operations, authorize data access, and enforce backend query limits.
+Use `registeredQueryRoute` for data requests, or `dataAppRoutes` for the shared
+registered-query and navigation contracts. Handlers must resolve IDs against
+the saved app, authorize data access, and enforce backend query limits.
 
 ## Registered query route
 

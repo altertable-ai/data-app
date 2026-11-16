@@ -38,10 +38,10 @@ entry for public codes and request IDs. Pass an abort signal to cancel a request
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
 
-## Bound operations in hosted and local apps
+## Hosted operations
 
-Bind operations to the app's query registry. The client derives its filters and
-uses the installed iframe bridge in hosted apps or HTTP in local directory apps:
+Bind operations to the app's query registry. The hosted client derives its
+filters and uses the installed iframe bridge:
 
 ```ts
 // ... app declared with defineDataApp(), operations created with dataApp.defineOperation()
@@ -57,8 +57,11 @@ the query ID from `defineDataApp({ queries })` to execute the saved SQL. The
 trusted bootstrap installs the bridge before app execution.
 
 In local directory apps, `client.query()` posts the operation name and input to
-`/api/data/:operation`. Bun executes `run()` there. The app code needs no
-execution option when moving between these environments.
+`/api/data/:operation`. Bun executes `run()` there. Keep the browser's operation
+import type-only and pass the browser-safe filter declarations to the HTTP
+client as shown above. This keeps operation implementations and their server-only
+imports out of the browser bundle. The `run()` declarations and `client.query()` calls use
+the same names and inputs in both environments.
 
 ## Iframe transport
 

@@ -300,6 +300,11 @@ describe('authoring', () => {
     expect(countRequests.length + totalRequests.length).toBe(requests.length);
     expect(requests.every(request => request.host)).toBe(true);
     expect(
+      requests.every(
+        request => !('statement' in request) && !('operation' in request)
+      )
+    ).toBe(true);
+    expect(
       countRequests.every(
         request => request.limit === 10 && request.params.limit === 10
       )

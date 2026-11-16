@@ -333,7 +333,6 @@ export const registeredQueryRoute = /* @__PURE__ */ defineMessageRoute({
 });
 
 export const dataAppRoutes = {
-  'data:operation': /* @__PURE__ */ defineDataOperationRoute(),
   'data:query': registeredQueryRoute,
   'navigation:update': navigationUpdateRoute,
 };

@@ -4,6 +4,7 @@ import {
   createMessageRouter,
   defineMessageRoute,
   defineDataOperationRoute,
+  dataAppRoutes,
   registeredQueryRoute,
   navigationUpdateRoute,
 } from '@altertable/data-app/contract';
@@ -23,6 +24,13 @@ const routes = {
 function context() {
   return { signal: new AbortController().signal };
 }
+
+test('default iframe routes expose registered queries and navigation only', () => {
+  expect(Object.keys(dataAppRoutes)).toEqual([
+    'data:query',
+    'navigation:update',
+  ]);
+});
 
 test('typed routes validate both boundaries and reject unknown routes before invoking a handler', async () => {
   let calls = 0;

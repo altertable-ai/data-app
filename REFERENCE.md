@@ -296,7 +296,7 @@ ControlBar (component, @altertable/data-app-react/ui): (props: ControlBarProps) 
 ControlBar.children: ReactNode
 ControlBar.…: plus props inherited from React
 ControlBarProps (type, @altertable/data-app-react/ui): = props listed as ControlBar.*
-createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : keyof OperationFilters<Operations> extends never ? [ ] : [ options: never ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations>; <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Named clients derive data from the declared operations' run return types. Without an operation contract, external operation data remains unknown.
+createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : keyof OperationFilters<Operations> extends never ? [ ] : [ options: never ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations>; <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Create an HTTP operation client or execute declared operations locally. Without an operation contract, external operation data remains unknown.
 createDataClient.options.transport?: DataTransport
 createDataClient.options.endpoint?: string
 createDataClient.options.fetch?: (input: RequestInfo | URL, init: RequestInit): Promise<Response>
@@ -395,7 +395,7 @@ DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
 DataAppOperationRegistry (type, @altertable/data-app, @altertable/data-app/config): <Operations>
-DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Use the installed iframe bridge in a hosted app, or HTTP locally.
+DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Run operations in a hosted iframe using its installed query bridge.
 DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
@@ -423,7 +423,7 @@ DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/
 DataAppView (type, @altertable/data-app-react): <Data, Input> — A declared data or time view that `<DataApp>` can run and describe.
 DataAppView.scope: (snapshot: DisplayedSnapshot<Data, Input>) => string
 DataClient (type, @altertable/data-app/client): <Operations> = props listed as createDataHooks.client.*
-DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Browser operations and named-operation delivery are mutually exclusive.
+DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Browser execution and HTTP operation delivery are mutually exclusive.
 DataContext (type, @altertable/data-app-react)
 DataContext.description: ReactNode
 DataContext.glossary: Record<string, GlossaryEntry>

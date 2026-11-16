@@ -10,7 +10,6 @@ import {
   type WithFilterInput,
 } from '../authoring/contract.ts';
 import { createDataClient, type DataClient } from '../client/data-client.ts';
-import { getDataAppTransport } from '../client/iframe.ts';
 import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
 import {
@@ -54,7 +53,7 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
 
 export type DataAppOperationRegistry<Operations extends DataOperations> =
   Operations & {
-    /** Use the installed iframe bridge in a hosted app, or HTTP locally. */
+    /** Run operations in a hosted iframe using its installed query bridge. */
     createDataClient(): DataClient<Operations>;
   };
 
@@ -136,28 +135,15 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
     defineOperations(operations: DataOperations) {
       if (Object.hasOwn(operations, 'createDataClient'))
         throw new Error('Operation name createDataClient is reserved.');
-      const filters = Object.fromEntries(
-        Object.entries(operations).flatMap(([name, operation]) =>
-          operation.filters ? [[name, operation.filters]] : []
-        )
-      );
       const registry = {
         ...operations,
       } as DataAppOperationRegistry<DataOperations>;
       Object.setPrototypeOf(registry, {
         createDataClient() {
-          if (typeof window !== 'undefined' && getDataAppTransport())
-            return (
-              createDataClient as (
-                options: object
-              ) => DataClient<DataOperations>
-            )({
-              operations,
-            });
           return (
             createDataClient as (options: object) => DataClient<DataOperations>
           )({
-            filters,
+            operations,
           });
         },
       });

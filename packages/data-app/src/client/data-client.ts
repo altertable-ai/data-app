@@ -142,7 +142,7 @@ type CheckedFacets<Operations extends DataOperations> = {
   : {
       'Facet filter options must name a registered operation returning DimensionOption[]': never;
     };
-/** Browser operations and named-operation delivery are mutually exclusive. */
+/** Browser execution and HTTP operation delivery are mutually exclusive. */
 export type DataClientOptions<Operations extends DataOperations> =
   (KnownRecord<Operations> extends never
     ? never
@@ -166,8 +166,7 @@ export type DataClientOptions<Operations extends DataOperations> =
 
 const dataOperationRoute = defineDataOperationRoute();
 
-/** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
-/** Named clients derive data from the declared operations' run return types. */
+/** Create an HTTP operation client or execute declared operations locally. */
 export function createDataClient<Operations extends DataOperations>(
   ...args: DataClientOptions<Operations> extends never
     ? [options: never]
@@ -259,7 +258,7 @@ function createOperationClient<Operations extends DataOperations>(options: {
           : getDataAppTransport()?.lakehouse);
       if (!lakehouse)
         throw new DataAppError(
-          'An authorized SQL bridge must be installed first.',
+          'An authorized data bridge must be installed first.',
           'bridge_unavailable',
           requestId
         );

@@ -3,7 +3,6 @@ import {
   type DataAppLogger,
 } from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
-import { createHttpTransport } from '@altertable/data-app/client';
 import { createMessageRouter } from '@altertable/data-app/contract';
 import { StrictMode, useReducer, useState, type ComponentRef } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -42,11 +41,7 @@ function Host() {
     warn: (...args) => record('warn', args),
     error: (...args) => record('error', args),
   };
-  const forward = createHttpTransport();
   const router = createMessageRouter(bridgeRoutes, {
-    'data:operation'({ operation, input }, { signal }) {
-      return forward(operation, input, signal);
-    },
     'data:query'() {
       return { columns: [], rows: [] };
     },

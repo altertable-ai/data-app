@@ -10,7 +10,6 @@ import {
   DataAppBridge,
   type DataAppBridgeHandle,
 } from '@altertable/data-app-embed/react';
-import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createMessageRouter,
   openExternalLinkRoute,
@@ -215,7 +214,6 @@ function Host() {
       ]);
     },
   };
-  const forward = createHttpTransport();
   function download(file: { filename: string; blob: Blob }) {
     if (exportFailure) throw new Error('Export unavailable');
     const url = URL.createObjectURL(file.blob);
@@ -252,8 +250,6 @@ function Host() {
         setEchoRequests(value => value + 1);
         return { period, version };
       },
-      'data:operation': ({ operation, input }, { signal }) =>
-        forward(operation, input, signal),
       'navigation:update': createNavigationHandler(),
       async 'data:query'({ queryId, limit, params }, { signal }) {
         const response = await fetch('/api/query', {

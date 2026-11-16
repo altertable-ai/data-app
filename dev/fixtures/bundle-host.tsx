@@ -18,7 +18,6 @@ import {
 } from '@altertable/data-app-react';
 import { AppIcon } from '@altertable/data-app-react/ui';
 import type { Theme } from '@altertable/data-app/appearance';
-import { createHttpTransport } from '@altertable/data-app/client';
 import {
   MessageRoutingError,
   annotationDraftRoute,
@@ -301,7 +300,6 @@ function Host() {
       : {}),
     ...(hostOptions.has('lazy') ? { loading: 'lazy' as const } : {}),
   };
-  const forward = createHttpTransport();
   const [openExternalLink] = useState(() => createExternalLinkHandler());
 
   const fileExportRoute = defineMessageRoute({
@@ -377,9 +375,6 @@ function Host() {
       },
       'test:echo'({ period }) {
         return { period, version };
-      },
-      'data:operation'({ operation, input }, { signal }) {
-        return forward(operation, input, signal);
       },
       'navigation:update': createNavigationHandler(),
     }
