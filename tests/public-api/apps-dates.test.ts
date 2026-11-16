@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
-test('widget headings share muted typography and preserve section hierarchy', async ({
+test('widget headings share primary foreground typography and preserve section hierarchy', async ({
   page,
 }) => {
   await page.goto('/date-presentation');
@@ -54,17 +54,20 @@ test('widget headings share muted typography and preserve section hierarchy', as
   expect(
     styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0]))
   ).toBe(true);
-  expect(
-    await page
-      .getByRole('heading', { name: 'Events', level: 3, exact: true })
-      .evaluate(element => getComputedStyle(element).color)
-  ).toBe(
-    await page
-      .getByRole('table')
-      .getByRole('columnheader')
-      .first()
-      .evaluate(element => getComputedStyle(element).color)
-  );
+  const [headingColor, textColor] = await page
+    .getByRole('heading', { name: 'Events', level: 3, exact: true })
+    .evaluate(element => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--atbl-text)';
+      element.parentElement!.append(probe);
+      const colors = [
+        getComputedStyle(element).color,
+        getComputedStyle(probe).color,
+      ];
+      probe.remove();
+      return colors;
+    });
+  expect(headingColor).toBe(textColor);
 });
 
 test('dates share locale and reporting zone with explicit overrides and raw CSV', async ({
