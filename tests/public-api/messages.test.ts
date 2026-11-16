@@ -231,6 +231,7 @@ test('registered query messages carry an ID and parameters without SQL', async (
     { statement: 'SELECT 1', limit: 1 },
     { queryId: '', limit: 1 },
     { queryId: 'salesByRegion', limit: 0 },
+    { queryId: 'salesByRegion', limit: 10_001 },
     { queryId: 'salesByRegion', limit: 1, params: { region: [] } },
   ])
     await expect(

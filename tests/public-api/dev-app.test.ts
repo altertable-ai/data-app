@@ -889,6 +889,22 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
     rows: [['SELECT $marker']],
     queryId: 'injected',
   });
+  for (const queryId of ['constructor', 'toString']) {
+    const inherited = await fetch(queryUrl, {
+      method: 'POST',
+      headers: { origin },
+      body: JSON.stringify({ queryId, limit: 1 }),
+    });
+    expect(inherited.status).toBe(404);
+    expect(await inherited.json()).toEqual({ reason: 'query_rejected' });
+  }
+  const excessiveLimit = await fetch(queryUrl, {
+    method: 'POST',
+    headers: { origin },
+    body: JSON.stringify({ queryId: 'marker', limit: 10_001 }),
+  });
+  expect(excessiveLimit.status).toBe(400);
+  expect(await excessiveLimit.json()).toEqual({ reason: 'query_rejected' });
   const overhead = new TextEncoder().encode(
     JSON.stringify({ queryId: 'marker', limit: 1, params: { marker: '' } })
   ).byteLength;

@@ -6,7 +6,11 @@ import {
   type DataQueryBody,
   type OutputOf,
 } from './operation-types.ts';
-import { isQueryParameters, type QueryParameters } from './queries.ts';
+import {
+  isQueryParameters,
+  MAX_QUERY_ROWS,
+  type QueryParameters,
+} from './queries.ts';
 import { isRecord } from './record.ts';
 export {
   type OperationContracts,
@@ -291,6 +295,7 @@ export const registeredQueryRoute = /* @__PURE__ */ defineMessageRoute({
       typeof query.limit !== 'number' ||
       !Number.isSafeInteger(query.limit) ||
       query.limit < 1 ||
+      query.limit > MAX_QUERY_ROWS ||
       (query.params !== undefined && !isQueryParameters(query.params))
     )
       throw new Error('Invalid registered query.');

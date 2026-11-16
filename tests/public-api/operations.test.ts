@@ -55,7 +55,7 @@ test('app operation registry derives filters and supports both delivery modes', 
     },
   });
   const region = searchFilter({ key: 'region', label: 'Region' });
-  const operations = app.defineOperations({
+  const definitions = {
     salesByRegion: app.defineOperation({
       filters: { region },
       policy: { maxQueryRows: 1, maxDurationMs: 100 },
@@ -63,8 +63,13 @@ test('app operation registry derives filters and supports both delivery modes', 
         return (await query('salesSql', { region })).rows[0]!.total;
       },
     }),
-  });
+  };
+  const operations = app.defineOperations(definitions);
   expect(Object.keys(operations)).toEqual(['salesByRegion']);
+  expect(operations.createDataClient().filters.salesByRegion).toEqual({
+    region,
+  });
+  definitions.salesByRegion = undefined as never;
   expect(operations.createDataClient().filters.salesByRegion).toEqual({
     region,
   });

@@ -143,7 +143,7 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
           return (
             createDataClient as (options: object) => DataClient<DataOperations>
           )({
-            operations,
+            operations: registry,
           });
         },
       });

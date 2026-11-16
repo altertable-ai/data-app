@@ -321,9 +321,9 @@ export async function serveAppFile({
             return Response.json({ reason: 'query_rejected' }, { status: 413 });
           return Response.json({ reason: 'query_rejected' }, { status: 400 });
         }
-        const statement = currentQueries[query.queryId];
-        if (!statement)
+        if (!Object.hasOwn(currentQueries, query.queryId))
           return Response.json({ reason: 'query_rejected' }, { status: 404 });
+        const statement = currentQueries[query.queryId]!;
         try {
           return Response.json(
             await lakehouse.queryAll(statement, {
