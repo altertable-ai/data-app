@@ -25,7 +25,7 @@ const operations = {
   },
 };
 const routes = {
-  'data:operation': defineDataOperationRoute(operations),
+  'test:operation': defineDataOperationRoute(operations),
   'navigation:update': navigationUpdateRoute,
   'test:echo': defineMessageRoute({
     input(value: unknown) {
@@ -40,21 +40,21 @@ const routes = {
 // Compile-only assertions: these functions are never called, including the deliberately invalid inputs.
 async function verifyTypes() {
   const client = createMessageClient(routes, async () => null);
-  const activity = await client.request('data:operation', {
+  const activity = await client.request('test:operation', {
     operation: 'activity',
     input: { days: 7 },
   });
   const count: number = activity.body.data.events;
   // @ts-expect-error Activity does not return label data.
   const label: string = activity.body.data.label;
-  const named = await client.request('data:operation', {
+  const named = await client.request('test:operation', {
     operation: 'label',
     input: { id: 'a' },
   });
   const title: string = named.body.data.label;
   // @ts-expect-error Unknown operation.
-  await client.request('data:operation', { operation: 'missing', input: {} });
-  await client.request('data:operation', {
+  await client.request('test:operation', { operation: 'missing', input: {} });
+  await client.request('test:operation', {
     operation: 'activity',
     // @ts-expect-error The input must match the selected operation.
     input: { id: 'a' },
@@ -71,7 +71,7 @@ async function verifyTypes() {
   // @ts-expect-error Echo expects a string payload.
   await client.request('test:echo', 7);
   createMessageRouter(routes, {
-    'data:operation'({ operation, input }) {
+    'test:operation'({ operation, input }) {
       if (operation === 'activity') {
         const days: number = input.days;
         void days;

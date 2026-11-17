@@ -92,23 +92,23 @@ test('an operation message client validates input and the response envelope and 
   };
   let response: unknown = { status: 200, body: envelope };
   const client = createMessageClient(
-    { 'data:operation': route },
+    { 'test:operation': route },
     async () => response
   );
   await expect(
-    client.request('data:operation', { operation: 'count', input: 1 })
+    client.request('test:operation', { operation: 'count', input: 1 })
   ).resolves.toEqual(response);
   await expect(
     // @ts-expect-error JavaScript callers can still send an unknown operation.
-    client.request('data:operation', { operation: 'missing', input: 1 })
+    client.request('test:operation', { operation: 'missing', input: 1 })
   ).rejects.toMatchObject({ code: 'invalid_payload' });
   await expect(
     // @ts-expect-error JavaScript callers can still supply an invalid input.
-    client.request('data:operation', { operation: 'count', input: '1' })
+    client.request('test:operation', { operation: 'count', input: '1' })
   ).rejects.toMatchObject({ code: 'invalid_payload' });
   response = { status: 200, body: { ...envelope, queryIds: 'q1' } };
   await expect(
-    client.request('data:operation', { operation: 'count', input: 1 })
+    client.request('test:operation', { operation: 'count', input: 1 })
   ).rejects.toMatchObject({ code: 'invalid_response' });
   response = {
     status: 403,
@@ -121,7 +121,7 @@ test('an operation message client validates input and the response envelope and 
     },
   };
   await expect(
-    client.request('data:operation', { operation: 'count', input: 1 })
+    client.request('test:operation', { operation: 'count', input: 1 })
   ).rejects.toMatchObject({
     code: 'forbidden',
     message: 'Denied',
