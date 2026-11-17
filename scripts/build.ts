@@ -72,8 +72,6 @@ async function bundle(options: Parameters<typeof Bun.build>[0]) {
         ]
       : [],
   });
-  if (!result.success)
-    throw new Error(result.logs.map(log => log.message).join('\n'));
   return result;
 }
 
