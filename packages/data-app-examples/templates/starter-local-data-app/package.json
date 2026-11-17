@@ -8,13 +8,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint --type-aware src",
+    "lint": "oxlint --type-aware src app.ts",
     "format": "oxfmt src app.ts",
     "format:check": "oxfmt --check src app.ts",
     "dev": "bun --hot src/server.ts",
     "build": "bun run typecheck && bun build src/index.html --outdir=dist --production",
     "check": "bun run lint && bun run format:check && bun run build",
-    "lint:fix": "oxlint --type-aware --fix src"
+    "lint:fix": "oxlint --type-aware --fix src app.ts"
   },
   "dependencies": {
     "@altertable/data-app": "0.77.0",

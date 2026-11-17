@@ -15,7 +15,7 @@ const client = createDataClient<typeof operations>({
 });
 const response = await client.query(
   'sampleCountsByGroup',
-  { groupName: '' },
+  { groupName: 'all' },
   { signal }
 );
 ```
