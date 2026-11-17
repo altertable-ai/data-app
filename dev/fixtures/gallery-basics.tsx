@@ -74,42 +74,6 @@ const revenueAndConversion = [
   { month: 'Jun', revenue: 78, forecast: 70, conversion: 3.8 },
 ];
 
-const organizationAQueries: Record<number, number> = {
-  40: 18,
-  41: 2,
-  51: 4,
-  52: 1,
-  53: 7,
-  64: 5,
-  78: 6,
-  79: 4,
-  82: 2,
-  91: 10,
-  101: 1,
-  102: 3,
-  160: 1,
-};
-const organizationBQueries: Record<number, number> = {
-  0: 3,
-  16: 3,
-  17: 2,
-  24: 5,
-  25: 7,
-  26: 11,
-  27: 5,
-  28: 2,
-  52: 2,
-  78: 1,
-};
-const hourlyOrganizationQueries = Array.from(
-  { length: 7 * 24 + 1 },
-  (_, hour) => ({
-    hour: new Date(Date.UTC(2026, 10, 9, 16 + hour)).toISOString(),
-    organizationA: organizationAQueries[hour] ?? 0,
-    organizationB: organizationBQueries[hour] ?? 0,
-  })
-);
-
 const serviceSeries = ['API', 'Search', 'Exports'].map((name, index) => ({
   key: ['service', index].join(KEY_SEPARATOR),
   name,
@@ -232,42 +196,6 @@ export function GalleryBasics() {
                 unit="orders"
                 ariaLabel="Orders by sales channel"
               />
-            </Example>
-            <Example
-              name="Stacked hourly BarChart"
-              description="Queries per UTC hour over seven days, stacked by organization. Some hours contain one or both organizations; the gaps are measured zeroes."
-              span={2}
-            >
-              <ComposedChart
-                data={hourlyOrganizationQueries}
-                ariaLabel="Hourly queries for organizations A and B, including hours with zero queries"
-              >
-                <ComposedChart.XAxis
-                  dataKey="hour"
-                  interval={23}
-                  tickFormatter={value => {
-                    const date = new Date(String(value));
-                    return `Nov ${date.getUTCDate()} ${String(date.getUTCHours()).padStart(2, '0')}:00`;
-                  }}
-                />
-                <ComposedChart.YAxis width={36} allowDecimals={false} />
-                <ComposedChart.Tooltip />
-                <ComposedChart.Legend />
-                <ComposedChart.Bar
-                  dataKey="organizationA"
-                  name="Organization A"
-                  fill="var(--atbl-chart-1)"
-                  stackId="organization"
-                  maxBarSize={8}
-                />
-                <ComposedChart.Bar
-                  dataKey="organizationB"
-                  name="Organization B"
-                  fill="var(--atbl-chart-2)"
-                  stackId="organization"
-                  maxBarSize={8}
-                />
-              </ComposedChart>
             </Example>
             <Example
               name="LineChart"
