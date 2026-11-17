@@ -5,16 +5,15 @@ import type {
 } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
 
+const SQL_PARAMETER_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 /** Bind a resolved filter range as timestamp strings for literal DuckDB SQL.
  * Dates carry reporting-zone wall-clock fields in UTC; omit `Z` for TIMESTAMP casts. */
 export function resolvedDateTimeRangeParams<const Prefix extends string>(
   range: ResolvedDateTimeRange,
   prefix: Prefix
 ): Record<`${Prefix}_from` | `${Prefix}_to`, string> {
-  invariant(
-    /^[A-Za-z_][A-Za-z0-9_]*$/.test(prefix),
-    'Use a SQL parameter name.'
-  );
+  invariant(SQL_PARAMETER_NAME.test(prefix), 'Use a SQL parameter name.');
   return {
     [`${prefix}_from`]: range.from.toISOString().slice(0, -1),
     [`${prefix}_to`]: range.to.toISOString().slice(0, -1),
@@ -28,10 +27,7 @@ export function dateTimeRangeSql(
   range: DateTimeRange,
   parameter = 'period'
 ): { from: string; to: string; params: Record<string, string> } {
-  invariant(
-    /^[A-Za-z_][A-Za-z0-9_]*$/.test(parameter),
-    'Use a SQL parameter name.'
-  );
+  invariant(SQL_PARAMETER_NAME.test(parameter), 'Use a SQL parameter name.');
   return {
     from: boundExpression(parameter, 'from'),
     to: boundExpression(parameter, 'to'),
