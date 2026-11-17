@@ -9,6 +9,7 @@ import {
   serializeDateTimeRange,
   dateTimeRangeSql,
   resolvedDateTimeRangeParams,
+  queryDateTimeRangeParams,
   resolveDateTimeRange,
   type DateTimeRange,
 } from '@altertable/data-app/contract';
@@ -61,7 +62,10 @@ test('datetime variables preserve relative intent and restore absolute values ac
 });
 
 test('an operation binds resolved date filter bounds as DuckDB timestamp parameters', async () => {
-  const period = dateTimeRangeFilter({ key: 'period', defaultValue: '7d' });
+  const periodFilter = dateTimeRangeFilter({
+    key: 'period',
+    defaultValue: '7d',
+  });
   const app = defineDataApp({
     title: 'Datetime',
     description: 'Datetime query',
@@ -79,13 +83,13 @@ test('an operation binds resolved date filter bounds as DuckDB timestamp paramet
     },
   });
   const operation = app.defineOperation({
-    filters: { period },
+    filters: { period: periodFilter },
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }, { period }) {
       return (
         await query(
           'events',
-          resolvedDateTimeRangeParams(period.range, 'period')
+          queryDateTimeRangeParams(periodFilter, period, 'period').current
         )
       ).rows;
     },
@@ -104,7 +108,7 @@ test('an operation binds resolved date filter bounds as DuckDB timestamp paramet
     },
   });
   const result = await client.query('events', {
-    period: period.request({ range: relative }),
+    period: periodFilter.request({ range: relative }),
   });
   expect(result.data).toEqual([{ start: 'start', end: 'end' }]);
   expect(sent?.statement).toBe(app.queries.events.statement);
@@ -131,6 +135,27 @@ test('an operation binds resolved date filter bounds as DuckDB timestamp paramet
       },
     })
   ).toThrow();
+});
+
+test('relative date bounds use the query clock, including comparison', () => {
+  const filter = dateTimeRangeFilter({
+    key: 'period',
+    defaultValue: '7d',
+    comparison: 'off',
+  });
+  const selected = { range: relative, comparison: 'previous' as const };
+  const requested = filter.request(selected, new Date('2026-01-08T12:00:00Z'));
+  const parsed = filter.parseInput(JSON.parse(JSON.stringify(requested)));
+  const bounds = queryDateTimeRangeParams(
+    filter,
+    parsed,
+    'period',
+    new Date('2026-01-09T12:00:00Z')
+  );
+  expect(bounds.current.period_to).toBe('2026-01-09T12:00:00.000');
+  expect(bounds.current.period_from).toBe('2026-01-02T12:00:00.000');
+  expect(bounds.comparison?.period_to).toBe(bounds.current.period_from);
+  expect(bounds.combined.period_from).toBe(bounds.comparison?.period_from);
 });
 
 test('query registry rejects SDK-only SQL syntax while ignoring literals and comments', () => {

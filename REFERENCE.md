@@ -578,7 +578,7 @@ DateTimeFormatOptions.timeZone?: string
 DateTimeFormatOptions.precision?: 'minute' | 'second'
 DateTimeRange (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract, @altertable/data-app/format): = props listed as dateTimeRangeSql.range.*
 DateTimeRangeComparison (type, @altertable/data-app/contract, @altertable/data-app-react/ui): = 'off' | 'on' — Offer the previous-period comparison, with its toggle starting off or on.
-dateTimeRangeFilter (function, @altertable/data-app/contract, @altertable/data-app-react/ui): <Comparison extends DateTimeRangeComparison | undefined = undefined>(options: DateTimeRangeFilterOptions<Comparison>): DateTimeRangeFilter<undefined extends Comparison ? false : true> — One declaration drives the picker, URL state, and the input of operations that list it. Operations receive `{ range, comparison }`: `from` inclusive, `to` exclusive.
+dateTimeRangeFilter (function, @altertable/data-app/contract, @altertable/data-app-react/ui): <Comparison extends DateTimeRangeComparison | undefined = undefined>(options: DateTimeRangeFilterOptions<Comparison>): DateTimeRangeFilter<undefined extends Comparison ? false : true> — One declaration drives the picker, URL state, and the input of operations that list it. Operations receive resolved bounds and the original selection: `from` inclusive, `to` exclusive.
 dateTimeRangeFilter.options.key: string
 dateTimeRangeFilter.options.label?: string
 dateTimeRangeFilter.options.defaultValue: string | DateTimeRange — Range text such as "7d" stays relative; `{ from, to }` is absolute.
@@ -612,9 +612,7 @@ DateTimeRangeFilter.request: (selection: DateTimeRangeSelection, now?: Date | un
 DateTimeRangeFilter.parseInput: (value: unknown) => DateTimeRangeInput — Validate untrusted input against coverage and return what the operation receives.
 DateTimeRangeFilter.previous: (selection: DateTimeRangeSelection) => ResolvedDateTimeRange | null
 DateTimeRangeFilterOptions (type, @altertable/data-app/contract, @altertable/data-app-react/ui): <Comparison> = props listed as dateTimeRangeFilter.options.*
-DateTimeRangeInput (type, @altertable/data-app/contract): What an operation receives for a date filter: resolved bounds, `from` inclusive and `to` exclusive, and the same window one selected length earlier while the comparison is on.
-DateTimeRangeInput.range: ResolvedDateTimeRange
-DateTimeRangeInput.comparison: ResolvedDateTimeRange | null
+DateTimeRangeInput (type, @altertable/data-app/contract): = props listed as queryDateTimeRangeParams.input.* — What an operation receives for a date filter: resolved bounds, `from` inclusive and `to` exclusive, and the same window one selected length earlier while the comparison is on.
 DateTimeRangeParseFailureReason (type, @altertable/data-app/format): = 'ambiguous' | 'empty' | 'invalid-range' | 'unrecognized'
 DateTimeRangeParserOptions (type, @altertable/data-app/format)
 DateTimeRangeParserOptions.now?: Date — UTC-encoded reference fields for omitted dates/years. Defaults to the current UTC date/time.
@@ -1317,6 +1315,12 @@ PresentStory.footer?: ReactNode
 PresentStory.trigger?: boolean — False renders only the presentation, which `?present=1&step=` opens.
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
+queryDateTimeRangeParams (function, @altertable/data-app/contract): <const Prefix extends string>(filter: Pick<DateTimeRangeFilter, 'request'>, input: DateTimeRangeInput, prefix: Prefix, now: Date): { current: Record<`${Prefix}_from` | `${Prefix}_to`, string>; comparison: Record<`${Prefix}_from` | `${Prefix}_to`, string> | null; combined: Record<`${Prefix}_from` |… — Bind one date selection immediately before dispatching a query. Both periods share one clock.
+queryDateTimeRangeParams.filter.request: (selection: DateTimeRangeSelection, now?: Date | undefined) => DateTimeRangeRequest — Resolve a selection against one reference time.
+queryDateTimeRangeParams.input.range: ResolvedDateTimeRange
+queryDateTimeRangeParams.input.comparison: ResolvedDateTimeRange | null
+queryDateTimeRangeParams.input.selection?: DateTimeRangeSelection — Original selection, retained so relative bounds can be resolved when a query runs.
+queryDateTimeRangeParams.now.…: plus props inherited from built-in
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }
 QueryField (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract)
 QueryField.type: keyof QueryValues

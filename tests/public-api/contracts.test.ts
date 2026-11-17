@@ -252,6 +252,7 @@ test('an operation derives its parser and checks from the filters it reads', asy
         to: new Date('2026-03-07T00:00:00Z'),
       },
       comparison: null,
+      selection: period.defaultValue,
     },
     group: 'all',
   };

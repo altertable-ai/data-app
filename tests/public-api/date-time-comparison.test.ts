@@ -46,7 +46,7 @@ test('comparison selection stays relative in URLs and the server checks the reso
     const { range, comparison } = request;
     expect(
       parse(JSON.parse(JSON.stringify({ period: request }))).period
-    ).toEqual({ range, comparison });
+    ).toEqual({ range, comparison, selection: request.selection });
     expect(parse({ period: { range, comparison } }).period).toEqual({
       range,
       comparison,

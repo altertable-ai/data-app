@@ -419,6 +419,7 @@ export type { FilterInput } from '../core/operation-filters.ts';
 
 export {
   dateTimeRangeFilter,
+  queryDateTimeRangeParams,
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,

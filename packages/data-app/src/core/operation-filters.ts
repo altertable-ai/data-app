@@ -119,8 +119,10 @@ export function defaultFilterInput<Filters extends FilterCollection>(
   return Object.fromEntries(
     Object.entries(filters).map(([name, filter]) => {
       if (filter.kind !== 'dateTimeRange') return [name, filter.defaultValue];
-      const { range, comparison } = filter.request(filter.defaultValue);
-      return [name, { range, comparison }];
+      const { range, comparison, selection } = filter.request(
+        filter.defaultValue
+      );
+      return [name, { range, comparison, selection }];
     })
   ) as FilterInput<Filters>;
 }

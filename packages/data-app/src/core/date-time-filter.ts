@@ -9,6 +9,7 @@ import {
   type DateTimeRangePolicy,
 } from './date-time-range-contract.ts';
 import { parseDateTimeRangeInput } from './date-time-range-parser.ts';
+import { resolvedDateTimeRangeParams } from './date-time-range-sql.ts';
 import {
   parseDateTimeRange,
   serializeDateTimeRange,
@@ -111,7 +112,7 @@ export type DateTimeRangeFilter<Comparable extends boolean = boolean> =
   };
 
 /** One declaration drives the picker, URL state, and the input of operations that list it.
- * Operations receive `{ range, comparison }`: `from` inclusive, `to` exclusive.
+ * Operations receive resolved bounds and the original selection: `from` inclusive, `to` exclusive.
  */
 export function dateTimeRangeFilter<
   Comparison extends DateTimeRangeComparison | undefined = undefined,
@@ -251,10 +252,14 @@ export function dateTimeRangeFilter<
         ),
         'Invalid datetime request.'
       );
-      // The server checks the range against current coverage; browser selection fields are ignored.
+      // Validate the browser snapshot against current coverage before retaining its selection.
       const range = policy.endAtNow(policy.resolve(parseRange(supplied.range)));
+      const selection =
+        supplied.selection === undefined
+          ? undefined
+          : parseSelection(supplied.selection);
       if (supplied.comparison === null || supplied.comparison === undefined)
-        return { range, comparison: null };
+        return { range, comparison: null, ...(selection ? { selection } : {}) };
       invariant(comparable, `${label} has no comparison.`);
       // The browser shifts by the selected length, which the server does not see:
       // accept an earlier window of equal length within coverage.
@@ -267,7 +272,7 @@ export function dateTimeRangeFilter<
             range.to.getTime() - range.from.getTime(),
         'Comparison must be an earlier range of equal length.'
       );
-      return { range, comparison };
+      return { range, comparison, ...(selection ? { selection } : {}) };
     },
     previous(selection) {
       return comparable ? policy.comparison(selection.range) : null;
@@ -297,5 +302,27 @@ export function dateTimeRangeFilter<
         ...comparisonParam(selection),
       };
     },
+  };
+}
+
+/** Bind one date selection immediately before dispatching a query. Both periods share one clock. */
+export function queryDateTimeRangeParams<const Prefix extends string>(
+  filter: Pick<DateTimeRangeFilter, 'request'>,
+  input: DateTimeRangeInput,
+  prefix: Prefix,
+  now = new Date()
+) {
+  const { range, comparison } = input.selection
+    ? filter.request(input.selection, now)
+    : input;
+  return {
+    current: resolvedDateTimeRangeParams(range, prefix),
+    comparison: comparison
+      ? resolvedDateTimeRangeParams(comparison, prefix)
+      : null,
+    combined: resolvedDateTimeRangeParams(
+      { from: comparison?.from ?? range.from, to: range.to },
+      prefix
+    ),
   };
 }

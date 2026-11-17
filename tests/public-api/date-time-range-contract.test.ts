@@ -137,6 +137,7 @@ test('a date filter applies its coverage to defaults, URL values, and server par
         to: new Date('2026-07-02T00:00:00Z'),
       },
       comparison: null,
+      selection: period.defaultValue,
     });
     expect(
       period.read(

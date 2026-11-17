@@ -1,6 +1,6 @@
 import {
   parseCount,
-  resolvedDateTimeRangeParams,
+  queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 
 import { operationFilters } from '#app/filters.ts';
@@ -12,15 +12,14 @@ export const operations = dataApp.defineOperations({
     filters: operationFilters.sampleTotal,
     policy,
     async run({ query }, { period }) {
-      const current = await query(
-        'sampleTotal',
-        resolvedDateTimeRangeParams(period.range, 'period')
+      const bounds = queryDateTimeRangeParams(
+        operationFilters.sampleTotal.period,
+        period,
+        'period'
       );
-      const previous = period.comparison
-        ? await query(
-            'sampleTotal',
-            resolvedDateTimeRangeParams(period.comparison, 'period')
-          )
+      const current = await query('sampleTotal', bounds.current);
+      const previous = bounds.comparison
+        ? await query('sampleTotal', bounds.comparison)
         : null;
       return {
         current: parseCount(current.rows[0]!.sample_count),
@@ -33,12 +32,13 @@ export const operations = dataApp.defineOperations({
     policy,
     async run({ query }, { period, grain }) {
       // With the comparison on, the trend starts at the previous period.
-      const range = {
-        from: period.comparison?.from ?? period.range.from,
-        to: period.range.to,
-      };
+      const bounds = queryDateTimeRangeParams(
+        operationFilters.samplesOverTime.period,
+        period,
+        'period'
+      );
       const result = await query('samplesOverTime', {
-        ...resolvedDateTimeRangeParams(range, 'period'),
+        ...bounds.combined,
         grain,
       });
       return result.rows.map(row => ({
@@ -51,8 +51,13 @@ export const operations = dataApp.defineOperations({
     filters: operationFilters.samplesByMember,
     policy,
     async run({ query }, { period, breakdown }) {
+      const bounds = queryDateTimeRangeParams(
+        operationFilters.samplesByMember.period,
+        period,
+        'period'
+      );
       const result = await query('samplesByMember', {
-        ...resolvedDateTimeRangeParams(period.range, 'period'),
+        ...bounds.current,
         breakdown,
       });
       return result.rows.map(row => ({
@@ -65,8 +70,13 @@ export const operations = dataApp.defineOperations({
     filters: operationFilters.sampleRows,
     policy,
     async run({ query }, { period, grain, breakdown }) {
+      const bounds = queryDateTimeRangeParams(
+        operationFilters.sampleRows.period,
+        period,
+        'period'
+      );
       const result = await query('sampleRows', {
-        ...resolvedDateTimeRangeParams(period.range, 'period'),
+        ...bounds.current,
         grain,
         breakdown,
       });

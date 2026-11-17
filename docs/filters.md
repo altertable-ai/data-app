@@ -207,10 +207,10 @@ period, time zone, and metric comparisons:
 import {
   dateTimeRangeFilter,
   dateTimeRangePresets,
-  resolvedDateTimeRangeParams,
+  queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 
-const period = dateTimeRangeFilter({
+const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: '30d',
   maxRangeDays: 90,
@@ -218,14 +218,14 @@ const period = dateTimeRangeFilter({
   presets: dateTimeRangePresets.analytics,
 });
 const dailyCounts = dataApp.defineOperation({
-  filters: { period, groupName },
+  filters: { period: periodFilter, groupName },
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, { period, groupName }) {
     const current = await query('dailyCounts', {
-      ...resolvedDateTimeRangeParams(period.range, 'period'),
+      ...queryDateTimeRangeParams(periodFilter, period, 'period').current,
       groupName,
     });
-    // ... use period.comparison the same way when it is not null
+    // ... use .comparison for the previous period when selected
     return current.rows;
   },
 });

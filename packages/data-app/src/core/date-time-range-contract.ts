@@ -5,6 +5,7 @@ import {
   today,
 } from '@internationalized/date';
 
+import type { DateTimeRangeSelection } from './date-time-filter.ts';
 import {
   parseDateTimeRange,
   resolveDateTimeRange,
@@ -21,6 +22,8 @@ import { fixedUnitMilliseconds } from './time-units.ts';
 export type DateTimeRangeInput = {
   range: ResolvedDateTimeRange;
   comparison: ResolvedDateTimeRange | null;
+  /** Original selection, retained so relative bounds can be resolved when a query runs. */
+  selection?: DateTimeRangeSelection;
 };
 
 export type DateTimeRangePolicyOptions = {

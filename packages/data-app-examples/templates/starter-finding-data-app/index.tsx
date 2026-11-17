@@ -14,7 +14,7 @@ import {
   dateTimeRangeFilter,
   displayChoice,
   parseCount,
-  resolvedDateTimeRangeParams,
+  queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 // One query per widget: each section loads its own result when it nears the viewport.
 const dataApp = defineDataApp({
@@ -96,7 +96,7 @@ const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-const period = dateTimeRangeFilter({
+const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
   minDate: '2026-01-05',
@@ -128,18 +128,13 @@ const breakdown = displayChoice({
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
 export const operations = dataApp.defineOperations({
   sampleTotal: dataApp.defineOperation({
-    filters: { period },
+    filters: { period: periodFilter },
     policy,
     async run({ query }, { period }) {
-      const current = await query(
-        'sampleTotal',
-        resolvedDateTimeRangeParams(period.range, 'period')
-      );
-      const previous = period.comparison
-        ? await query(
-            'sampleTotal',
-            resolvedDateTimeRangeParams(period.comparison, 'period')
-          )
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
+      const current = await query('sampleTotal', bounds.current);
+      const previous = bounds.comparison
+        ? await query('sampleTotal', bounds.comparison)
         : null;
       return {
         current: parseCount(current.rows[0]!.sample_count),
@@ -148,16 +143,13 @@ export const operations = dataApp.defineOperations({
     },
   }),
   samplesOverTime: dataApp.defineOperation({
-    filters: { period, grain },
+    filters: { period: periodFilter, grain },
     policy,
     async run({ query }, { period, grain }) {
       // With the comparison on, the trend starts at the previous period.
-      const range = {
-        from: period.comparison?.from ?? period.range.from,
-        to: period.range.to,
-      };
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('samplesOverTime', {
-        ...resolvedDateTimeRangeParams(range, 'period'),
+        ...bounds.combined,
         grain,
       });
       return result.rows.map(row => ({
@@ -167,11 +159,12 @@ export const operations = dataApp.defineOperations({
     },
   }),
   samplesByMember: dataApp.defineOperation({
-    filters: { period, breakdown },
+    filters: { period: periodFilter, breakdown },
     policy,
     async run({ query }, { period, breakdown }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('samplesByMember', {
-        ...resolvedDateTimeRangeParams(period.range, 'period'),
+        ...bounds.current,
         breakdown,
       });
       return result.rows.map(row => ({
@@ -181,11 +174,12 @@ export const operations = dataApp.defineOperations({
     },
   }),
   sampleRows: dataApp.defineOperation({
-    filters: { period, grain, breakdown },
+    filters: { period: periodFilter, grain, breakdown },
     policy,
     async run({ query }, { period, grain, breakdown }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('sampleRows', {
-        ...resolvedDateTimeRangeParams(period.range, 'period'),
+        ...bounds.current,
         grain,
         breakdown,
       });

@@ -110,9 +110,10 @@ const dataApp = defineDataApp({
 });
 ```
 
-In the operation, import `resolvedDateTimeRangeParams` from
+In the operation, import `queryDateTimeRangeParams` from
 `@altertable/data-app/contract` and call
-`query('dailyOrders', resolvedDateTimeRangeParams(period.range, 'period'))`.
+`query('dailyOrders', queryDateTimeRangeParams(periodFilter, period, 'period').current)`.
+This resolves relative bounds when the query runs.
 
 Date filters pass resolved bounds in their `timeZone`, encoded as UTC wall-clock
 fields: 4 PM in the reporting zone is 16:00Z. SQL bounds are therefore
