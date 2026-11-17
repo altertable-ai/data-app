@@ -37,7 +37,7 @@ describe('authoring', () => {
       .poll(() =>
         page
           .getByRole('group', { name: 'Host page actions', exact: true })
-          .getByRole('button', { name: /refresh/ })
+          .getByRole('button', { name: /refresh/i })
           .getAttribute('aria-busy')
       )
       .toBe('true');
@@ -164,7 +164,7 @@ describe('authoring', () => {
       .poll(() =>
         page
           .getByRole('group', { name: 'Host page actions', exact: true })
-          .getByRole('button', { name: /refresh/ })
+          .getByRole('button', { name: /refresh/i })
           .getAttribute('aria-busy')
       )
       .toBe('true');

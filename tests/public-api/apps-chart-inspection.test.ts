@@ -878,8 +878,10 @@ for (const name of ['Hover bars', 'Inspection lines', 'Inspection areas']) {
       );
       await expect.poll(() => tooltip.getByRole('listitem').count()).toBe(1);
       if (exit === 'leave') {
-        // No blur or key handler can reset a plot that has never received focus.
-        await page.mouse.move(0, 0);
+        // Leave for a stable sibling plot without focusing the inspected plot.
+        await page
+          .getByRole('application', { name: 'Hover lines', exact: true })
+          .hover();
         await expect.poll(() => tooltip.isVisible()).toBe(false);
       } else {
         // Move keyboard focus out of the plot while the pointer stays over it.

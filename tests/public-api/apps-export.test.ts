@@ -55,7 +55,7 @@ describe('export', () => {
     });
     function refreshing() {
       return actions
-        .getByRole('button', { name: /refresh/ })
+        .getByRole('button', { name: /refresh/i })
         .getAttribute('aria-busy');
     }
     expect(await app.getByRole('group', { name: 'Page actions' }).count()).toBe(
