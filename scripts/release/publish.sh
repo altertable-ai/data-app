@@ -7,7 +7,10 @@ for directory in packages/data-app-manifest packages/data-app packages/data-app-
   registry_name="$(node --print "encodeURIComponent(require('./$directory/package.json').name)")"
   status="$(curl --silent --show-error --output published.json --write-out '%{http_code}' "https://registry.npmjs.org/$registry_name/$package_version")"
   if [[ "$status" == "200" ]]; then
-    PACKAGE_VERSION="$package_version" node -e 'if (JSON.parse(require("node:fs").readFileSync("published.json", "utf8")).version !== process.env.PACKAGE_VERSION) process.exit(1)'
+    PACKAGE_VERSION="$package_version" node -e 'if (JSON.parse(require("node:fs").readFileSync("published.json", "utf8")).version !== process.env.PACKAGE_VERSION) process.exit(1)' || {
+      echo "::error::Registry metadata for $package_name does not match $package_version."
+      exit 1
+    }
     echo "$package_name@$package_version is already published; skipping."
   elif [[ "$status" == "404" ]]; then
     npm publish "./$directory" --provenance
