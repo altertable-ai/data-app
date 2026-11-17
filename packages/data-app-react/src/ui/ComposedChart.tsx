@@ -41,6 +41,7 @@ import type { HorizontalGridProps } from './chart-data.ts';
 import { ChartDateAxes } from './chart-date-axis.tsx';
 import {
   ChartInteractionContext,
+  type ChartBarPoint,
   type ChartPoint,
 } from './chart-interaction.tsx';
 import {
@@ -87,6 +88,59 @@ function findNearestSeriesId(
     }
   }
   return selected;
+}
+
+function findNearestBar(
+  bars: ReadonlyMap<string, ChartBarPoint>,
+  position: ChartPoint | null,
+  layout: 'horizontal' | 'vertical'
+) {
+  if (!position) return null;
+  let nearest: ChartBarPoint | null = null;
+  let categoryDistance = Infinity;
+  let valueDistance = Infinity;
+  for (const bar of bars.values()) {
+    const category =
+      layout === 'horizontal'
+        ? Math.abs(position.x - (bar.x + bar.width / 2))
+        : Math.abs(position.y - (bar.y + bar.height / 2));
+    const value =
+      layout === 'horizontal'
+        ? Math.max(bar.y - position.y, 0, position.y - bar.y - bar.height)
+        : Math.max(bar.x - position.x, 0, position.x - bar.x - bar.width);
+    if (
+      category < categoryDistance ||
+      (category === categoryDistance && value < valueDistance)
+    ) {
+      nearest = bar;
+      categoryDistance = category;
+      valueDistance = value;
+    }
+  }
+  return nearest;
+}
+
+function categoryDataKey(
+  children: ReactNode,
+  layout: 'horizontal' | 'vertical'
+): string | ((row: unknown) => unknown) | undefined {
+  for (const child of Children.toArray(children)) {
+    if (!isValidElement<{ children?: ReactNode; dataKey?: unknown }>(child))
+      continue;
+    if (child.type === Fragment) {
+      const nested = categoryDataKey(child.props.children, layout);
+      if (nested) return nested;
+    }
+    if (
+      child.type !== (layout === 'horizontal' ? XAxis : YAxis) &&
+      child.type !== (layout === 'horizontal' ? NativeXAxis : NativeYAxis)
+    )
+      continue;
+    const key = child.props.dataKey;
+    if (typeof key === 'string' || typeof key === 'function')
+      return key as string | ((row: unknown) => unknown);
+  }
+  return undefined;
 }
 
 export type ComposedChartProps<Row = unknown> = HorizontalGridProps &
@@ -408,10 +462,19 @@ function ComposedChartRoot<Row>({
   const [pointerPosition, setPointerPosition] = useState<ChartPoint | null>(
     null
   );
+  const [nearestBar, setNearestBar] = useState<ChartBarPoint | null>(null);
   const latestPointerPosition = useRef<ChartPoint | null>(null);
   const [points, setPoints] = useState<ReadonlyMap<string, ChartPoint>>(
     () => new Map()
   );
+  const bars = useRef(new Map<string, ChartBarPoint>());
+  const registerBar = useCallback((bar: ChartBarPoint) => {
+    const key = `${bar.seriesId}:${bar.index}`;
+    bars.current.set(key, bar);
+    return () => {
+      if (bars.current.get(key) === bar) bars.current.delete(key);
+    };
+  }, []);
   const registerPoint = useCallback((id: string, x: number, y: number) => {
     setPoints(current => new Map(current).set(id, { x, y }));
     return () =>
@@ -440,9 +503,14 @@ function ComposedChartRoot<Row>({
     setSuppressPlotInspection(false);
     setIsPointerInspection(true);
     // Direct-hit series do not need pointer coordinates to select a sample.
-    if (hoveredSeriesId != null && !points.has(hoveredSeriesId)) {
+    if (
+      bars.current.size === 0 &&
+      hoveredSeriesId != null &&
+      !points.has(hoveredSeriesId)
+    ) {
       latestPointerPosition.current = null;
       setPointerPosition(null);
+      setNearestBar(null);
       return true;
     }
     const matrix = svg.getScreenCTM();
@@ -452,6 +520,8 @@ function ComposedChartRoot<Row>({
     );
     const nextPosition = { x: point.x, y: point.y };
     latestPointerPosition.current = nextPosition;
+    const selected = findNearestBar(bars.current, nextPosition, layout);
+    setNearestBar(current => (current === selected ? current : selected));
     setPointerPosition(current =>
       findNearestSeriesId(hoveredSeriesId, points, current) ===
       findNearestSeriesId(hoveredSeriesId, points, nextPosition)
@@ -467,12 +537,12 @@ function ComposedChartRoot<Row>({
     setHoveredSeriesId(null);
     latestPointerPosition.current = null;
     setPointerPosition(null);
+    setNearestBar(null);
   }
-  const activeSeriesId = findNearestSeriesId(
-    hoveredSeriesId,
-    points,
-    pointerPosition
-  );
+  const activeBar = points.size === 0 ? nearestBar : null;
+  const activeSeriesId =
+    activeBar?.seriesId ??
+    findNearestSeriesId(hoveredSeriesId, points, pointerPosition);
   const [seriesIds, setSeriesIds] = useState<ReadonlySet<string>>(
     () => new Set()
   );
@@ -570,6 +640,10 @@ function ComposedChartRoot<Row>({
             activePoint:
               activeSeriesId == null ? undefined : points.get(activeSeriesId),
             registerPoint,
+            registerBar,
+            activeBar,
+            data,
+            categoryDataKey: categoryDataKey(children, layout),
             setHoveredSeriesId,
             seriesCount: seriesIds.size,
             registerSeries,

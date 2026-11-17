@@ -457,6 +457,73 @@ test('default composed inspection formats the hovered measure and restores compl
     .toContain('Purple');
 });
 
+test('sparse stacked bars follow the nearest populated hour and closest visible series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Sparse stacked bars basic example',
+    exact: true,
+  });
+  const plot = chart.getByRole('application');
+  await plot.scrollIntoViewIfNeeded();
+  const bars = await chart
+    .locator('.recharts-bar-rectangle')
+    .evaluateAll(elements =>
+      elements
+        .map(element => element.getBoundingClientRect())
+        .filter(rect => rect.width > 0 && rect.height > 0)
+        .map(rect => ({
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+        }))
+        .sort((left, right) => left.x - right.x || right.y - left.y)
+    );
+  const [a0, b2, a3, b3] = bars;
+  const tooltip = chart.getByRole('tooltip');
+  await page.mouse.move(a0!.x + a0!.width / 2, a0!.y + a0!.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization A : 5');
+  await page.mouse.move(b2!.x + b2!.width / 2, b2!.y + b2!.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 7');
+  await page.mouse.move(b2!.x + b2!.width / 2, b2!.y - 20);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 7');
+  const emptyHour = await plot.getByText('H1', { exact: true }).boundingBox();
+  await page.mouse.move(
+    emptyHour!.x + emptyHour!.width * 0.75,
+    b2!.y + b2!.height / 2
+  );
+  await expect.poll(() => tooltip.textContent()).toContain('H2');
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 7');
+  await page.mouse.move(a3!.x + a3!.width / 2, a3!.y + a3!.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization A : 2');
+  await expect
+    .poll(() =>
+      chart.locator('.recharts-bar-rectangle [opacity="0.75"]').count()
+    )
+    .toBe(1);
+  await page.mouse.move(b3!.x + b3!.width / 2, b3!.y + b3!.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 3');
+  await expect
+    .poll(() =>
+      chart.locator('.recharts-bar-rectangle [opacity="0.75"]').count()
+    )
+    .toBe(1);
+});
+
 test('touch inspection retains only the tapped series after releasing the screen', async ({
   mobilePage: page,
 }) => {

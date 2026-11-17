@@ -4,6 +4,7 @@ import { formatMetric, formatNumber } from '@altertable/data-app/format';
 import {
   cloneElement,
   isValidElement,
+  useCallback,
   useContext,
   useLayoutEffect,
   type ComponentProps,
@@ -13,6 +14,7 @@ import {
   Dot,
   type DotProps,
   Bar,
+  Rectangle,
   Line,
   Scatter,
   YAxis,
@@ -23,6 +25,7 @@ import {
   DefaultTooltipContent,
   type TooltipContentProps,
   type BarProps,
+  type BarShapeProps,
   type LineProps,
   type AreaProps,
 } from 'recharts';
@@ -80,6 +83,32 @@ function NearestChartDot({
 }
 
 /** Shared series defaults; native props override every authored choice. */
+function InspectedBarShape({
+  seriesId,
+  ...props
+}: BarShapeProps & { seriesId: string }) {
+  const interaction = useContext(ChartInteractionContext);
+  const registerBar = interaction?.registerBar;
+  const { x, y, width, height, originalDataIndex, value } = props;
+  const reading = Array.isArray(value) ? value[1] - value[0] : value;
+  useLayoutEffect(() => {
+    if (reading === 0 || width <= 0 || height <= 0) return;
+    return registerBar?.({
+      seriesId,
+      index: originalDataIndex,
+      x,
+      y,
+      width,
+      height,
+    });
+  }, [registerBar, seriesId, originalDataIndex, x, y, width, height, reading]);
+  const selected =
+    interaction?.isPointerInspection &&
+    interaction.activeBar?.seriesId === seriesId &&
+    interaction.activeBar.index === originalDataIndex;
+  return <Rectangle {...props} opacity={selected ? 0.75 : props.opacity} />;
+}
+
 export function ChartBar<Row = unknown, Value = number | null>(
   props: BarProps<Row, Value>
 ) {
@@ -92,6 +121,14 @@ export function ChartBar<Row = unknown, Value = number | null>(
   const key = chartLegendSeriesKey(series.id, props.dataKey);
   const axisId =
     layout === 'vertical' ? (props.xAxisId ?? 0) : (props.yAxisId ?? 0);
+  const inspectStack =
+    props.stackId != null && props.shape == null && props.activeBar == null;
+  const inspectedShape = useCallback(
+    (shapeProps: BarShapeProps) => (
+      <InspectedBarShape {...shapeProps} seriesId={series.id} />
+    ),
+    [series.id]
+  );
   useLayoutEffect(
     () => (key && !props.hide ? registerBarAxis?.(key, axisId) : undefined),
     [registerBarAxis, key, axisId, props.hide]
@@ -102,9 +139,12 @@ export function ChartBar<Row = unknown, Value = number | null>(
         fill={chartBarFill}
         radius={props.stackId == null ? [5, 5, 0, 0] : 0}
         maxBarSize={30}
-        activeBar={series.active ? { opacity: 0.75 } : false}
+        activeBar={
+          inspectStack ? false : series.active ? { opacity: 0.75 } : false
+        }
         isAnimationActive={false}
         {...props}
+        shape={inspectStack ? inspectedShape : props.shape}
         id={series.id}
         hide={legend.hidden || props.hide}
         opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
@@ -384,6 +424,12 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
       {...tooltipProps}
       content={content => {
         if (legendInteraction?.suppressPlotInspection) return null;
+        const activeBar = interaction?.isPointerInspection
+          ? interaction.activeBar
+          : null;
+        const selectedRow = activeBar
+          ? interaction?.data[activeBar.index]
+          : undefined;
         const payload = (
           interaction?.isPointerInspection &&
           interaction.seriesCount !== 1 &&
@@ -400,7 +446,35 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
           );
           return key == null || legendInteraction.focusedKeys.has(key);
         });
-        const filtered: TooltipContentProps = { ...content, payload };
+        const selectedPayload =
+          selectedRow == null
+            ? payload
+            : payload.map(entry => {
+                const key = entry.dataKey;
+                const value =
+                  typeof key === 'function'
+                    ? key(selectedRow)
+                    : key == null
+                      ? entry.value
+                      : (selectedRow as Record<string | number, unknown>)[key];
+                return {
+                  ...entry,
+                  payload: selectedRow,
+                  value: value as typeof entry.value,
+                };
+              });
+        const categoryKey = interaction?.categoryDataKey;
+        const label =
+          selectedRow == null || categoryKey == null
+            ? content.label
+            : typeof categoryKey === 'function'
+              ? categoryKey(selectedRow)
+              : (selectedRow as Record<string, unknown>)[categoryKey];
+        const filtered: TooltipContentProps = {
+          ...content,
+          payload: selectedPayload,
+          label: label as string | number | undefined,
+        };
         if (typeof authoredContent === 'function')
           return authoredContent(filtered);
         if (isValidElement<TooltipContentProps>(authoredContent))

@@ -1121,6 +1121,28 @@ createRoot(document.getElementById('root')!).render(
           ]}
         />
       </Example>
+      <Example
+        name="Sparse stacked bars"
+        description="Pointer inspection across occupied and empty hours."
+      >
+        <ComposedChart
+          ariaLabel="Sparse stacked bars"
+          data={[
+            { hour: 'H0', a: 5, b: 0 },
+            { hour: 'H1', a: 0, b: 0 },
+            { hour: 'H2', a: 0, b: 7 },
+            { hour: 'H3', a: 2, b: 3 },
+            { hour: 'H4', a: 0, b: 0 },
+            { hour: 'H5', a: 8, b: 0 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="hour" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Bar dataKey="a" name="Organization A" stackId="org" />
+          <ComposedChart.Bar dataKey="b" name="Organization B" stackId="org" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
     </Grid>
   </Stack>
 );
