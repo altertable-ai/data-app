@@ -160,7 +160,8 @@ function LinkedTimeCursor({
 /**
  * Infers temporal input from ISO dates, zoned ISO timestamps, and Date values.
  * Use scale="utc" for epoch milliseconds or type="category" for date-like categories.
- * Explicit tick formatters and tick lists retain authored axis behavior.
+ * Explicit tick formatters and tick lists retain authored axis behavior while
+ * date-like values still receive readable tooltip labels.
  */
 export function ChartXAxis<Row = unknown, Value = string | number | Date>(
   props: ComponentProps<typeof XAxis<Row, Value>>
@@ -176,17 +177,25 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
       props.scale == null &&
       props.tickFormatter == null &&
       props.ticks == null);
-  const model = useMemo(() => {
-    if (!enabled || !data?.length || dataKey == null) return null;
+  const dateLabelModel = useMemo(() => {
+    if (!data?.length || dataKey == null) return null;
+    if (props.type === 'category' && props.scale !== 'utc') return null;
+    if (
+      props.type === 'number' &&
+      props.scale !== 'utc' &&
+      props.scale !== 'time'
+    )
+      return null;
     return timeModel(
       data.map(row =>
         typeof dataKey === 'function'
           ? dataKey(row as Row)
           : field(row, dataKey)
       ),
-      numeric
+      props.scale === 'utc' || props.scale === 'time'
     );
-  }, [data, dataKey, enabled, numeric]);
+  }, [data, dataKey, props.type, props.scale]);
+  const model = enabled ? dateLabelModel : null;
   const cursorModel = useMemo(() => {
     if (!data?.length || dataKey == null || props.type === 'category')
       return null;
@@ -203,8 +212,8 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
   const register = context?.register;
   const id = props.xAxisId ?? 0;
   useEffect(
-    () => (model ? register?.(id, model.tooltip) : undefined),
-    [register, id, model]
+    () => (dateLabelModel ? register?.(id, dateLabelModel.tooltip) : undefined),
+    [register, id, dateLabelModel]
   );
   if (!model || dataKey == null) {
     return (

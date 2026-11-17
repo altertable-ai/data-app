@@ -491,10 +491,17 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
   await expect
     .poll(() => tooltip.textContent())
     .toContain('Organization B : 7');
+  const anchored = (await tooltip.boundingBox())!;
+  const distanceToBar = Math.min(
+    Math.abs(anchored.x - (b2!.x + b2!.width)),
+    Math.abs(anchored.x + anchored.width - b2!.x)
+  );
+  expect(distanceToBar).toBeLessThanOrEqual(20);
   await page.mouse.move(b2!.x + b2!.width / 2, b2!.y - 20);
   await expect
     .poll(() => tooltip.textContent())
     .toContain('Organization B : 7');
+  expect(await tooltip.boundingBox()).toEqual(anchored);
   const emptyHour = await plot.getByText('H1', { exact: true }).boundingBox();
   await page.mouse.move(
     emptyHour!.x + emptyHour!.width * 0.75,
@@ -504,6 +511,7 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
   await expect
     .poll(() => tooltip.textContent())
     .toContain('Organization B : 7');
+  expect(await tooltip.boundingBox()).toEqual(anchored);
   await page.mouse.move(a3!.x + a3!.width / 2, a3!.y + a3!.height / 2);
   await expect
     .poll(() => tooltip.textContent())
@@ -522,6 +530,35 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
       chart.locator('.recharts-bar-rectangle [opacity="0.75"]').count()
     )
     .toBe(1);
+
+  await page.setViewportSize({ width: 320, height: 900 });
+  await plot.scrollIntoViewIfNeeded();
+  const rightmostBar = await chart
+    .locator('.recharts-bar-rectangle')
+    .evaluateAll(
+      elements =>
+        elements
+          .map(element => element.getBoundingClientRect())
+          .filter(rect => rect.width > 0 && rect.height > 0)
+          .map(rect => ({
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+          }))
+          .sort((left, right) => right.x - left.x)[0]
+    );
+  await page.mouse.move(
+    rightmostBar!.x + rightmostBar!.width / 2,
+    rightmostBar!.y + rightmostBar!.height / 2
+  );
+  await expect.poll(() => tooltip.isVisible()).toBe(true);
+  const narrowPlot = (await plot.boundingBox())!;
+  const narrowTooltip = (await tooltip.boundingBox())!;
+  expect(narrowTooltip.x).toBeGreaterThanOrEqual(narrowPlot.x);
+  expect(narrowTooltip.x + narrowTooltip.width).toBeLessThanOrEqual(
+    narrowPlot.x + narrowPlot.width
+  );
 });
 
 test('touch inspection retains only the tapped series after releasing the screen', async ({

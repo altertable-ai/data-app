@@ -189,6 +189,14 @@ const edgeExamples: Example[] = [
     rows: sample(['2024-01-01', '2024-01-02', '2024-12-31']),
     axis: { type: 'category' },
   },
+  {
+    title: 'Hourly categories · authored labels',
+    description: 'Custom hourly ticks retain a readable tooltip date.',
+    rows: sample(timestamps('2026-10-14T00:00:00Z', 3, 3_600_000)),
+    axis: {
+      tickFormatter: value => `Hour ${new Date(String(value)).getUTCHours()}`,
+    },
+  },
 ];
 
 function DateAxisFixture() {

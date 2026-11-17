@@ -7,7 +7,10 @@ import {
   useCallback,
   useContext,
   useLayoutEffect,
+  useRef,
+  useState,
   type ComponentProps,
+  type ReactNode,
 } from 'react';
 import {
   Area,
@@ -20,6 +23,7 @@ import {
   YAxis,
   useYAxisTicks,
   useCartesianChartLayout,
+  usePlotArea,
   CartesianGrid,
   Tooltip,
   DefaultTooltipContent,
@@ -405,20 +409,87 @@ export function ChartTooltipContent(
   );
 }
 
+function MeasuredTooltipContent({
+  children,
+  onMeasure,
+}: {
+  children: ReactNode;
+  onMeasure: (width: number, height: number) => void;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const target = element;
+    function measure() {
+      onMeasure(target.offsetWidth, target.offsetHeight);
+    }
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onMeasure]);
+  return (
+    <span ref={ref} style={{ display: 'block' }}>
+      {children}
+    </span>
+  );
+}
+
+function barTooltipPosition(
+  bar: { x: number; y: number; width: number; height: number },
+  plot: { x: number; y: number; width: number; height: number },
+  size: { width: number; height: number }
+) {
+  const gap = 10;
+  const right = bar.x + bar.width + gap;
+  const left = bar.x - size.width - gap;
+  const plotRight = plot.x + plot.width;
+  const x =
+    right + size.width <= plotRight
+      ? right
+      : left >= plot.x
+        ? left
+        : Math.max(plot.x, Math.min(right, plotRight - size.width));
+  const y = Math.max(
+    plot.y,
+    Math.min(
+      bar.y + bar.height / 2 - size.height / 2,
+      plot.y + plot.height - size.height
+    )
+  );
+  return { x, y };
+}
+
 /** Uses the same surface as single-series inspection; Recharts owns interaction. */
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
   const legendInteraction = useContext(ChartLegendInteractionContext);
+  const plot = usePlotArea();
+  const [tooltipSize, setTooltipSize] = useState({ width: 0, height: 0 });
+  const measureTooltip = useCallback((width: number, height: number) => {
+    setTooltipSize(current =>
+      current.width === width && current.height === height
+        ? current
+        : { width, height }
+    );
+  }, []);
   const { content: authoredContent, ...tooltipProps } = props;
+  const activeBar = interaction?.isPointerInspection
+    ? interaction.activeBar
+    : null;
+  const position =
+    activeBar && plot && tooltipSize.width && tooltipSize.height
+      ? barTooltipPosition(activeBar, plot, tooltipSize)
+      : interaction?.isPointerInspection && interaction.activePoint
+        ? { y: interaction.activePoint.y }
+        : undefined;
   return (
     <Tooltip
       labelFormatter={dateLabel}
-      position={
-        interaction?.isPointerInspection && interaction.activePoint
-          ? { y: interaction.activePoint.y }
-          : undefined
-      }
+      position={position}
       cursor={false}
       isAnimationActive={false}
       {...tooltipProps}
@@ -475,11 +546,19 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
           payload: selectedPayload,
           label: label as string | number | undefined,
         };
-        if (typeof authoredContent === 'function')
-          return authoredContent(filtered);
-        if (isValidElement<TooltipContentProps>(authoredContent))
-          return cloneElement(authoredContent, filtered);
-        return <ChartTooltipContent {...filtered} />;
+        const rendered =
+          typeof authoredContent === 'function' ? (
+            authoredContent(filtered)
+          ) : isValidElement<TooltipContentProps>(authoredContent) ? (
+            cloneElement(authoredContent, filtered)
+          ) : (
+            <ChartTooltipContent {...filtered} />
+          );
+        return (
+          <MeasuredTooltipContent onMeasure={measureTooltip}>
+            {rendered}
+          </MeasuredTooltipContent>
+        );
       }}
     />
   );

@@ -222,3 +222,21 @@ test('authored category accessors and UTC tick overrides retain their public con
   });
   expect(await explicit.textContent()).toContain('Oct 14, 2026, 06:00');
 });
+
+test('authored hourly ticks keep readable date titles in tooltips', async ({
+  page,
+}) => {
+  await page.goto('/date-axes?edge-cases');
+  const chart = page.getByRole('application', {
+    name: 'Hourly categories · authored labels',
+    exact: true,
+  });
+  await expect.poll(() => chart.textContent()).toContain('Hour 1');
+  await chart.focus();
+  await page.keyboard.press('ArrowRight');
+  const tooltip = page.getByRole('tooltip');
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Oct 14, 2026, 01:00');
+  expect(await tooltip.textContent()).not.toContain('2026-10-14T');
+});
