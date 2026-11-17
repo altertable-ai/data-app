@@ -512,6 +512,15 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
     .poll(() => tooltip.textContent())
     .toContain('Organization B : 7');
   expect(await tooltip.boundingBox()).toEqual(anchored);
+  const nullHour = await plot.getByText('H4', { exact: true }).boundingBox();
+  await page.mouse.move(
+    nullHour!.x + nullHour!.width / 2,
+    b3!.y + b3!.height / 2
+  );
+  await expect.poll(() => tooltip.isVisible()).toBe(true);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 3');
   await page.mouse.move(a3!.x + a3!.width / 2, a3!.y + a3!.height / 2);
   await expect
     .poll(() => tooltip.textContent())
@@ -566,6 +575,56 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
   expect(narrowTooltip.x + narrowTooltip.width).toBeLessThanOrEqual(
     narrowPlot.x + narrowPlot.width
   );
+});
+
+test('brushed stacked bars inspect nested values and authored shapes after data and size changes', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Stacked bar inspection regressions basic example',
+    exact: true,
+  });
+  const plot = chart.getByRole('application');
+  await plot.scrollIntoViewIfNeeded();
+  const bShape = chart.locator('[data-custom-shape="b"]');
+  await expect.poll(() => bShape.count()).toBeGreaterThan(0);
+  const bBar = (await bShape.first().boundingBox())!;
+  const pointer = { x: bBar.x + bBar.width / 2, y: bBar.y + bBar.height / 2 };
+  await page.mouse.move(pointer.x, pointer.y);
+  const tooltip = chart.getByRole('tooltip');
+  await expect.poll(() => tooltip.textContent()).toContain('H2');
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 7');
+  await expect
+    .poll(() => chart.locator('[data-custom-active-shape="b"]').count())
+    .toBe(1);
+
+  await chart.getByRole('button', { name: 'Update bars' }).evaluate(button => {
+    (button as HTMLButtonElement).click();
+  });
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 9');
+
+  await chart.locator('section.altertable-composed-chart').evaluate(element => {
+    (element as HTMLElement).style.width = '70%';
+  });
+  await expect
+    .poll(async () => {
+      const bar = await chart
+        .locator('[data-custom-active-shape="b"]')
+        .first()
+        .boundingBox();
+      const tip = await tooltip.boundingBox();
+      if (!bar || !tip) return Infinity;
+      return Math.min(
+        Math.abs(tip.x - (bar.x + bar.width)),
+        Math.abs(tip.x + tip.width - bar.x)
+      );
+    })
+    .toBeLessThanOrEqual(20);
 });
 
 test('touch inspection retains only the tapped series after releasing the screen', async ({

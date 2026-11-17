@@ -13,6 +13,7 @@ export type ChartBarPoint = ChartPoint & {
   height: number;
   index: number;
   seriesId: string;
+  payload: unknown;
 };
 
 type ChartInteractionApi = {
@@ -23,7 +24,6 @@ type ChartInteractionApi = {
   registerPoint: (id: string, x: number, y: number) => () => void;
   registerBar: (bar: ChartBarPoint) => () => void;
   activeBar: ChartBarPoint | null;
-  data: readonly unknown[];
   categoryDataKey?: string | ((row: unknown) => unknown);
   registerSeries: (id: string) => () => void;
   activeSeriesId: string | null;

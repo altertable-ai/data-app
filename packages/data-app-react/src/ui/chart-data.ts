@@ -3,6 +3,22 @@ import { invariant } from '@altertable/data-app/internal';
 import type { ItemActions } from './ExplorationActionControl.tsx';
 import type { ChartCursorGroup } from './use-chart-cursor-group.tsx';
 
+/** Match Recharts data keys, including nested paths and literal dotted keys. */
+export function chartField(row: unknown, key: string | number): unknown {
+  if (row == null || typeof row !== 'object') return undefined;
+  if (key in row) return (row as Record<string | number, unknown>)[key];
+  return String(key)
+    .replace(/\[(\d+)\]/g, '.$1')
+    .split('.')
+    .reduce<unknown>(
+      (value, part) =>
+        value != null && typeof value === 'object'
+          ? (value as Record<string, unknown>)[part]
+          : undefined,
+      row
+    );
+}
+
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
 export type ChartItem = { id: string; label: string; value: number };
 export type CartesianChartItem = ChartItem & {

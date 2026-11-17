@@ -19,6 +19,7 @@ import {
   type XAxisTickContentProps,
 } from 'recharts';
 
+import { chartField as field } from './chart-data.ts';
 import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
 import { ChartCursorChartContext } from './use-chart-cursor-group.tsx';
 
@@ -83,21 +84,6 @@ export function useDateAxisBar(id: string | number = 0) {
 export function useDateAxisLabel(id: string | number = 0) {
   return useContext(ChartDateAxesContext)?.formatters.get(id);
 }
-function field(row: unknown, key: string | number): unknown {
-  if (row == null || typeof row !== 'object') return undefined;
-  if (key in row) return (row as Record<string | number, unknown>)[key];
-  return String(key)
-    .replace(/\[(\d+)\]/g, '.$1')
-    .split('.')
-    .reduce<unknown>(
-      (value, part) =>
-        value != null && typeof value === 'object'
-          ? (value as Record<string, unknown>)[part]
-          : undefined,
-      row
-    );
-}
-
 const xAxisDefaults = {
   interval: 'preserveStartEnd' as const,
   stroke: 'var(--atbl-muted)',

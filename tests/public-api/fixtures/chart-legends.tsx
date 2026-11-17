@@ -15,7 +15,7 @@ import {
 import { applyAppearance } from '@altertable/data-app/appearance';
 import { useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Line as NativeLine } from 'recharts';
+import { Line as NativeLine, Rectangle } from 'recharts';
 
 injectDataAppStyles();
 applyAppearance(
@@ -300,6 +300,43 @@ function DynamicFunnelExample() {
           { id: 'enterprise', label: 'Enterprise plan', values: [200, 180] },
         ]}
       />
+    </>
+  );
+}
+
+function StackedBarInspectionRegressions() {
+  const [updated, setUpdated] = useState(false);
+  const rows = [
+    { time: { hour: 'H0' }, metrics: { a: 12, b: 0 } },
+    { time: { hour: 'H1' }, metrics: { a: 0, b: 0 } },
+    { time: { hour: 'H2' }, metrics: { a: 0, b: updated ? 9 : 7 } },
+    { time: { hour: 'H3' }, metrics: { a: updated ? 5 : 2, b: 3 } },
+    { time: { hour: 'H4' }, metrics: { a: 8, b: 0 } },
+  ];
+  return (
+    <>
+      <Button onClick={() => setUpdated(value => !value)}>Update bars</Button>
+      <ComposedChart ariaLabel="Stacked bar inspection regressions" data={rows}>
+        <ComposedChart.XAxis dataKey="time.hour" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Bar
+          dataKey="metrics.a"
+          name="Organization A"
+          stackId="org"
+          shape={props => <Rectangle {...props} data-custom-shape="a" />}
+        />
+        <ComposedChart.Bar
+          dataKey="metrics.b"
+          name="Organization B"
+          stackId="org"
+          shape={props => <Rectangle {...props} data-custom-shape="b" />}
+          activeBar={props => (
+            <Rectangle {...props} data-custom-active-shape="b" />
+          )}
+        />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Brush startIndex={2} endIndex={4} height={20} />
+      </ComposedChart>
     </>
   );
 }
@@ -1132,7 +1169,7 @@ createRoot(document.getElementById('root')!).render(
             { hour: 'H1', a: 0, b: 0 },
             { hour: 'H2', a: 0, b: 7 },
             { hour: 'H3', a: 2, b: 3 },
-            { hour: 'H4', a: 0, b: 0 },
+            { hour: 'H4', a: null, b: null },
             { hour: 'H5', a: 8, b: 0 },
           ]}
         >
@@ -1142,6 +1179,12 @@ createRoot(document.getElementById('root')!).render(
           <ComposedChart.Bar dataKey="b" name="Organization B" stackId="org" />
           <ComposedChart.Tooltip />
         </ComposedChart>
+      </Example>
+      <Example
+        name="Stacked bar inspection regressions"
+        description="Brush, nested keys, custom shapes, and data refresh."
+      >
+        <StackedBarInspectionRegressions />
       </Example>
     </Grid>
   </Stack>

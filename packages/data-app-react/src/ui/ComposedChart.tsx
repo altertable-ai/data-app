@@ -468,13 +468,45 @@ function ComposedChartRoot<Row>({
     () => new Map()
   );
   const bars = useRef(new Map<string, ChartBarPoint>());
-  const registerBar = useCallback((bar: ChartBarPoint) => {
-    const key = `${bar.seriesId}:${bar.index}`;
-    bars.current.set(key, bar);
-    return () => {
-      if (bars.current.get(key) === bar) bars.current.delete(key);
-    };
+  const barRefreshFrame = useRef<number | null>(null);
+  const barLayout = useRef(layout);
+  useLayoutEffect(() => {
+    barLayout.current = layout;
+  }, [layout]);
+  const refreshNearestBar = useCallback(() => {
+    if (barRefreshFrame.current != null || !latestPointerPosition.current)
+      return;
+    barRefreshFrame.current = requestAnimationFrame(() => {
+      barRefreshFrame.current = null;
+      const selected = findNearestBar(
+        bars.current,
+        latestPointerPosition.current,
+        barLayout.current
+      );
+      setNearestBar(current => (current === selected ? current : selected));
+    });
   }, []);
+  useEffect(
+    () => () => {
+      if (barRefreshFrame.current != null)
+        cancelAnimationFrame(barRefreshFrame.current);
+    },
+    []
+  );
+  const registerBar = useCallback(
+    (bar: ChartBarPoint) => {
+      const key = `${bar.seriesId}:${bar.index}`;
+      bars.current.set(key, bar);
+      refreshNearestBar();
+      return () => {
+        if (bars.current.get(key) === bar) {
+          bars.current.delete(key);
+          refreshNearestBar();
+        }
+      };
+    },
+    [refreshNearestBar]
+  );
   const registerPoint = useCallback((id: string, x: number, y: number) => {
     setPoints(current => new Map(current).set(id, { x, y }));
     return () =>
@@ -642,7 +674,6 @@ function ComposedChartRoot<Row>({
             registerPoint,
             registerBar,
             activeBar,
-            data,
             categoryDataKey: categoryDataKey(children, layout),
             setHoveredSeriesId,
             seriesCount: seriesIds.size,
