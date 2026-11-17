@@ -6,8 +6,8 @@ import type { DateTimeRange } from './date-time-range.ts';
 import type { DimensionSelection } from './dimension.ts';
 import { invariant } from './invariant.ts';
 import type { QueryResult } from './operation-types.ts';
-import { isRecord } from './record.ts';
 import { unsupportedParameterReference } from './parameter-sql.ts';
+import { isRecord } from './record.ts';
 
 export const MAX_QUERY_ROWS = 10_000;
 export const REGISTERED_QUERY_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
