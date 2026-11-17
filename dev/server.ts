@@ -6,9 +6,11 @@ import { createReloadChannel } from '@altertable/data-app-bun/reload';
 import {
   DataSourceError,
   parseDataAppAnnotationDraft,
+  type QueryDefinitions,
   type QueryParameters,
 } from '@altertable/data-app/contract';
 
+import { dataApp as playgroundApp } from '@/dev/app';
 import appearance from '@/dev/fixtures/appearance.html';
 import bridgeFrame from '@/dev/fixtures/bridge-frame.html';
 import bridgeHost from '@/dev/fixtures/bridge-host.html';
@@ -22,16 +24,25 @@ import layout from '@/dev/fixtures/layout.html';
 import styleStress from '@/dev/fixtures/style-stress.html';
 import styles from '@/dev/fixtures/styles.html';
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
+import { dataApp as hostedFindingStarterApp } from '@/packages/data-app-examples/templates/starter-finding-data-app/index';
 import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { dataApp as findingStarterApp } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/app';
 import findingStarterPage from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
 import { dataApp as metricStarterApp } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/app';
 import metricStarterPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
+import { dataApp as hostedMetricStarterApp } from '@/packages/data-app-examples/templates/starter-metric-data-app/index';
 
-const registeredQueries: Readonly<Record<string, { statement: string }>> = {
+const defaultRegisteredQueries: QueryDefinitions = {
   ...hostedStarterApp.queries,
   ...starterApp.queries,
+};
+const previewQueries: Readonly<Record<string, QueryDefinitions>> = {
+  '/starter-data-app': hostedStarterApp.queries,
+  '/starter-metric-data-app': hostedMetricStarterApp.queries,
+  '/starter-finding-data-app': hostedFindingStarterApp.queries,
+  '/playground': playgroundApp.queries,
+  '/content-sizing': playgroundApp.queries,
 };
 
 async function bundle(entry: string) {
@@ -278,6 +289,10 @@ Bun.serve({
       );
     }
     if (path === '/api/query') {
+      const sourcePath = new URL(request.headers.get('referer') ?? request.url)
+        .pathname;
+      const registeredQueries =
+        previewQueries[sourcePath] ?? defaultRegisteredQueries;
       const delay = isDevelopment
         ? Number(
             new URL(

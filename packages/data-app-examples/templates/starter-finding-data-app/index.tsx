@@ -17,7 +17,7 @@ import {
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 // One query per widget: each section loads its own result when it nears the viewport.
-const dataApp = defineDataApp({
+export const dataApp = defineDataApp({
   title: 'Sample finding',
   description:
     'Fixture evidence; replace with the Finding and its supporting queries.',

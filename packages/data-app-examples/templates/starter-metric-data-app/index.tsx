@@ -9,7 +9,7 @@ import {
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
-const dataApp = defineDataApp({
+export const dataApp = defineDataApp({
   title: 'Sample metric',
   description: 'Fixture counts by group; replace with the requested metric.',
   scope: { organization: 'demo', environment: 'sample' },

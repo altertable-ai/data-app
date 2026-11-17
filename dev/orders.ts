@@ -2,12 +2,13 @@ import type { InputOf, OutputOf } from '@altertable/data-app/client';
 import {
   dimensionFilter,
   parseCount,
+  queryDateTimeRangeParams,
   type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 
 import { dataApp } from '@/dev/app';
-import { countries, period } from '@/dev/commerce';
+import { countries, period as periodFilter } from '@/dev/commerce';
 
 const countryFilter = dimensionFilter({
   key: 'country',
@@ -32,12 +33,13 @@ function totals(
 }
 export const operations = {
   orderOverview: dataApp.defineOperation({
-    filters: { period, country: countryFilter },
+    filters: { period: periodFilter, country: countryFilter },
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, { country, period }) {
       const member = country.kind === 'all' ? undefined : country.members[0];
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'window');
       const params = {
-        window: period.range,
+        ...bounds.current,
         countryMode: country.kind,
         country: member?.kind === 'value' ? member.value : null,
       };
@@ -54,8 +56,8 @@ export const operations = {
         query('ordersByValue', params),
         query('previousPeriod', {
           ...params,
-          window: period.comparison ?? period.range,
-          enabled: period.comparison !== null,
+          ...(bounds.comparison ?? bounds.current),
+          enabled: bounds.comparison !== null,
         }),
         query('orders', params),
         query('items', params),
@@ -85,7 +87,7 @@ export const operations = {
           quantity: parseCount(row.quantity),
           unitPrice: amount(row.unit_price),
         })),
-        previous: period.comparison ? totals(previousResult.rows[0]!) : null,
+        previous: bounds.comparison ? totals(previousResult.rows[0]!) : null,
       };
     },
   }),
