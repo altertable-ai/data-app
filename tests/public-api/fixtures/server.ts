@@ -3,6 +3,7 @@ import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app-bun';
 
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
+import { dataApp as localStarterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
@@ -206,6 +207,7 @@ process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
 const local = serveLocalApp({
   page: starterPage,
   operations,
+  queries: localStarterApp.queries,
   title: 'Local starter',
   port: 0,
 });

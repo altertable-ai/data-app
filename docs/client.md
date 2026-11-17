@@ -1,7 +1,22 @@
 # Client
 
 Use this guide when customizing client delivery. Standard apps keep the
-starter's client. Import `createDataClient()` from `@altertable/data-app/client`.
+starter's client.
+
+## Registered operations
+
+Hosted and local metric/finding starters use the same operation client:
+
+```ts
+const operations = dataApp.defineOperations({ sampleCountsByGroup });
+const client = operations.createDataClient();
+```
+
+`run()` executes in the browser. Hosted apps send each named query through
+`data:query`; local apps install `installLocalQueryLakehouse()` before mounting
+and send it to `POST /api/query/:queryId`. Both backends execute only registered
+SQL. The local Bun server receives `dataApp.queries` through `serveLocalApp()`.
+Keep `run()` and its imports browser-safe in this mode.
 
 ## HTTP operations
 
@@ -20,9 +35,9 @@ const response = await client.query(
 );
 ```
 
-Keep the operations import type-only so implementations stay on the server.
-Pass the filters each operation reads from a browser-safe module both sides
-import ([shared filters](filters.md#share-filters-with-http-and-local-apps)).
+Use this delivery when operations must stay on the server. Keep the operations
+import type-only and share browser-safe filter declarations between both sides
+([shared filters](filters.md#share-filters-with-http-operation-apps)).
 Inputs and data are inferred from the operation map and `run()`.
 
 The default endpoint is `/api/data`. Override it with
@@ -37,31 +52,6 @@ entry for public codes and request IDs. Pass an abort signal to cancel a request
 
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
-
-## Hosted operations
-
-Bind operations to the app's query registry. The hosted client derives its
-filters and uses the installed iframe bridge:
-
-```ts
-// ... app declared with defineDataApp(), operations created with dataApp.defineOperation()
-const operations = dataApp.defineOperations({ sampleCountsByGroup });
-const client = operations.createDataClient();
-const response = await client.query('sampleCountsByGroup', { groupName: '' });
-```
-
-In hosted apps, `client.query()` executes the operation's `run()` in the iframe.
-Each `run()` call to its named `query()` helper sends the registered query ID,
-resolved parameter values, and row limit through `data:query`. The backend uses
-the query ID from `defineDataApp({ queries })` to execute the saved SQL. The
-trusted bootstrap installs the bridge before app execution.
-
-In local directory apps, `client.query()` posts the operation name and input to
-`/api/data/:operation`. Bun executes `run()` there. Keep the browser's operation
-import type-only and pass the browser-safe filter declarations to the HTTP
-client as shown above. This keeps operation implementations and their server-only
-imports out of the browser bundle. The `run()` declarations and `client.query()` calls use
-the same names and inputs in both environments.
 
 ## Iframe transport
 

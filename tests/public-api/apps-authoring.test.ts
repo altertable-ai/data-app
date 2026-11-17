@@ -5,6 +5,37 @@ import { test, localURL } from '@/tests/public-api/browser';
 describe('authoring', () => {
   const failure = { error: 'Fixture unavailable' };
 
+  test('local server runs only registered query IDs', async () => {
+    function run(id: string, body: unknown) {
+      return fetch(new URL(`/api/query/${id}`, localURL), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+    const result = await run('connection', { limit: 1 });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toMatchObject({ rows: [[1]] });
+    expect((await run('unknown', { limit: 1 })).status).toBe(404);
+    expect((await run('connection', { limit: 10_001 })).status).toBe(400);
+    expect(
+      (await run('connection', { limit: 1, params: { sql: 'SELECT 1' } }))
+        .status
+    ).toBe(400);
+    expect(
+      (
+        await fetch(new URL('/api/query/connection', localURL), {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            origin: 'https://other.example',
+          },
+          body: JSON.stringify({ limit: 1 }),
+        })
+      ).status
+    ).toBe(403);
+  });
+
   test('single-file hosted example queries through the host and preserves displayed filters', async ({
     page,
   }) => {

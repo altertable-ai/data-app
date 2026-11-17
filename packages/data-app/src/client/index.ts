@@ -14,6 +14,10 @@ export {
   DataAppError,
 } from '../authoring/client.ts';
 export { createHttpTransport, type DataTransport } from './transport.ts';
+export {
+  createLocalQueryLakehouse,
+  installLocalQueryLakehouse,
+} from './local-query.ts';
 export { type DataAppLocation, type AppLocation } from './location.ts';
 export {
   createDataAppNavigation,

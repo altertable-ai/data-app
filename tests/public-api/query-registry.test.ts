@@ -1,5 +1,9 @@
 import { defineDataApp, type DataAppConfig } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
+import {
+  createDataClient,
+  createLocalQueryLakehouse,
+  installLocalQueryLakehouse,
+} from '@altertable/data-app/client';
 import {
   defineOperation,
   type Lakehouse,
@@ -8,7 +12,7 @@ import {
   type QueryParameters,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 const dataApp = defineDataApp({
   title: 'Products',
@@ -135,6 +139,59 @@ test('hosted execution sends the registered query ID without a SQL statement', a
   expect(calls).toEqual([
     { queryId: 'products', params: { orgId: 'org-1', limit: 10 } },
   ]);
+});
+
+test('local query adapter posts the ID and parameters to the Bun route', async () => {
+  const requests: { url: string; body: unknown }[] = [];
+  const lakehouse = createLocalQueryLakehouse('/api/query', (async (
+    url: RequestInfo | URL,
+    options?: RequestInit
+  ) => {
+    requests.push({
+      url: url instanceof Request ? url.url : url.toString(),
+      body: JSON.parse(options?.body as string),
+    });
+    return Response.json({
+      columns: [{ name: 'org_id' }],
+      rows: [['org-1']],
+    });
+  }) as typeof fetch);
+  const client = createDataClient({
+    operations: { products: products({ orgId: 'org-1' }) },
+    lakehouse,
+  });
+  await client.query('products', {});
+  expect(requests).toEqual([
+    {
+      url: '/api/query/products',
+      body: { limit: 20, params: { orgId: 'org-1', limit: 10 } },
+    },
+  ]);
+});
+
+test('local installation lets the same operation client run in the browser', async () => {
+  const frame = {} as Window;
+  vi.stubGlobal('window', frame);
+  const calls: string[] = [];
+  const uninstall = installLocalQueryLakehouse(frame, {
+    async queryAllById(queryId) {
+      calls.push(queryId);
+      return { columns: [{ name: 'org_id' }], rows: [['org-1']] };
+    },
+  });
+  try {
+    const operations = dataApp.defineOperations({
+      products: products({ orgId: 'org-1' }),
+    });
+    const client = operations.createDataClient();
+    await expect(client.query('products', {})).resolves.toMatchObject({
+      data: { rows: [{ org_id: 'org-1' }] },
+    });
+    expect(calls).toEqual(['products']);
+  } finally {
+    uninstall();
+    vi.unstubAllGlobals();
+  }
 });
 
 test('query failures reject missing, extra, invalid, and inherited parameters before source execution', async () => {

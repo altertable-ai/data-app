@@ -6,11 +6,11 @@ Replace the connectivity screen or fixture examples with the content specified b
 the app brief, using the [shared SDK patterns](app-authoring.md). Local execution
 does not require a particular content structure or presentation story.
 
-| Task                         | Documentation                            |
-| ---------------------------- | ---------------------------------------- |
-| Customize local serving      | [Bun server](server-bun.md)              |
-| Authorize hosted viewers     | [Server](server.md)                      |
-| Customize the browser client | [HTTP client](client.md#http-operations) |
+| Task                         | Documentation                             |
+| ---------------------------- | ----------------------------------------- |
+| Customize local serving      | [Bun server](server-bun.md)               |
+| Authorize hosted viewers     | [Server](server.md)                       |
+| Customize the browser client | [Client](client.md#registered-operations) |
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).
 

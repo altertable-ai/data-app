@@ -259,9 +259,9 @@ Custom control ownership is needed only when generated controls cannot express
 the requirement; use `/ui` for that case. Do not reuse reserved inspection,
 presentation, or navigation URL keys.
 
-## Share filters with HTTP and local apps
+## Share filters with HTTP operation apps
 
-HTTP and local apps keep operations on the server, so the browser imports them
+HTTP operation apps keep operations on the server, so the browser imports them
 as types only. Declare filters in a browser-safe module that both sides import:
 
 ```ts

@@ -22,6 +22,7 @@ import type { IsUnion, KnownRecord } from '../core/queries.ts';
 import { randomUuid } from '../core/uuid.ts';
 import { appDiagnostics } from './diagnostics.ts';
 import { getDataAppTransport } from './iframe.ts';
+import { getLocalQueryLakehouse } from './local-query.ts';
 import { createHttpTransport, DataAppError } from './transport.ts';
 import type { DataTransport } from './transport.ts';
 export type { InputOf, OutputOf } from '../core/operation-types.ts';
@@ -255,7 +256,7 @@ function createOperationClient<Operations extends DataOperations>(options: {
         options.lakehouse ??
         (typeof window === 'undefined'
           ? undefined
-          : getDataAppTransport()?.lakehouse);
+          : (getDataAppTransport()?.lakehouse ?? getLocalQueryLakehouse()));
       if (!lakehouse)
         throw new DataAppError(
           'An authorized data bridge must be installed first.',

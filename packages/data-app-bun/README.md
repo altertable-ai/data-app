@@ -18,14 +18,19 @@ Serve a local app's HTML entry and operation registry:
 ```ts
 import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
+import { dataApp } from './app.ts';
 import { operations } from './operations.ts';
 
-serveLocalApp({ page, operations, title: 'Activity' });
+serveLocalApp({
+  page,
+  operations,
+  queries: dataApp.queries,
+  title: dataApp.title,
+});
 ```
 
-The app supplies `index.html` and `operations.ts`. `serveLocalApp()` configures
-lakehouse access from server-only credentials; operations use their `query()`
-helper.
+`serveLocalApp()` uses server-only credentials to execute registered queries by
+ID. Browser operations use their `query()` helper.
 
 Local serving does not authenticate hosted viewers; use
 `@altertable/data-app/server` with per-request authorization for hosted apps.

@@ -10,13 +10,20 @@ when typechecking a Bun app.
 ```ts
 import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
+import { dataApp } from './app.ts';
 import { operations } from './operations.ts';
 
-serveLocalApp({ page, operations, title: 'Activity' });
+serveLocalApp({
+  page,
+  operations,
+  queries: dataApp.queries,
+  title: dataApp.title,
+});
 ```
 
 The server binds to `127.0.0.1`. Its default port is `25837`, overridable through
-`PORT` or the `port` option. It serves the Bun HTML bundle and operation requests.
+`PORT` or the `port` option. It serves the Bun HTML bundle and registered queries
+by ID. The `/api/data/:operation` route remains available for server-run operations.
 
 `localLakehouse()` reads the CLI proxy URL and token from
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN`. It also supports

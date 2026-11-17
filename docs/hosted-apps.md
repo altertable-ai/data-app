@@ -29,14 +29,10 @@ the iframe and sends its registered query IDs and parameter values through
 1. Combine the app's filters, operations, data context, views, any presentation
    and export features, app declaration, and browser entry into one `index.tsx`, following the
    [single-file starter](app-authoring.md#use-release-matched-starters).
-2. Collect the operations with `dataApp.defineOperations()` and use
-   `operations.createDataClient()`. The registry supplies the operations'
-   filters, so drop the `filters` option. See
-   [hosted operations](client.md#hosted-operations)
-   for execution through the host.
-3. Remove the Bun server, HTML, server adapters, credentials, and relative or
-   app-alias imports. Rewrite any operation that depends on server-only code
-   to use the operation's `query()` helper.
+2. Keep `operations.createDataClient()`; the hosted bootstrap supplies its
+   query bridge. See [registered operations](client.md#registered-operations).
+3. Remove the Bun server, HTML, local query adapter installation, credentials,
+   and relative or app-alias imports.
 4. Confirm the host can query the same catalogs, tables, and fields.
    [Verify the app](app-authoring.md#verify-the-app) in the hosted runtime against
    the local version's filters and findings.
