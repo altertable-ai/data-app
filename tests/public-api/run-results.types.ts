@@ -23,7 +23,7 @@ const operations = {
     },
   }),
 };
-const client = createDataClient<typeof operations>();
+const client = createDataClient({ operations });
 async function verifyRunResult() {
   const response = await client.query('totals', {});
   const total: number = response.data.total;

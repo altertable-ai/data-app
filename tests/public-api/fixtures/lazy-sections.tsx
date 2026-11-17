@@ -8,13 +8,14 @@ import {
   mountDataApp,
   Stack,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   searchFilter,
   type DataOperation,
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { Component, type ReactNode } from 'react';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const regionFilters = {
   region: searchFilter({ key: 'region', label: 'Region', defaultValue: '' }),
@@ -59,13 +60,19 @@ async function transport(name: string, input: unknown) {
 }
 const search = new URLSearchParams(location.search);
 const { defineView } = createDataHooks(
-  createDataClient<Operations>({ filters: operationFilters, transport })
+  createTransportFixtureClient<Operations>({
+    filters: operationFilters,
+    transport,
+  })
 );
 /** `?other-client` declares the breakdown view on a second client, whose filter
  * controls `<DataApp>` does not own. */
 const breakdownHooks = search.has('other-client')
   ? createDataHooks(
-      createDataClient<Operations>({ filters: operationFilters, transport })
+      createTransportFixtureClient<Operations>({
+        filters: operationFilters,
+        transport,
+      })
     )
   : { defineView };
 const dataContext = createDataContext({

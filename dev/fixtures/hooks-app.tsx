@@ -4,11 +4,7 @@ import {
   TextWidget,
   useAppFilters,
 } from '@altertable/data-app-react/ui';
-import {
-  createDataClient,
-  type InputOf,
-  type OutputOf,
-} from '@altertable/data-app/client';
+import { type InputOf, type OutputOf } from '@altertable/data-app/client';
 import { defineOperation, searchFilter } from '@altertable/data-app/contract';
 import type { TransportResponse } from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
@@ -23,6 +19,7 @@ import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
 import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
 import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
 import { useDeclaredResult } from '@/packages/data-app-react/src/view-runtime.tsx';
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 injectDataAppStyles();
 
@@ -55,7 +52,7 @@ const operations = {
   }),
 };
 const pending = new Map<string, (response: TransportResponse) => void>();
-const client = createDataClient<typeof operations>({
+const client = createTransportFixtureClient<typeof operations>({
   filters: {
     alpha: operations.alpha.filters,
     beta: operations.beta.filters,

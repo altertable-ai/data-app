@@ -22,7 +22,6 @@ import {
   LineChart,
   DataTableTimestamp,
 } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
   type DataOperation,
@@ -30,6 +29,8 @@ import {
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { formatTime } from '@altertable/data-app/format';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const records = [
   {
@@ -84,7 +85,7 @@ type EventsOperation<Filters extends FilterCollection> = DataOperation<
   FilterInput<Filters>,
   typeof records
 > & { filters: Filters };
-const client = createDataClient<{
+const client = createTransportFixtureClient<{
   events: EventsOperation<typeof filters.events>;
   tokyoEvents: EventsOperation<typeof filters.tokyoEvents>;
 }>({

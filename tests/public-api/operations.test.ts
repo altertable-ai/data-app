@@ -7,7 +7,6 @@ import {
   searchFilter,
   type Lakehouse,
 } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test, vi } from 'vitest';
 
 function operation() {
@@ -41,7 +40,7 @@ function lakehouse(): Lakehouse {
   };
 }
 
-test('app operation registry derives filters and supports both delivery modes', async () => {
+test('app operation registry derives filters and executes in the browser', async () => {
   const app = defineDataApp({
     title: 'Sales',
     description: 'Sales by region',
@@ -73,53 +72,7 @@ test('app operation registry derives filters and supports both delivery modes', 
   expect(operations.createDataClient().filters.salesByRegion).toEqual({
     region,
   });
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: {
-      async queryAll() {
-        return { columns: [{ name: 'total' }], rows: [[42]] };
-      },
-    },
-  }));
-  expect(
-    (await handler(new Request('http://localhost/api/data/createDataClient')))
-      .status
-  ).toBe(404);
-  const serverResponse = await handler(
-    new Request('http://localhost/api/data/salesByRegion', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ region: 'EU' }),
-    })
-  );
-  expect(serverResponse.status).toBe(200);
-  expect((await serverResponse.json()).data).toBe(42);
-
-  const transport = vi.fn(async (_name: string, _input: unknown) => ({
-    status: 200,
-    body: {
-      data: 42,
-      requestId: 'request-1',
-      queriedAt: '2026-01-01T00:00:00.000Z',
-      queryIds: [],
-    },
-  }));
   const listedOperations = { salesByRegion: operations.salesByRegion };
-  const serverClient = createDataClient<typeof listedOperations>({
-    filters: { salesByRegion: { region } },
-    transport,
-  });
-  expect(
-    await serverClient.query('salesByRegion', { region: 'EU' })
-  ).toMatchObject({
-    data: 42,
-    input: { region: 'EU' },
-  });
-  expect(transport).toHaveBeenCalledWith(
-    'salesByRegion',
-    { region: 'EU' },
-    undefined
-  );
-
   const browserClient = createDataClient({
     operations: listedOperations,
     lakehouse: {
@@ -168,7 +121,7 @@ test('operation declarations retain runtime validation for unchecked check array
   }
 });
 
-test('browser and HTTP operations share parsing, bounds, and query evidence', async () => {
+test('browser operations preserve parsing, bounds, and query evidence', async () => {
   const operations = { count: operation() };
   const client = createDataClient({ operations, lakehouse: lakehouse() });
   const browser = await client.query('count', 3);
@@ -184,23 +137,6 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
         queryId: 'q1',
       },
     ],
-  });
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: lakehouse(),
-  }));
-  const http = createDataClient<typeof operations>({
-    endpoint: 'http://localhost/api/data',
-    fetch: Object.assign(
-      async (url: RequestInfo | URL, options?: RequestInit) =>
-        handler(new Request(url, options)),
-      { preconnect() {} }
-    ),
-  });
-  expect(await http.query('count', 3)).toMatchObject({
-    data: browser.data,
-    input: browser.input,
-    queryIds: browser.queryIds,
-    queries: browser.queries,
   });
 });
 
@@ -232,7 +168,7 @@ test('browser operations reject malformed inputs, unknown operations, and privat
   });
 });
 
-test('browser and HTTP execution preserve public source failures across package entries', async () => {
+test('browser execution preserves public source failures across package entries', async () => {
   const operations = { count: operation() };
   const source: Lakehouse = {
     async queryAll() {
@@ -244,20 +180,6 @@ test('browser and HTTP execution preserve public source failures across package 
     await sourceError.query('count', 3).catch(error => error)
   ).toMatchObject({
     code: 'source_rate_limited',
-  });
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: source,
-  }));
-  const response = await handler(
-    new Request('http://localhost/api/data/count', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '3',
-    })
-  );
-  expect(response.status).toBe(429);
-  expect(await response.json()).toMatchObject({
-    error: { code: 'source_rate_limited' },
   });
 });
 
@@ -333,123 +255,6 @@ test('browser operation clients require a SQL adapter', async () => {
       .query('count', 3)
       .catch(error => error)
   ).toBeInstanceOf(DataAppError);
-});
-
-test('an authorized client queries an operation with validated input and query evidence', async () => {
-  const operations = {
-    count: defineOperation({
-      input: parseCount,
-      checks: [3],
-      queries: {
-        count: {
-          projections: { count: { type: 'number' } } as const,
-          statement: 'SELECT $count',
-          params: { count: { type: 'number' } },
-        },
-      },
-      policy: { maxQueryRows: 2, maxDurationMs: 1000 },
-      async run({ query }, input) {
-        const result = await query('count', { count: input });
-        return result.rows[0]!.count;
-      },
-    }),
-  };
-  let authorized = true;
-  const handler = createDataHandler(operations, async () => {
-    if (!authorized) throw new Error('Access denied');
-    return {
-      lakehouse: {
-        async queryAll() {
-          return {
-            columns: [{ name: 'count' }],
-            rows: [[3]],
-            queryId: 'query-1',
-          };
-        },
-      },
-    };
-  });
-  const client = createDataClient<typeof operations>({
-    endpoint: 'https://app.example/api/data',
-    fetch: Object.assign(
-      async (url: RequestInfo | URL, options?: RequestInit) =>
-        handler(new Request(url, options)),
-      { preconnect() {} }
-    ),
-  });
-
-  await expect(client.query('count', 3)).resolves.toMatchObject({
-    data: 3,
-    input: 3,
-    queryIds: ['query-1'],
-    queries: [
-      {
-        name: 'count',
-        statement: 'SELECT $count',
-        params: { count: 3 },
-        queryId: 'query-1',
-      },
-    ],
-  });
-  await expect(client.query('count', -1)).rejects.toMatchObject({
-    code: 'invalid_input',
-  });
-
-  authorized = false;
-  await expect(client.query('count', 3)).rejects.toMatchObject({
-    code: 'forbidden',
-  });
-});
-
-test('an HTTP client rejects malformed results and exposes actionable errors without upstream details', async () => {
-  const valid = {
-    data: 3,
-    requestId: 'request',
-    queriedAt: 'now',
-    queryIds: [],
-  };
-  let body: unknown = valid;
-  let status = 200;
-  const client = createDataClient({
-    endpoint: 'https://app.example/api/data',
-    fetch: Object.assign(
-      async () =>
-        typeof body === 'string'
-          ? new Response(body, { status })
-          : Response.json(body, { status }),
-      { preconnect() {} }
-    ),
-  });
-  await expect(client.query('count', {})).resolves.toMatchObject({ data: 3 });
-  for (const malformed of [
-    {},
-    { requestId: 'request', queriedAt: 'now', queryIds: [] },
-    { ...valid, requestId: undefined },
-    { ...valid, queriedAt: undefined },
-    { ...valid, queryIds: [1] },
-    { ...valid, queries: [{ name: 'query', statement: 1 }] },
-    [],
-  ]) {
-    body = malformed;
-    await expect(client.query('count', {})).rejects.toMatchObject({
-      code: 'invalid_response',
-    });
-  }
-  status = 403;
-  body = {
-    error: { code: 'forbidden', message: 'Denied', requestId: 'denied' },
-  };
-  await expect(client.query('count', {})).rejects.toMatchObject({
-    code: 'forbidden',
-    message: 'Denied',
-    requestId: 'denied',
-  });
-  status = 502;
-  body = 'Private upstream details';
-  await expect(client.query('count', {})).rejects.toMatchObject({
-    code: 'request_failed',
-    message: 'Could not load data.',
-  });
 });
 
 test('browser operations retain cryptographic request IDs without randomUUID and fail closed without secure randomness', async () => {

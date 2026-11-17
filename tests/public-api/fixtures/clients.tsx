@@ -9,10 +9,6 @@ import {
   injectDataAppStyles,
 } from '@altertable/data-app-react';
 import {
-  createDataClient,
-  type DataTransport,
-} from '@altertable/data-app/client';
-import {
   facetFilter,
   searchFilter,
   type DataOperation,
@@ -21,6 +17,11 @@ import {
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
+
+import {
+  createTransportFixtureClient,
+  type FixtureTransport,
+} from '@/tests/public-api/fixtures/transport-client';
 
 const search = searchFilter({ key: 'search', label: 'Search categories' });
 const category = facetFilter({
@@ -47,20 +48,20 @@ type Operations = {
 };
 const pending = new Map<
   string,
-  (value: Awaited<ReturnType<DataTransport>>) => void
+  (value: Awaited<ReturnType<FixtureTransport>>) => void
 >();
 const context = createDataContext({ count: 'count' })({
   description: 'Counts',
   glossary: {},
 });
-function response(data: unknown): Awaited<ReturnType<DataTransport>> {
+function response(data: unknown): Awaited<ReturnType<FixtureTransport>> {
   return {
     status: 200,
     body: { data, requestId: 'fixture', queriedAt: 'now', queryIds: [] },
   };
 }
 function makeApp(id: string) {
-  const client = createDataClient<Operations>({
+  const client = createTransportFixtureClient<Operations>({
     filters,
     transport(operation, input, signal) {
       const search =

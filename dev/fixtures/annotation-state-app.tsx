@@ -8,12 +8,11 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
-import {
-  createDataClient,
-  getDataAppNavigation,
-} from '@altertable/data-app/client';
+import { getDataAppNavigation } from '@altertable/data-app/client';
 import { searchFilter } from '@altertable/data-app/contract';
 import { useEffect } from 'react';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const dataApp = defineDataApp({
   title: 'Displayed context',
@@ -41,7 +40,7 @@ const operations = {
     },
   }),
 };
-const client = createDataClient<typeof operations>({
+const client = createTransportFixtureClient<typeof operations>({
   filters: { counts: operations.counts.filters },
   transport(_name, input) {
     const { period } = input as { period: string };

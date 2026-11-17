@@ -526,17 +526,7 @@ for (const source of ['bundle', 'packaged', 'url']) {
             .textContent()
         )
         .toContain('sql-query');
-      await app
-        .getByRole('button', { name: 'Denied query', exact: true })
-        .click();
-      await expect
-        .poll(() =>
-          app
-            .getByRole('status', { name: 'Query result', exact: true })
-            .textContent()
-        )
-        .toBe('{"publicError":true,"code":"forbidden"}');
-      expect(requests).toEqual(['host', 'host']);
+      expect(requests).toEqual(['host']);
     }
     if (source !== 'url') {
       await page

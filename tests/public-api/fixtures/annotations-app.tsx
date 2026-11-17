@@ -14,13 +14,8 @@ import {
   createDataClient,
   getDataAppTransport,
   getDataAppNavigation,
-  DataAppError,
 } from '@altertable/data-app/client';
-import {
-  connectionCheck,
-  searchFilter,
-  type ConnectionOperation,
-} from '@altertable/data-app/contract';
+import { connectionCheck, searchFilter } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -186,24 +181,6 @@ function App() {
         }}
       >
         Data query
-      </button>
-      <button
-        onClick={() => {
-          void createDataClient<{
-            forbidden: ConnectionOperation;
-          }>()
-            .query('forbidden', {})
-            .catch(error =>
-              setResult(
-                JSON.stringify({
-                  publicError: error instanceof DataAppError,
-                  code: error.code,
-                })
-              )
-            );
-        }}
-      >
-        Denied query
       </button>
       <button onClick={() => state.set('period', '')}>Clear filter</button>
       <button onClick={() => state.set('period', 'last-7')}>Last 7 days</button>

@@ -48,7 +48,7 @@ const operations = {
     },
   }),
 };
-const client = createDataClient<typeof operations>();
+const client = createDataClient({ operations });
 async function verifyResults() {
   const response = await client.query('report', {});
   const first: number | null | undefined = response.data.rows[0]?.count;

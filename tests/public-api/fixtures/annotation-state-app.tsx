@@ -8,16 +8,15 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
-import {
-  createDataClient,
-  getDataAppNavigation,
-} from '@altertable/data-app/client';
+import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   searchFilter,
   type DataOperation,
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { useEffect } from 'react';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const countsFilters = {
   period: searchFilter({
@@ -40,7 +39,7 @@ function changePeriod(period: string) {
   const navigation = getDataAppNavigation()!;
   navigation.update({ ...navigation.snapshot(), search: `?period=${period}` });
 }
-const client = createDataClient<{
+const client = createTransportFixtureClient<{
   counts: DataOperation<CountsInput, number> & {
     filters: typeof countsFilters;
   };

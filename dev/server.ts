@@ -24,11 +24,10 @@ import styles from '@/dev/fixtures/styles.html';
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
-import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
+import { dataApp as findingStarterApp } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/app';
 import findingStarterPage from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
-import { operations as findingStarterOperations } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/operations';
+import { dataApp as metricStarterApp } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/app';
 import metricStarterPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
-import { operations as metricStarterOperations } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/operations';
 
 const registeredQueries: Readonly<Record<string, { statement: string }>> = {
   ...hostedStarterApp.queries,
@@ -131,21 +130,21 @@ if (!lakehouse) {
 if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
-  operations: starterOperations,
+  queries: starterApp.queries,
   title: starterApp.title,
   port: port + 2,
 });
 if (isDevelopment)
   serveLocalApp({
     page: metricStarterPage,
-    operations: metricStarterOperations,
+    queries: metricStarterApp.queries,
     title: 'Local metric starter',
     port: port + 3,
   });
 if (isDevelopment)
   serveLocalApp({
     page: findingStarterPage,
-    operations: findingStarterOperations,
+    queries: findingStarterApp.queries,
     title: 'Local finding starter',
     port: port + 4,
   });
@@ -352,18 +351,6 @@ Bun.serve({
         queryId: 'sql-query',
       });
     }
-    if (path === '/api/data/forbidden')
-      return Response.json(
-        { error: { code: 'forbidden', message: 'Denied' } },
-        { status: 403 }
-      );
-    if (path === '/api/data/connection')
-      return Response.json({
-        data: true,
-        requestId: 'request',
-        queriedAt: '2026-09-30T00:00:00Z',
-        queryIds: ['query'],
-      });
 
     return new Response('Not found', { status: 404 });
   },

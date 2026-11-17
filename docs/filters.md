@@ -258,38 +258,3 @@ use app-owned drafts only when the task needs Apply/Cancel.
 Custom control ownership is needed only when generated controls cannot express
 the requirement; use `/ui` for that case. Do not reuse reserved inspection,
 presentation, or navigation URL keys.
-
-## Share filters with HTTP operation apps
-
-HTTP operation apps keep operations on the server, so the browser imports them
-as types only. Declare filters in a browser-safe module that both sides import:
-
-```ts
-// src/filters.ts
-import { choiceFilter } from '@altertable/data-app/contract';
-
-const groupName = choiceFilter({
-  // ... key, label, defaultValue, and options
-});
-
-export const operationFilters = {
-  sampleCountsByGroup: { groupName },
-  sampleCountsBySegment: { groupName },
-};
-```
-
-Each operation in `src/operations.ts` declares
-`filters: operationFilters.sampleCountsByGroup`, and the browser client receives
-the same map:
-
-```ts
-// src/App.tsx
-import { operationFilters } from '#app/filters.ts';
-import type { operations } from '#app/operations.ts';
-
-const { defineView } = createDataHooks(
-  createDataClient<typeof operations>({ filters: operationFilters })
-);
-```
-
-The client's types require `filters` whenever an operation declares them.

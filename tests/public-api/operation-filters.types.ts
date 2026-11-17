@@ -94,15 +94,6 @@ const total = defineView({ operation: 'total', dataContext: context });
 total.metric({} as never, data => ({ current: data, previous: 1 }));
 // @ts-expect-error filters belong to the operation
 defineView({ operation: 'total', dataContext: context, filters: {} });
-// HTTP clients need the filters
-// @ts-expect-error missing filters
-createDataClient<typeof operations>();
-createDataClient<typeof operations>({
-  filters: {
-    trend: operations.trend.filters,
-    segments: operations.segments.filters,
-  },
-});
 const bad = {
   trend: app.defineOperation({
     filters: {

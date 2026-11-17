@@ -11,7 +11,6 @@ import {
   type QueryDefinitions,
   type QueryParameters,
 } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test, vi } from 'vitest';
 
 const dataApp = defineDataApp({
@@ -67,7 +66,7 @@ function source(statements: DeliveredQuery[]): Lakehouse {
   };
 }
 
-test('config queries execute defaults and overrides with shared browser and HTTP evidence', async () => {
+test('config queries execute defaults and overrides with browser query evidence', async () => {
   const statements: DeliveredQuery[] = [];
   const operations = { products: products({ orgId: 'org-1' }) };
   expect(operations.products.queryNames).toEqual({ products: 'products' });
@@ -84,31 +83,12 @@ test('config queries execute defaults and overrides with shared browser and HTTP
       queryId: 'q1',
     },
   ]);
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: source(statements),
-  }));
-  const response = await handler(
-    new Request('http://localhost/api/data/products', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-    })
-  );
-  expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({
-    queries: result.queries,
-    data: result.data,
-  });
   const overridden = createDataClient({
     operations: { products: products({ orgId: 'org-1', limit: 5 }) },
     lakehouse: source(statements),
   });
   await overridden.query('products', {});
   expect(statements).toEqual([
-    {
-      statement: dataApp.queries.products.statement,
-      params: { orgId: 'org-1', limit: 10 },
-    },
     {
       statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
@@ -213,34 +193,6 @@ test('query failures reject missing, extra, invalid, and inherited parameters be
     });
   }
   expect(statements).toEqual([]);
-});
-
-test('HTTP authorization supplies protected parameter values and callers cannot override them', async () => {
-  const statements: DeliveredQuery[] = [];
-  for (const values of [{}, { orgId: 'other-org' }]) {
-    const handler = createDataHandler(
-      { products: products(values) },
-      async () => ({
-        lakehouse: source(statements),
-
-        queryParams: { orgId: 'org-1', environment: 'test' },
-      })
-    );
-    const response = await handler(
-      new Request('http://localhost/api/data/products', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: '{}',
-      })
-    );
-    expect(response.status).toBe(Object.hasOwn(values, 'orgId') ? 502 : 200);
-  }
-  expect(statements).toEqual([
-    {
-      statement: dataApp.queries.products.statement,
-      params: { orgId: 'org-1', limit: 10 },
-    },
-  ]);
 });
 
 test('registry validation checks declarations and defaults without interpreting SQL', () => {

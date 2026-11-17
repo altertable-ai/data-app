@@ -9,7 +9,6 @@ does not require a particular content structure or presentation story.
 | Task                         | Documentation                             |
 | ---------------------------- | ----------------------------------------- |
 | Customize local serving      | [Bun server](server-bun.md)               |
-| Authorize hosted viewers     | [Server](server.md)                       |
 | Customize the browser client | [Client](client.md#registered-operations) |
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).

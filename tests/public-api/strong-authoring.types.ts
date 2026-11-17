@@ -131,10 +131,6 @@ const conditionalView = app.defineOperation({
 // @ts-expect-error Narrow conditional filter maps before declaring facet dependencies.
 createDataClient({ operations: { view: conditionalView } });
 
-type Source = {
-  strings: DataOperation<{ search: string }, DimensionOption<string>[]>;
-  view: DataOperation<{ search: string }, number>;
-};
 const dataContext = createDataContext({})({
   description: 'View',
   glossary: {},
@@ -148,21 +144,6 @@ const noDefault = {
 } as const;
 // @ts-expect-error A default must be a concrete typed value, never undefined.
 defineDataApp({ ...header, queries: { items: noDefault } });
-const untyped = createDataClient();
-async function unknownDelivery() {
-  const response = await untyped.query('external', {});
-  // @ts-expect-error A type annotation cannot turn unchecked network data into a number.
-  const data: number = response.data;
-  return data;
-}
-void unknownDelivery;
-// @ts-expect-error Clients without an operation contract cannot be relabeled through hooks.
-createDataHooks<Source>(untyped);
-
-const erasedClient = { query: untyped.query };
-// @ts-expect-error Extracting a method cannot manufacture an operation registry contract.
-createDataHooks<Source>(erasedClient);
-
 // @ts-expect-error Empty names cannot be registered queries.
 defineDataApp({ ...header, queries: { '': emptyQuery } });
 defineDataApp({
@@ -189,7 +170,9 @@ type Branches = {
   alpha: DataOperation<{ text: string }, number>;
   beta: DataOperation<{ count: number }, number>;
 };
-const branchClient = createDataClient<Branches>();
+const branchClient = createDataClient<Branches>({
+  operations: { alpha: alphaOperation, beta: betaOperation },
+});
 const operation = choose ? 'alpha' : 'beta';
 // @ts-expect-error Narrow the operation before supplying its branch-specific input.
 void branchClient.query(operation, { text: 'only alpha' });

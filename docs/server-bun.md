@@ -11,11 +11,9 @@ when typechecking a Bun app.
 import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
 import { dataApp } from './app.ts';
-import { operations } from './operations.ts';
 
 serveLocalApp({
   page,
-  operations,
   queries: dataApp.queries,
   title: dataApp.title,
 });
@@ -23,7 +21,7 @@ serveLocalApp({
 
 The server binds to `127.0.0.1`. Its default port is `25837`, overridable through
 `PORT` or the `port` option. It serves the Bun HTML bundle and registered queries
-by ID. The `/api/data/:operation` route remains available for server-run operations.
+by ID.
 
 `localLakehouse()` reads the CLI proxy URL and token from
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN`. It also supports
@@ -32,5 +30,4 @@ server-only `ALTERTABLE_LAKEHOUSE_USERNAME` and
 Missing credentials fail at startup. Keep these variables out of browser code.
 
 Local serving does not authenticate hosted viewers.
-Use [the portable server handler](server.md) with per-request authorization when
-hosting an app for other people.
+Hosted apps authorize viewers in the host before executing registered queries.

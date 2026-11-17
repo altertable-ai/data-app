@@ -1,5 +1,5 @@
 /**
- * Typed clients for HTTP and iframe delivery; safe to import in the browser.
+ * Typed clients for registered-query delivery; safe to import in the browser.
  * @module @altertable/data-app/client
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/client.md
  */
@@ -13,7 +13,6 @@ export {
   type OperationFilters,
   DataAppError,
 } from '../authoring/client.ts';
-export { createHttpTransport, type DataTransport } from './transport.ts';
 export {
   createLocalQueryLakehouse,
   installLocalQueryLakehouse,

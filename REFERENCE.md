@@ -296,20 +296,9 @@ ControlBar (component, @altertable/data-app-react/ui): (props: ControlBarProps) 
 ControlBar.children: ReactNode
 ControlBar.…: plus props inherited from React
 ControlBarProps (type, @altertable/data-app-react/ui): = props listed as ControlBar.*
-createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : keyof OperationFilters<Operations> extends never ? [ ] : [ options: never ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations>; <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Create an HTTP operation client or execute declared operations locally. Without an operation contract, external operation data remains unknown.
-createDataClient.options.transport?: DataTransport
-createDataClient.options.endpoint?: string
-createDataClient.options.fetch?: (input: RequestInfo | URL, init: RequestInit): Promise<Response>
-createDataClient.options.fetch?: (input: string | URL | Request, init: BunFetchRequestInit): Promise<Response>
-createDataClient.options.fetch?: (input: string | URL | Request, init: RequestInit): Promise<Response>
-createDataClient.options.operations: Operations [variant 1 of 2]
-createDataClient.options.lakehouse?: Lakehouse [variant 1 of 2]
-createDataClient.options.transport?: DataTransport [variant 2 of 2]
-createDataClient.options.endpoint?: string [variant 2 of 2]
-createDataClient.options.fetch?: (input: RequestInfo | URL, init: RequestInit): Promise<Response> [variant 2 of 2]
-createDataClient.options.fetch?: (input: string | URL | Request, init: BunFetchRequestInit): Promise<Response> [variant 2 of 2]
-createDataClient.options.fetch?: (input: string | URL | Request, init: RequestInit): Promise<Response> [variant 2 of 2]
-createDataClient.options.filters?: OperationFilters<Operations> [variant 2 of 2] — Pass the same filter declarations the server operations read.
+createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Create a browser operation client.
+createDataClient.options.operations: Operations
+createDataClient.options.lakehouse?: Lakehouse
 createDataContext (function, @altertable/data-app-react): <const Names extends Record<string, string>>(queryNames: Names): <const Context extends Omit<DataContext, 'glossary'> & { glossary: Record<string, Omit<GlossaryEntry, 'queryNames'> & { queryNames?: Names[keyof Names][]; }>; }>(context: Context) => Context & { ...; } — Bind glossary query references and card evidence to the same registry.
 createDataHooks (function, @altertable/data-app-react): <Operations extends DataOperations>(client: DataClient<Operations>): { defineView: <Name extends ViewOperationName<Operations>, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: { operation: Name; dataContext: DataContext; describeInput?: ((input: FilterInput<...>) => s… — Bind declared operations to URL filters, displayed readings, and request feedback. The client's operations declare their filters; `<DataApp>` renders their controls.
 createDataHooks.client.filters: Readonly<Record<string, FilterCollection>> — Each operation's filters; views derive their inputs and controls from them.
@@ -423,7 +412,7 @@ DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/
 DataAppView (type, @altertable/data-app-react): <Data, Input> — A declared data or time view that `<DataApp>` can run and describe.
 DataAppView.scope: (snapshot: DisplayedSnapshot<Data, Input>) => string
 DataClient (type, @altertable/data-app/client): <Operations> = props listed as createDataHooks.client.*
-DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Browser execution and HTTP operation delivery are mutually exclusive.
+DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Execute declared operations in the browser against registered query IDs.
 DataContext (type, @altertable/data-app-react)
 DataContext.description: ReactNode
 DataContext.glossary: Record<string, GlossaryEntry>
@@ -437,7 +426,7 @@ DataIdentifierDefinition.name: string
 DataIdentifierDefinition.kind: 'table' [variant 2 of 2]
 DataIdentifierDefinition.catalog: string [variant 2 of 2]
 DataIdentifierDefinition.schema: string [variant 2 of 2]
-DataOperation (type, @altertable/data-app/contract): <Input, Output> — The input parser runs in the operation executor's runtime: server for HTTP apps, browser for bundle apps. Browser validation does not replace backend authorization or query limits.
+DataOperation (type, @altertable/data-app/contract): <Input, Output> — The input parser runs in the browser. Browser validation does not replace backend authorization or query limits.
 DataOperation.filters?: Readonly<FilterCollection> — The app filters the operation reads; its input has one field per filter.
 DataOperation.input: (value: unknown) => Input
 DataOperation.run: (context: OperationContext, input: Input) => Promise<Output>
@@ -929,8 +918,9 @@ FunnelChartSeries.values: readonly number[] — Finite, nonnegative counts align
 FunnelChartStep (type, @altertable/data-app-react/ui): Ordered step with a unique, nonblank ID.
 FunnelChartStep.id: string
 FunnelChartStep.label: string
-GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server.
+GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and supply the app's registered connection operation.
 GettingStarted.dataContext: DataContext
+GettingStarted.client: DataClient<{ connection: ConnectionOperation; }>
 GlossaryDefinition (component, @altertable/data-app-react/ui): (props: GlossaryDefinitionProps)
 GlossaryDefinition.entry: GlossaryEntry
 GlossaryDefinition.children?: ReactNode

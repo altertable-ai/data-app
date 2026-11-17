@@ -18,46 +18,14 @@ and send it to `POST /api/query/:queryId`. Both backends execute only registered
 SQL. The local Bun server receives `dataApp.queries` through `serveLocalApp()`.
 Keep `run()` and its imports browser-safe in this mode.
 
-## HTTP operations
-
-```ts
-import { createDataClient } from '@altertable/data-app/client';
-import { operationFilters } from './filters.ts';
-import type { operations } from './operations.ts';
-
-const client = createDataClient<typeof operations>({
-  filters: operationFilters,
-});
-const response = await client.query(
-  'sampleCountsByGroup',
-  { groupName: 'all' },
-  { signal }
-);
-```
-
-Use this delivery when operations must stay on the server. Keep the operations
-import type-only and share browser-safe filter declarations between both sides
-([shared filters](filters.md#share-filters-with-http-operation-apps)).
-Inputs and data are inferred from the operation map and `run()`.
-
-The default endpoint is `/api/data`. Override it with
-`createDataClient<typeof operations>({ filters, endpoint, fetch })` to change the base URL or supply a Fetch
-implementation. Calls POST JSON to `/api/data/:operation`; the client sends
-operation inputs rather than SQL or credentials.
-
 For direct client calls, render `response.data` and label it with `response.input`
 so retained results keep their original scope during refresh. React views handle
-this automatically. For custom error handling, import `DataAppError` from the same
-entry for public codes and request IDs. Pass an abort signal to cancel a request.
+this automatically. Import `DataAppError` for public codes and request IDs.
+Pass an abort signal to cancel a query.
 
-See [contracts](contract.md), [server handlers](server.md), and
-[React bindings](react.md).
+See [contracts](contract.md) and [React bindings](react.md).
 
 ## Iframe transport
-
-`createDataClient<typeof operations>({ filters, transport })` accepts a
-`DataTransport` for custom HTTP operation delivery. Without it, the client uses
-`/api/data/:operation`. `createHttpTransport()` provides the underlying adapter.
 
 A URL-hosted app configures trust and installs the bridge before mounting:
 

@@ -416,17 +416,12 @@ describe('authoring', () => {
     let gate = new Promise<void>(resolve => {
       release = resolve;
     });
-    await page.route('**/api/data/connection', async route => {
+    await page.route('**/api/query/connection', async route => {
       await gate;
       if (fail)
         await route.fulfill({
           status: 503,
-          json: {
-            error: {
-              code: 'source_unavailable',
-              message: 'Fixture unavailable',
-            },
-          },
+          json: { reason: 'unavailable' },
         });
       else await route.continue();
     });

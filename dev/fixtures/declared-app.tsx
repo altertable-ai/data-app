@@ -7,7 +7,6 @@ import {
   TextWidget,
   VisualizationWidget,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   searchFilter,
@@ -15,6 +14,8 @@ import {
 } from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useState } from 'react';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const pending = new Map<string, (response: TransportResponse) => void>();
 const version = searchFilter({
@@ -36,7 +37,7 @@ const operations = {
   }),
   beta: defineOperation({ queries: {}, policy, run: answeredByTransport }),
 };
-const client = createDataClient<typeof operations>({
+const client = createTransportFixtureClient<typeof operations>({
   filters: { alpha: operations.alpha.filters },
   transport(name, input, signal) {
     const version =

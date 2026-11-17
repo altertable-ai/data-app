@@ -13,11 +13,12 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
-import {
-  createDataClient,
-  createHttpTransport,
-} from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
+
+import {
+  createTransportFixtureClient,
+  fixtureHttpTransport,
+} from '@/tests/public-api/fixtures/transport-client';
 const dataApp = defineDataApp({
   title: 'Responsive report',
   description: 'Explore the report across screen sizes.',
@@ -25,10 +26,10 @@ const dataApp = defineDataApp({
   queries: {},
 });
 const { defineView } = createDataHooks(
-  createDataClient<{
+  createTransportFixtureClient<{
     activity: DataOperation<Record<string, never>, number[]>;
   }>({
-    transport: createHttpTransport({ endpoint: '/layout-data' }),
+    transport: fixtureHttpTransport('/layout-data'),
   })
 );
 const context = createDataContext({ activity: 'activity' })({

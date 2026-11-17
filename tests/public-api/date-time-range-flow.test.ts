@@ -13,7 +13,6 @@ import {
   resolveDateTimeRange,
   type DateTimeRange,
 } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, expectTypeOf, test, vi } from 'vitest';
 
 const relative: DateTimeRange = {
@@ -436,67 +435,7 @@ test('mixed ranges validate in the reporting zone and survive URL restoration', 
   }
 });
 
-test('HTTP host datetime parameters decode validated JSON and remain protected from caller overrides', async () => {
-  const dataApp = defineDataApp({
-    title: 'Host range',
-    description: 'Protected range',
-    scope: { organization: 'test', environment: 'test' },
-    queries: {
-      events: {
-        statement: 'SELECT $period AS start',
-        params: { period: { type: 'dateTimeRange' } },
-        projections: { start: { type: 'string' } },
-      },
-    },
-  });
-  const operation = dataApp.defineOperation({
-    input: (value: unknown) => ({ override: value === true }),
-    checks: [{ override: false }],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
-    async run({ query }, input) {
-      return input.override
-        ? (await query('events', { period: relative })).rows
-        : (await query('events')).rows;
-    },
-  });
-  let sqlCalls = 0;
-  let hostValue = serializeDateTimeRange({
-    from: new Date('2026-07-02T16:00:00.000Z'),
-    to: relative.from,
-  });
-  const handle = createDataHandler({ events: operation }, async () => ({
-    queryParams: { period: hostValue },
-    lakehouse: {
-      async queryAll(_statement, { params }) {
-        sqlCalls++;
-        expect(params?.period).toBe(hostValue);
-        return { columns: [{ name: 'start' }], rows: [['2026-07-02 16:00']] };
-      },
-    },
-  }));
-  function request(override = false) {
-    return new Request('http://localhost/api/data/events', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(override),
-    });
-  }
-  expect((await handle(request())).status).toBe(200);
-  expect(sqlCalls).toBe(1);
-  expect((await handle(request(true))).status).toBe(502);
-  expect(sqlCalls).toBe(1);
-  for (const invalid of [
-    'not json',
-    '{"from":"not a date"}',
-    '{"from":{"anchor":"INVALID","offset":[]}}',
-  ]) {
-    hostValue = invalid;
-    expect((await handle(request())).status).toBe(502);
-  }
-  expect(sqlCalls).toBe(1);
-});
-
-test('nonpositive fixed relative ranges are rejected by variables and HTTP input before querying', async () => {
+test('nonpositive fixed relative ranges are rejected by variables before querying', async () => {
   const period = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '1h',
@@ -506,32 +445,6 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
     key: 'period',
     defaultValue: '1h',
   });
-  const dataApp = defineDataApp({
-    title: 'Validated range',
-    description: 'Relative order',
-    scope: { organization: 'test', environment: 'test' },
-    queries: {
-      events: {
-        statement: 'SELECT $period AS start',
-        params: { period: { type: 'dateTimeRange' } },
-        projections: { start: { type: 'string' } },
-      },
-    },
-  });
-  const operation = dataApp.defineOperation({
-    filters: { period },
-    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
-    async run({ query }, input) {
-      return (await query('events', input)).rows;
-    },
-  });
-  const queryAll = vi.fn(async () => ({
-    columns: [{ name: 'start' }],
-    rows: [['start']],
-  }));
-  const handle = createDataHandler({ events: operation }, async () => ({
-    lakehouse: { queryAll },
-  }));
   for (const amount of [0, 1]) {
     for (const to of [
       null,
@@ -549,16 +462,7 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
       expect(() => parseDateTimeRange(range)).toThrow(
         'Start must be before end.'
       );
-      const response = await handle(
-        new Request('http://localhost/api/data/events', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ period: range }),
-        })
-      );
-      expect(response.status).toBe(400);
     }
   }
-  expect(queryAll).not.toHaveBeenCalled();
   expect(period.valid(period.defaultValue)).toBe(true);
 });

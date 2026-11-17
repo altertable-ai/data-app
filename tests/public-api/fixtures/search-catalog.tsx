@@ -13,13 +13,14 @@ import {
   mountDataApp,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   searchFilter,
   type DataOperation,
   type FilterInput,
   type SearchFilter,
 } from '@altertable/data-app/contract';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const catalog = {
   people: [
@@ -62,7 +63,7 @@ if (new URLSearchParams(location.search).has('secondSearch')) {
 if (new URLSearchParams(location.search).has('noSearch')) {
   delete searchFilters.q;
 }
-const client = createDataClient<{
+const client = createTransportFixtureClient<{
   catalog: DataOperation<FilterInput<typeof searchFilters>, typeof catalog> & {
     filters: typeof searchFilters;
   };

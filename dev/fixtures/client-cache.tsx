@@ -1,4 +1,3 @@
-import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   facetFilter,
@@ -14,6 +13,7 @@ import {
   getViewDefinition,
   type ClientFilters,
 } from '@/packages/data-app-react/src/view-runtime.tsx';
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 
 const context = registerContext({})({
   description: 'Fixture context',
@@ -50,7 +50,7 @@ const pending = new Map<string, (response: TransportResponse) => void>();
 function createFixtureClient(id: string) {
   const calls = new Map<string, number>();
 
-  return createDataClient<typeof operations>({
+  return createTransportFixtureClient<typeof operations>({
     filters: { metric: operations.metric.filters },
     transport(name, _, signal) {
       calls.set(name, (calls.get(name) ?? 0) + 1);

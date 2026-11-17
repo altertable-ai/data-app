@@ -11,7 +11,6 @@ import {
   type DateTimeRangeInput,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
 test('an operation reading a date range and dimension validates and escapes its input', async () => {
@@ -408,43 +407,4 @@ test('operations sharing a client share one declaration per filter name', () => 
   ).toThrow(
     'Operations read different filters named group; declare it once and share it (second).'
   );
-});
-
-test('HTTP clients receive the filters their server operations read', async () => {
-  const group = groupFilter();
-  const operations = {
-    counts: defineOperation({
-      queries: {},
-      filters: { group },
-      policy,
-      async run(_, input) {
-        return input.group === 'alpha' ? 1 : 0;
-      },
-    }),
-  };
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: {
-      async queryAll() {
-        return { columns: [], rows: [] };
-      },
-    },
-  }));
-  const client = createDataClient<typeof operations>({
-    filters: { counts: operations.counts.filters },
-    endpoint: 'http://localhost/api/data',
-    fetch: Object.assign(
-      async (url: RequestInfo | URL, options?: RequestInit) =>
-        handler(new Request(url, options)),
-      { preconnect() {} }
-    ),
-  });
-  expect(client.filters).toEqual({ counts: { group } });
-  expect(await client.query('counts', { group: 'alpha' })).toMatchObject({
-    data: 1,
-    input: { group: 'alpha' },
-  });
-  await expect(
-    // @ts-expect-error The server rejects selections outside the declared options.
-    client.query('counts', { group: 'beta' })
-  ).rejects.toMatchObject({ code: 'invalid_input' });
 });

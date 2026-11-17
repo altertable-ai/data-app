@@ -7,15 +7,18 @@ import {
   TextWidget,
   VisualizationWidget,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
-import type { DataTransport } from '@altertable/data-app/client';
 import {
   searchFilter,
   type DataOperation,
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
-type TransportResponse = Awaited<ReturnType<DataTransport>>;
+
+import {
+  createTransportFixtureClient,
+  type FixtureTransport,
+} from '@/tests/public-api/fixtures/transport-client';
+type TransportResponse = Awaited<ReturnType<FixtureTransport>>;
 
 const alphaFilters = {
   version: searchFilter({
@@ -26,7 +29,7 @@ const alphaFilters = {
 };
 
 const pending = new Map<string, (response: TransportResponse) => void>();
-const client = createDataClient<{
+const client = createTransportFixtureClient<{
   alpha: DataOperation<FilterInput<typeof alphaFilters>, { count: number }> & {
     filters: typeof alphaFilters;
   };

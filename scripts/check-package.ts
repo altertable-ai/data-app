@@ -474,8 +474,7 @@ await assert.rejects(copyExample('../escape', process.argv[1]), /Unknown data ap
       `
     import { defineDataApp } from '@altertable/data-app';
     import { createDataClient } from '@altertable/data-app/client';
-    import { createDataHandler } from '@altertable/data-app/server';
-    if ([defineDataApp, createDataClient, createDataHandler].some(value => typeof value !== 'function')) throw new Error('Portable exports unavailable');
+    if ([defineDataApp, createDataClient].some(value => typeof value !== 'function')) throw new Error('Portable exports unavailable');
   `,
     ],
     base
@@ -484,7 +483,7 @@ await assert.rejects(copyExample('../escape', process.argv[1]), /Unknown data ap
     base,
     `export { defineDataApp } from '@altertable/data-app';
 export { createDataClient } from '@altertable/data-app/client';
-export { createDataHandler } from '@altertable/data-app/server';`
+`
   );
   console.log(
     `Base consumer: ${baseNames.size} installed dependency names; no React or server adapter.`
@@ -687,13 +686,12 @@ console.log(MetricWidget, DataAppBridge);\n`
   await writeFile(
     join(temporary, 'server.ts'),
     `import { defineDataApp } from "@altertable/data-app";
-import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app-bun";
 import { serveAppFile, runAppFilePreview, type AppFilePreview } from "@altertable/data-app-bun/preview";
 const runner: () => Promise<AppFilePreview> = runAppFilePreview;
 if (typeof runner !== "function") throw new Error("Preview runner is unavailable");
 if (typeof serveAppFile !== "function") throw new Error("Preview export is unavailable");
-if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
+if (typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
 const app = defineDataApp({ title: "Server app", description: "Declare an app on the server.", scope: { organization: "demo", environment: "test" }, queries: {} });
 if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
@@ -768,16 +766,6 @@ try {
     )
   )
     throw new Error('Worker contains unsupported runtime dependencies.');
-  await run(
-    [
-      'node',
-      '--input-type=module',
-      '-e',
-      'import("@altertable/data-app/server").then(module => { if (typeof module.createDataHandler !== "function") process.exit(1) })',
-    ],
-    temporary
-  );
-
   const embed = await Bun.build({
     entrypoints: [join(temporary, 'embed.tsx')],
     target: 'browser',
@@ -915,7 +903,7 @@ if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('M
     target: 'browser',
   });
   console.log(
-    'Packed documentation, exports, declarations, explicit styles, tree-shaking, and server imports verified.'
+    'Packed documentation, exports, declarations, explicit styles, tree-shaking, and Bun imports verified.'
   );
 } finally {
   await rm(temporary, { recursive: true, force: true });

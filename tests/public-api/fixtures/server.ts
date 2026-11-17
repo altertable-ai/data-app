@@ -5,7 +5,6 @@ import { serveLocalApp } from '@altertable/data-app-bun';
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import { dataApp as localStarterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
-import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
@@ -195,11 +194,7 @@ const server = Bun.serve({
         });
       return new Response('Unexpected query', { status: 400 });
     }
-    if (url.pathname === '/api/data/forbidden')
-      return Response.json(
-        { error: { code: 'forbidden', message: 'Denied' } },
-        { status: 403 }
-      );
+
     return new Response('Not found', { status: 404 });
   },
 });
@@ -207,7 +202,6 @@ const server = Bun.serve({
 process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
 const local = serveLocalApp({
   page: starterPage,
-  operations,
   queries: localStarterApp.queries,
   title: 'Local starter',
   port: 0,

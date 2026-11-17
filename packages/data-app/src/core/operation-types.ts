@@ -60,8 +60,8 @@ export type OperationContext = {
 };
 
 /**
- * The input parser runs in the operation executor's runtime: server for HTTP apps, browser for
- * bundle apps. Browser validation does not replace backend authorization or query limits.
+ * The input parser runs in the browser. Browser validation does not replace
+ * backend authorization or query limits.
  * Registered queries decode rows from their declared projections; `run` derives the operation's data.
  */
 export type DataOperation<Input, Output> = {
@@ -100,5 +100,5 @@ export type DataQueryBody<Output> = {
   queries?: DisclosedQuery[];
 };
 
-/** Delivery envelope shared by HTTP and iframe transports. */
+/** Delivery envelope for typed message routes. */
 export type TransportResponse<Body = unknown> = { status: number; body: Body };

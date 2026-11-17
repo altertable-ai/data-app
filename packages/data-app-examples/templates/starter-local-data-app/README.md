@@ -30,8 +30,7 @@ specified by the app brief. Change identity, appearance, and queries in `app.ts`
 bun run check
 ```
 
-`bun run check` includes the build, which writes browser assets to `dist/`. Hosting them requires an authorized
-`/api/data` backend; the local adapter does not authenticate hosted viewers.
+`bun run check` includes the build, which writes browser assets to `dist/`. Hosted apps require an authorized query bridge; the local adapter does not authenticate hosted viewers.
 
 ## License
 

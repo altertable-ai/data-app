@@ -9,13 +9,14 @@ import {
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   searchFilter,
   type DataOperation,
   type FilterInput,
 } from '@altertable/data-app/contract';
 import { Component, type ReactNode } from 'react';
+
+import { createTransportFixtureClient } from '@/tests/public-api/fixtures/transport-client';
 const dataApp = defineDataApp({
   title: 'Binding ownership',
   description: 'Verify that displayed bindings follow their owning view.',
@@ -32,7 +33,7 @@ const rowFilters = {
   search: searchFilter({ key: 'q', label: 'Search rows' }),
 };
 const { defineView } = createDataHooks(
-  createDataClient<{
+  createTransportFixtureClient<{
     rows: DataOperation<FilterInput<typeof rowFilters>, number> & {
       filters: typeof rowFilters;
     };

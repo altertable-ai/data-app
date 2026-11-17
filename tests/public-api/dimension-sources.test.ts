@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import type { Lakehouse } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
 function sourceApp(mode: 'single' | 'multiple' = 'single') {
@@ -70,55 +69,6 @@ function sourceApp(mode: 'single' | 'multiple' = 'single') {
   return { app, region, customer, input, operations };
 }
 
-test('a selected customer validates independently and discloses its exact lookup before the business query', async () => {
-  const { operations, input } = sourceApp();
-  const calls: string[] = [];
-  const lakehouse: Lakehouse = {
-    async queryAll(statement, { params, limit }) {
-      if (statement.includes('FROM regions')) {
-        calls.push('region');
-        expect(params).toEqual({ member: 'eu' });
-        expect(limit).toBe(2);
-        return {
-          columns: [{ name: 'value' }, { name: 'label' }],
-          rows: [['eu', 'Europe']],
-        };
-      }
-      if (statement.includes('FROM customers')) {
-        calls.push('customer');
-        expect(params).toEqual({
-          member: 999,
-          tenant: 'trusted',
-        });
-        return {
-          columns: [{ name: 'value' }, { name: 'label' }],
-          rows: [[999, 'Beyond first page']],
-        };
-      }
-      calls.push('business');
-      return { columns: [{ name: 'sales' }], rows: [[10]] };
-    },
-  };
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse,
-    queryParams: { tenant: 'trusted' },
-  }));
-  const response = await handler(
-    new Request('http://localhost/api/data/sales', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(input),
-    })
-  );
-  expect(response.status).toBe(200);
-  const body = await response.json();
-  expect(calls).toEqual(['customer', 'business']);
-  expect(body.queries.map((query: { name: string }) => query.name)).toEqual([
-    'customers',
-    'business',
-  ]);
-});
-
 test('invalid memberships and failed lookups prevent business execution', async () => {
   const { operations, input } = sourceApp();
   for (const fail of [false, true]) {
@@ -174,40 +124,6 @@ test('source declarations reject a query with the wrong member and option type',
   ).toThrow('matching nullable member');
 });
 
-test('invalid independent membership is rejected before the business query', async () => {
-  const { operations, input } = sourceApp();
-  const calls: string[] = [];
-  const handler = createDataHandler(operations, async () => ({
-    queryParams: { tenant: 'trusted' },
-    lakehouse: {
-      async queryAll(statement) {
-        if (statement.includes('FROM regions')) {
-          calls.push('regions');
-          return {
-            columns: [{ name: 'value' }, { name: 'label' }],
-            rows: [['eu', 'Europe']],
-          };
-        }
-        if (statement.includes('FROM customers')) {
-          calls.push('customers');
-          return { columns: [{ name: 'value' }, { name: 'label' }], rows: [] };
-        }
-        calls.push('business');
-        return { columns: [], rows: [] };
-      },
-    },
-  }));
-  const response = await handler(
-    new Request('http://localhost/api/data/sales', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(input),
-    })
-  );
-  expect(response.status).toBe(400);
-  expect(calls).toEqual(['customers']);
-});
-
 test('cancellation during a membership lookup prevents late business execution', async () => {
   const { operations, input } = sourceApp();
   let completeLookup: (() => void) | undefined;
@@ -244,53 +160,6 @@ test('cancellation during a membership lookup prevents late business execution',
   completeLookup!();
   await new Promise(resolve => setTimeout(resolve, 0));
   expect(business).toBe(false);
-});
-
-test('HTTP automatically registers authorized selectors and exact selected labels separately from options', async () => {
-  const { operations } = sourceApp();
-  let authorized = 0;
-  let queried = 0;
-  const handler = createDataHandler(operations, async () => {
-    authorized++;
-    return {
-      queryParams: { tenant: 'trusted' },
-      lakehouse: {
-        async queryAll(statement, { params, limit }) {
-          queried++;
-          if (statement.includes('FROM regions'))
-            return {
-              columns: [{ name: 'value' }, { name: 'label' }],
-              rows: [['eu', 'Europe']],
-            };
-          expect(params).toEqual({
-            member: 999,
-            tenant: 'trusted',
-          });
-          expect(limit).toBe(2);
-          return {
-            columns: [{ name: 'value' }, { name: 'label' }],
-            rows: [[999, 'Beyond first page']],
-          };
-        },
-      },
-    };
-  });
-  // Generated controls request this selector without adding it to the author's operation registry.
-  const response = await handler(
-    new Request('http://localhost/api/data/__dimension%3Acustomer', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        member: 999,
-      }),
-    })
-  );
-  expect(response.status).toBe(200);
-  expect((await response.json()).data).toEqual([
-    { value: 999, label: 'Beyond first page' },
-  ]);
-  expect(authorized).toBe(1);
-  expect(queried).toBe(1);
 });
 
 for (const kind of ['include', 'exclude'] as const) {

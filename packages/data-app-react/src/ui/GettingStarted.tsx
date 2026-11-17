@@ -1,5 +1,6 @@
-import { createDataClient } from '@altertable/data-app/client';
+import type { DataClient } from '@altertable/data-app/client';
 import type { ConnectionOperation } from '@altertable/data-app/contract';
+import { useMemo } from 'react';
 
 import { createDataHooks } from '../hooks.ts';
 import { useDeclaredResult } from '../view-runtime.tsx';
@@ -14,20 +15,24 @@ const connectionContext = registerContext({})({
   glossary: {},
 });
 
-const client = /* @__PURE__ */ createDataClient<{
-  connection: ConnectionOperation;
-}>();
-const { defineView } = /* @__PURE__ */ createDataHooks(client);
-
-const connectionView = defineView({
-  dataContext: connectionContext,
-  operation: 'connection',
-  describeInput: () => 'the connection',
-});
-
 /** Query-backed connection state and next steps for a newly created app. Mount within
- * `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server. */
-export function GettingStarted({ dataContext }: { dataContext: DataContext }) {
+ * `DataAppProvider` and supply the app's registered connection operation. */
+export function GettingStarted({
+  dataContext,
+  client,
+}: {
+  dataContext: DataContext;
+  client: DataClient<{ connection: ConnectionOperation }>;
+}) {
+  const connectionView = useMemo(
+    () =>
+      createDataHooks(client).defineView({
+        dataContext: connectionContext,
+        operation: 'connection',
+        describeInput: () => 'the connection',
+      }),
+    [client]
+  );
   const connection = useDeclaredResult(connectionView);
   const state =
     connection.view.kind === 'error' || connection.view.kind === 'stale-error'

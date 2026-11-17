@@ -13,17 +13,15 @@ Requires Bun.
 
 ## Usage
 
-Serve a local app's HTML entry and operation registry:
+Serve a local app's HTML entry and query registry:
 
 ```ts
 import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
 import { dataApp } from './app.ts';
-import { operations } from './operations.ts';
 
 serveLocalApp({
   page,
-  operations,
   queries: dataApp.queries,
   title: dataApp.title,
 });
@@ -32,8 +30,7 @@ serveLocalApp({
 `serveLocalApp()` uses server-only credentials to execute registered queries by
 ID. Browser operations use their `query()` helper.
 
-Local serving does not authenticate hosted viewers; use
-`@altertable/data-app/server` with per-request authorization for hosted apps.
+Local serving does not authenticate hosted viewers. Hosted apps authorize viewers in the host.
 
 ## Preview a single-file app
 

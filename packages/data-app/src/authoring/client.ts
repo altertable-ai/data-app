@@ -1,4 +1,4 @@
-/** Clients and HTTP delivery configured by app authors. */
+/** Browser operation clients configured by app authors. */
 export {
   createDataClient,
   type InputOf,

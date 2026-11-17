@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import { type QueryResult } from '@altertable/data-app/contract';
-import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
 const app = defineDataApp({
@@ -55,7 +54,7 @@ function client(response: QueryResult) {
   });
 }
 
-test('projection declarations decode typed records by returned name in browser and HTTP operations', async () => {
+test('projection declarations decode typed records by returned name in browser operations', async () => {
   const expected = [
     {
       country: 'France',
@@ -69,25 +68,6 @@ test('projection declarations decode typed records by returned name in browser a
   const browser = await client(result()).query('revenue', {});
   expect(browser.data).toEqual(expected);
   expect(browser.queryIds).toEqual(['revenue-query']);
-  const handler = createDataHandler({ revenue: operation }, async () => ({
-    lakehouse: {
-      async queryAll() {
-        return result();
-      },
-    },
-  }));
-  const response = await handler(
-    new Request('https://app.example/api/data/revenue', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-    })
-  );
-  expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({
-    data: expected,
-    queryIds: ['revenue-query'],
-  });
   const present = result();
   present.rows = [[false, '-0.5', 'Measured', false, 0, 'France']];
   expect((await client(present).query('revenue', {})).data).toEqual([
@@ -355,7 +335,7 @@ test('all-null rows preserve nullable values and intentional null-only projectio
   }
 });
 
-test('run manipulates declared scalar types after query casting in browser and HTTP delivery', async () => {
+test('run manipulates declared scalar types after query casting in browser delivery', async () => {
   const declared = defineDataApp({
     title: 'Scalar casts',
     description: 'Decode before deriving data.',
@@ -406,16 +386,6 @@ test('run manipulates declared scalar types after query casting in browser and H
   ];
   const browser = createDataClient({ operations: { values }, lakehouse });
   expect((await browser.query('values', {})).data).toEqual(expected);
-  const handle = createDataHandler({ values }, async () => ({ lakehouse }));
-  const response = await handle(
-    new Request('https://app.example/api/data/values', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-    })
-  );
-  expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({ data: expected });
 });
 
 test('malformed field declarations fail even when a query would return no rows', () => {
