@@ -1115,7 +1115,7 @@ MetricWidget.content: string | (string & Iterable<ReactNode>) | (string & Promis
 MetricWidget.…: plus props inherited from React
 MetricWidgetProps (type, @altertable/data-app-react): <Data, Input> = props listed as MetricWidget.*
 MetricWidgetProps (type, @altertable/data-app-react/ui): = props listed as MetricWidget.* — VisualizationWidget with a formatted metric, optional comparison, and evidence.
-mountDataApp (function, @altertable/data-app-react): <const Queries extends QueryDefinitions>(options: {…}): void — Mount once per document; installs document identity and the shared request provider.
+mountDataApp (function, @altertable/data-app-react): <const Queries extends QueryDefinitions>(options: {…}): void — Mount once per browser document; server imports do not mount.
 mountDataApp.options.app: DataAppDefinition<Queries>
 mountDataApp.options.component: ComponentType
 mountDataApp.options.root?: HTMLElement | null

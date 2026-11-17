@@ -14,23 +14,27 @@ import { I18nProvider } from 'react-aria-components';
 import { createRoot } from 'react-dom/client';
 
 import { DataAppContext } from './app-context.ts';
+import { injectDataAppStyles } from './styles.ts';
 import { InspectionProvider } from './ui/InspectionProvider.tsx';
 
-/** Mount once per document; installs document identity and the shared request provider. */
+/** Mount once per browser document; server imports do not mount. */
 export function mountDataApp<const Queries extends QueryDefinitions>({
   app,
   component: Component,
-  root = document.getElementById('root'),
+  root,
 }: {
   app: DataAppDefinition<Queries>;
   component: ComponentType;
   root?: HTMLElement | null;
 }): void {
-  invariant(root, 'Data app root element is missing.');
+  if (typeof document === 'undefined') return;
+  const target = root === undefined ? document.getElementById('root') : root;
+  invariant(target, 'Data app root element is missing.');
+  injectDataAppStyles();
   document.documentElement.lang = navigator.language;
   document.title = dataAppTitle(app);
   getDataAppNavigation();
-  createRoot(root, {
+  createRoot(target, {
     onUncaughtError(error) {
       console.error(error);
       getDataAppTransport()?.fail(error);

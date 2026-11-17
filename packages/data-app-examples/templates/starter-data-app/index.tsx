@@ -8,7 +8,6 @@ import {
   TableWidget,
   Stack,
   TextContent,
-  injectDataAppStyles,
   mountDataApp,
   MetricWidget,
 } from '@altertable/data-app-react';
@@ -191,7 +190,4 @@ function App() {
     </DataApp>
   );
 }
-if (typeof document !== 'undefined') {
-  injectDataAppStyles();
-  mountDataApp({ app: dataApp, component: App });
-}
+mountDataApp({ app: dataApp, component: App });

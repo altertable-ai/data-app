@@ -34,6 +34,9 @@ describe('authoring', () => {
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
     await expect
+      .poll(() => app.locator('style[data-altertable-styles]').count())
+      .toBe(1);
+    await expect
       .poll(() =>
         page
           .getByRole('group', { name: 'Host page actions', exact: true })

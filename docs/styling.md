@@ -3,7 +3,8 @@
 Keep default appearance unless customization is requested. Use components and
 typed props first. Configure appearance once through
 `dataApp.appearance`; see [formatting and appearance](formatting-and-appearance.md).
-Call `injectDataAppStyles()` before mounting and use one `<DataApp>` per document.
+`mountDataApp()` installs styles. When mounting `DataAppProvider` yourself, call
+`injectDataAppStyles()` first. Use one `<DataApp>` per document.
 
 ## Customize
 

@@ -16,7 +16,7 @@ Mount a simple static screen into an element with `id="root"`:
 
 ```tsx
 import { defineDataApp } from '@altertable/data-app';
-import { injectDataAppStyles, mountDataApp } from '@altertable/data-app-react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { MetricWidget } from '@altertable/data-app-react/ui';
 
 const dataApp = defineDataApp({
@@ -36,13 +36,12 @@ function App() {
   );
 }
 
-injectDataAppStyles();
 mountDataApp({ app: dataApp, component: App });
 ```
 
 Use the main entry for declared views, bound widgets, and layouts; `/ui` supports
-setup screens, static content, and custom composition. Install styles explicitly
-with `injectDataAppStyles()`.
+setup screens, static content, and custom composition. When mounting
+`DataAppProvider` yourself, install styles with `injectDataAppStyles()`.
 
 To host an app iframe, use `@altertable/data-app-embed/react`.
 

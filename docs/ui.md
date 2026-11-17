@@ -20,8 +20,8 @@ derive findings from the displayed data. Standard widgets and `<DataApp>`
 already own these experiences.
 
 For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
-Call `injectDataAppStyles()` before mounting either entry; imports do not install
-styles.
+`mountDataApp()` installs styles. For a custom root using `DataAppProvider`, call
+`injectDataAppStyles()` before mounting; imports do not install styles.
 
 ## Tooltips and explanations
 

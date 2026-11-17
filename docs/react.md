@@ -7,9 +7,8 @@ React and React DOM 19.2 or newer are required. Start with
 ## Mount the app
 
 ```tsx
-import { injectDataAppStyles, mountDataApp } from '@altertable/data-app-react';
+import { mountDataApp } from '@altertable/data-app-react';
 
-injectDataAppStyles();
 mountDataApp({ app: dataApp, component: App });
 ```
 

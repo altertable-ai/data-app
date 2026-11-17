@@ -1,9 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
-import {
-  createDataContext,
-  injectDataAppStyles,
-  mountDataApp,
-} from '@altertable/data-app-react';
+import { createDataContext, mountDataApp } from '@altertable/data-app-react';
 import {
   createDataHooks,
   DataApp,
@@ -351,7 +347,4 @@ function App() {
     </DataApp>
   );
 }
-if (typeof document !== 'undefined') {
-  injectDataAppStyles();
-  mountDataApp({ app: dataApp, component: App });
-}
+mountDataApp({ app: dataApp, component: App });
