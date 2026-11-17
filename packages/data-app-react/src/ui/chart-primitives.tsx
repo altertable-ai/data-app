@@ -452,11 +452,12 @@ function barTooltipPosition(
       : left >= plot.x
         ? left
         : Math.max(plot.x, Math.min(right, plotRight - size.width));
+  const edgeInset = Math.min(8, Math.max(0, (plot.height - size.height) / 2));
   const y = Math.max(
-    plot.y,
+    plot.y + edgeInset,
     Math.min(
       bar.y + bar.height / 2 - size.height / 2,
-      plot.y + plot.height - size.height
+      plot.y + plot.height - size.height - edgeInset
     )
   );
   return { x, y };

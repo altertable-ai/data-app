@@ -516,6 +516,13 @@ test('sparse stacked bars follow the nearest populated hour and closest visible 
   await expect
     .poll(() => tooltip.textContent())
     .toContain('Organization A : 2');
+  const axisBaseline = await plot
+    .locator('.recharts-xAxis .recharts-cartesian-axis-line')
+    .evaluate(element => element.getBoundingClientRect().y);
+  const lowBarTooltip = (await tooltip.boundingBox())!;
+  expect(
+    axisBaseline - (lowBarTooltip.y + lowBarTooltip.height)
+  ).toBeGreaterThanOrEqual(8);
   await expect
     .poll(() =>
       chart.locator('.recharts-bar-rectangle [opacity="0.75"]').count()
