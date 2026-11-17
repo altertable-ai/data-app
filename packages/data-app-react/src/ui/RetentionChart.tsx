@@ -168,7 +168,11 @@ export function RetentionChart({
         <span>No data</span>
       ) : (
         <>
-          <ComposedChart data={rows} ariaLabel={`${ariaLabel} plot`}>
+          <ComposedChart
+            data={rows}
+            ariaLabel={`${ariaLabel} plot`}
+            horizontalGrid={horizontalGrid}
+          >
             {horizontalGrid && <ComposedChart.CartesianGrid />}
             <ComposedChart.XAxis
               dataKey="offset"

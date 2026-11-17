@@ -391,7 +391,7 @@ function ComposedChartRoot<Row>({
   ariaLabel,
   valueFormat,
   cursorGroup,
-  horizontalGrid = false,
+  horizontalGrid = true,
   children,
   width = '100%',
   height = 300,

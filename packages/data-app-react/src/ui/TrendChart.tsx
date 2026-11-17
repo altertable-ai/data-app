@@ -45,7 +45,7 @@ export function TrendChart<Row extends CartesianChartItem>({
   kind,
   itemActions,
   cursorGroup,
-  horizontalGrid = false,
+  horizontalGrid = true,
 }: CartesianChartProps<Row> & { kind: 'line' | 'area' }) {
   validateValueChartItems(kind, items);
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;

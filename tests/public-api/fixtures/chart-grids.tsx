@@ -33,6 +33,7 @@ const retention = [
 ];
 function Example() {
   const [grid, setGrid] = useState(true);
+  const gridProps = grid ? {} : { horizontalGrid: false };
   return (
     <>
       <button onClick={() => setGrid(value => !value)}>Toggle grids</button>
@@ -47,35 +48,31 @@ function Example() {
         }}
       >
         <BarChart
-          horizontalGrid={grid}
+          {...gridProps}
           items={items}
           unit="requests"
           ariaLabel="Grid bar"
         />
         <LineChart
-          horizontalGrid={grid}
+          {...gridProps}
           items={items}
           unit="requests"
           ariaLabel="Grid line"
         />
         <AreaChart
-          horizontalGrid={grid}
+          {...gridProps}
           items={items}
           unit="requests"
           ariaLabel="Grid area"
         />
-        <ComposedChart
-          horizontalGrid={grid}
-          data={items}
-          ariaLabel="Grid composed"
-        >
+        <ComposedChart {...gridProps} data={items} ariaLabel="Grid composed">
           <ComposedChart.XAxis dataKey="label" />
           <ComposedChart.YAxis />
           <ComposedChart.Area dataKey="value" />
           <ComposedChart.Tooltip />
         </ComposedChart>
         <ScatterChart
-          horizontalGrid={grid}
+          {...gridProps}
           items={items.map(item => ({ ...item, x: item.value, y: item.value }))}
           xLabel="Traffic"
           yLabel="Latency"
@@ -84,19 +81,19 @@ function Example() {
           ariaLabel="Grid scatter"
         />
         <RetentionChart
-          horizontalGrid={grid}
+          {...gridProps}
           series={retention}
           unit="users"
           ariaLabel="Grid retention"
         />
         <FunnelChart
-          horizontalGrid={grid}
+          {...gridProps}
           steps={items.map(item => ({ id: item.id, label: item.label }))}
           series={[{ id: 'visits', label: 'Visits', values: [100, 70, 30] }]}
           unit="users"
           ariaLabel="Grid funnel"
         />
-        <ComposedChart horizontalGrid data={items} ariaLabel="Authored grid">
+        <ComposedChart data={items} ariaLabel="Authored grid">
           <ComposedChart.XAxis dataKey="label" />
           <ComposedChart.YAxis />
           <>

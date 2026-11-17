@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
-test('Cartesian charts support themed horizontal grids without changing inspection', async ({
+test('Cartesian charts default to themed horizontal grids and allow opt-out without changing inspection', async ({
   page,
 }) => {
   await page.goto('/chart-grids');
@@ -24,6 +24,7 @@ test('Cartesian charts support themed horizontal grids without changing inspecti
           chart.locator('.recharts-cartesian-grid-horizontal line').count()
         )
         .toBeGreaterThan(1);
+      expect(await chart.locator('.recharts-cartesian-grid').count()).toBe(1);
       expect(
         await chart.locator('.recharts-cartesian-grid-vertical line').count()
       ).toBe(0);

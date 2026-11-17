@@ -244,6 +244,7 @@ export function FunnelChart({
               <ComposedChart
                 data={rows}
                 ariaLabel={`${ariaLabel} plot`}
+                horizontalGrid={horizontalGrid}
                 height={300}
                 barCategoryGap="4%"
                 barGap={1}

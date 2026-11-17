@@ -100,7 +100,7 @@ export function BarChart<Row extends BarChartItem>({
   formatValue = formatNumber,
   itemActions,
   cursorGroup,
-  horizontalGrid = false,
+  horizontalGrid = true,
 }: BarChartProps<Row>) {
   validateValueChartItems('bar', items);
   const chartActions = useChartActions();
