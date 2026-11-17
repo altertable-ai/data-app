@@ -36,7 +36,12 @@ import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import tooltips from '@/tests/public-api/fixtures/tooltips.html';
 
-const port = 0;
+const registeredQueries: Readonly<Record<string, { statement: string }>> = {
+  ...hostedStarterApp.queries,
+  ...localStarterApp.queries,
+};
+
+const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
 async function bundle(entry: string, sourcemap = false) {
   const result = await Bun.build({
     entrypoints: [entry],
@@ -163,13 +168,9 @@ const server = Bun.serve({
         limit: number;
         params?: Record<string, string | number>;
       };
-      const statement =
-        (
-          hostedStarterApp.queries as Readonly<
-            Record<string, { statement: string } | undefined>
-          >
-        )[queryId]?.statement ??
-        (queryId === 'connection' ? 'SELECT 1 AS connection_check' : undefined);
+      const statement = Object.hasOwn(registeredQueries, queryId)
+        ? registeredQueries[queryId]?.statement
+        : undefined;
       if (!statement) return new Response('Unknown query', { status: 404 });
       if (statement.trim().startsWith('WITH sample_counts(')) {
         const query = database.query(statement);

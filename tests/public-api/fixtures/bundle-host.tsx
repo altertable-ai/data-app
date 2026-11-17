@@ -251,6 +251,7 @@ function Host() {
         return { period, version };
       },
       'navigation:update': createNavigationHandler(),
+      // Exercise the host's query-ID boundary in browser integration tests.
       async 'data:query'({ queryId, limit, params }, { signal }) {
         const response = await fetch('/api/query', {
           method: 'POST',

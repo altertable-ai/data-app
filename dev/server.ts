@@ -30,6 +30,11 @@ import { operations as findingStarterOperations } from '@/packages/data-app-exam
 import metricStarterPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
 import { operations as metricStarterOperations } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/operations';
 
+const registeredQueries: Readonly<Record<string, { statement: string }>> = {
+  ...hostedStarterApp.queries,
+  ...starterApp.queries,
+};
+
 async function bundle(entry: string) {
   const result = await Bun.build({
     entrypoints: [new URL(entry, import.meta.url).pathname],
@@ -287,15 +292,9 @@ Bun.serve({
         limit: number;
         params?: QueryParameters;
       };
-      const statement =
-        (
-          hostedStarterApp.queries as Readonly<
-            Record<string, { statement: string } | undefined>
-          >
-        )[query.queryId]?.statement ??
-        (query.queryId === 'connection'
-          ? 'SELECT 1 AS connection_check'
-          : undefined);
+      const statement = Object.hasOwn(registeredQueries, query.queryId)
+        ? registeredQueries[query.queryId]?.statement
+        : undefined;
       if (!statement)
         return Response.json(
           { error: 'Unknown registered query' },
