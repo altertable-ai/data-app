@@ -257,7 +257,7 @@ export function parseDateTimeBound(
   }
   // datetime-local controls encode fields without performing a local-time conversion.
   if (
-    /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{3})?)?)?Z?$/.test(input)
+    /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{3})?)?Z?)?$/.test(input)
   ) {
     const encoded = input.includes('T')
       ? input.replace(/Z$/, '')

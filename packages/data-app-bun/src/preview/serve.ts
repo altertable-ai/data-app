@@ -204,16 +204,18 @@ export async function serveAppFile({
     if (stopped) return;
     clearTimeout(rebuildTimer);
     rebuildTimer = setTimeout(() => {
-      rebuildQueue = rebuildQueue.then(async () => {
-        const result = await buildApp();
-        if (stopped) return;
-        currentBundle = result.bundle;
-        watchedFiles = new Set(result.inputFiles);
-        if ('error' in currentBundle) console.error(currentBundle.error);
-        else console.log(`Rebuilt ${appFile}`);
-        updateWatchers(result.directories);
-        reload.notify();
-      });
+      rebuildQueue = rebuildQueue
+        .then(async () => {
+          const result = await buildApp();
+          if (stopped) return;
+          currentBundle = result.bundle;
+          watchedFiles = new Set(result.inputFiles);
+          if ('error' in currentBundle) console.error(currentBundle.error);
+          else console.log(`Rebuilt ${appFile}`);
+          updateWatchers(result.directories);
+          reload.notify();
+        })
+        .catch(error => console.error(error));
     }, 50);
   }
 

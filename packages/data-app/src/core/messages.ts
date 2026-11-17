@@ -276,7 +276,7 @@ export type SqlQueryInput = {
 };
 
 /** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
-export const sqlQueryRoute = defineMessageRoute({
+export const sqlQueryRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): SqlQueryInput {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid SQL query.');

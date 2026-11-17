@@ -390,22 +390,28 @@ function tryParseUnixRange(
     return null;
   }
 
-  if (from.getTime() > to.getTime()) {
+  if (from.getTime() >= to.getTime()) {
     return failure('invalid-range', normalized);
   }
 
   return success({ from, to }, normalized, 'unix');
 }
 
-function tryParseSlidingRelative(normalized: string): ParseSuccess | null {
+function tryParseSlidingRelative(
+  normalized: string
+): ParseDateTimeRangeResult | null {
   const match = normalized.match(SLIDING_RELATIVE_PATTERN);
   if (!match) {
     return null;
   }
 
   const amount = match[1] ? Number(match[1]) : 1;
+  // A zero-length window must not fall through to chrono, which reads it as today.
+  if (amount === 0) {
+    return failure('unrecognized', normalized);
+  }
   const unit = parseRelativeUnit(match[2] ?? '');
-  if (!Number.isSafeInteger(amount) || amount <= 0 || !unit) {
+  if (!Number.isSafeInteger(amount) || amount < 0 || !unit) {
     return null;
   }
 
@@ -655,7 +661,7 @@ function tryParseAbsoluteRange(
     return null;
   }
 
-  if (from.getTime() > to.getTime()) {
+  if (from.getTime() >= to.getTime()) {
     return failure('invalid-range', normalized);
   }
 
@@ -724,15 +730,9 @@ export function parseDateTimeRangeInput(
 
   for (const attempt of attempts) {
     const result = attempt();
-    if (!result) {
-      continue;
-    }
-
-    if (!result.ok) {
+    if (result) {
       return result;
     }
-
-    return result;
   }
 
   return failure('unrecognized', normalizedInput);

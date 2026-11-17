@@ -315,7 +315,9 @@ export function isAnnotationPresentation(
             Number.isSafeInteger(target.number) &&
             target.number > 0 &&
             (target.anchor === undefined ||
-              (typeof target.anchor.x === 'number' &&
+              (typeof target.anchor === 'object' &&
+                target.anchor !== null &&
+                typeof target.anchor.x === 'number' &&
                 Number.isFinite(target.anchor.x) &&
                 target.anchor.x >= 0 &&
                 target.anchor.x <= 1 &&
