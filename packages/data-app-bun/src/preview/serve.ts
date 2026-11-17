@@ -5,7 +5,7 @@ import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import {
   DataSourceError,
   registeredQueryRoute,
-  type Lakehouse,
+  type SqlLakehouse,
 } from '@altertable/data-app/contract';
 import {
   readRequestBody,
@@ -30,7 +30,7 @@ export type AppFilePreviewOptions = {
   /** Localhost port. Use 0 to select an available port. Defaults to 25837. */
   port?: number;
   /** Server-only query backend; the caller owns credentials and profile selection. */
-  lakehouse: Lakehouse;
+  lakehouse: SqlLakehouse;
   /** Override data-app and React import resolution, such as for checkout development. */
   resolveDependency?: (specifier: string) => string;
 };

@@ -64,6 +64,8 @@ export type {
 } from '../authoring/contract.ts';
 export type {
   Lakehouse,
+  SqlLakehouse,
+  HostedLakehouse,
   OperationContext,
   DataOperations,
 } from './operation-types.ts';

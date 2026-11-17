@@ -491,7 +491,7 @@ const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { o
 function App() {
   return <>
     <button onClick={async () => {
-      try { await getDataAppTransport().lakehouse.queryAll('SELECT 1', { name: 'ready', limit: 1 }); }
+      try { await getDataAppTransport().lakehouse.queryAllById('ready', { limit: 1, signal: new AbortController().signal }); }
       catch (error) { document.querySelector('output').textContent = error.code; }
     }}>Run query</button>
     <output aria-label="Query error" />

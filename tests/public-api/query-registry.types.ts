@@ -4,6 +4,7 @@ import {
   defineOperation,
   connectionCheck,
   type QueryDefinitions,
+  type HostedLakehouse,
 } from '@altertable/data-app/contract';
 
 const dataApp = defineDataApp({
@@ -29,6 +30,21 @@ const dataApp = defineDataApp({
     },
   },
 });
+
+const hosted: HostedLakehouse = {
+  async queryAllById(_queryId, _options) {
+    return { columns: [], rows: [] };
+  },
+};
+void hosted;
+
+const invalidHosted: HostedLakehouse = {
+  // @ts-expect-error Hosted adapters accept registered IDs, not SQL statements.
+  async queryAll(_statement: string) {
+    return { columns: [], rows: [] };
+  },
+};
+void invalidHosted;
 
 const operation = dataApp.defineOperation({
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },

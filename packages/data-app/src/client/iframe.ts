@@ -5,7 +5,7 @@ import {
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
 } from '../core/bridge.ts';
-import { type Lakehouse } from '../core/contract.ts';
+import { type HostedLakehouse } from '../core/contract.ts';
 import {
   registeredQueryRoute,
   MessageRoutingError,
@@ -305,13 +305,12 @@ export function createIframeTransport({
     logger,
     request: requestMessage,
     lakehouse: {
-      queryAll(_statement, { name, limit, signal, params }) {
-        if (!name) throw new Error('A registered query name is required.');
+      queryAllById(queryId, { limit, signal, params }) {
         return messages
           .request(
             'data:query',
             {
-              queryId: name,
+              queryId,
               limit,
               ...(params === undefined ? {} : { params }),
             },
@@ -319,7 +318,7 @@ export function createIframeTransport({
           )
           .catch(rethrowDataMessageError);
       },
-    } satisfies Lakehouse,
+    } satisfies HostedLakehouse,
     dispose,
     mode,
     snapshot() {

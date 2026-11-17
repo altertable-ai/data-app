@@ -4,6 +4,7 @@ import type {
   DataOperations,
   DisclosedQuery,
   Lakehouse,
+  SqlLakehouse,
   OperationContext,
   DataQueryBody,
 } from './operation-types.ts';
@@ -86,7 +87,7 @@ function createOperationLakehouse(
 ) {
   const queryIds: string[] = [];
   const queries: DisclosedQuery[] = [];
-  const lakehouse: Lakehouse = {
+  const lakehouse: SqlLakehouse = {
     async queryAll(statement, options) {
       signal.throwIfAborted();
       if (!Number.isInteger(options.limit) || options.limit < 1)
@@ -108,12 +109,21 @@ function createOperationLakehouse(
       const querySignal = AbortSignal.any([signal, options.signal]);
       let result;
       try {
-        result = await source.queryAll(statement, {
-          ...(options.name === undefined ? {} : { name: options.name }),
+        const queryOptions = {
           limit,
           ...(options.params === undefined ? {} : { params: options.params }),
           signal: querySignal,
-        });
+        };
+        if ('queryAllById' in source) {
+          if (!options.name || !operation.queryNames)
+            throw new Error('A registered query name is required.');
+          result = await source.queryAllById(options.name, queryOptions);
+        } else {
+          result = await source.queryAll(statement, {
+            ...queryOptions,
+            ...(options.name === undefined ? {} : { name: options.name }),
+          });
+        }
       } catch (error) {
         if (!querySignal.aborted) onQuery?.(query.name, error);
         if (error instanceof DataSourceError) error.queryName = query.name;

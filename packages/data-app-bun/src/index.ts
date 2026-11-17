@@ -6,7 +6,7 @@ import type { DataAppOperationRegistry } from '@altertable/data-app';
  */
 import {
   DataSourceError,
-  type Lakehouse,
+  type SqlLakehouse,
   type QueryResult,
   type DataOperations,
 } from '@altertable/data-app/contract';
@@ -70,7 +70,7 @@ export function validateLakehouseCredentials(
 export function localLakehouse(
   environment: Record<string, string | undefined> = process.env,
   request: typeof fetch = fetch
-): Lakehouse {
+): SqlLakehouse {
   validateLakehouseCredentials(environment);
   const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
   const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;

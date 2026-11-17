@@ -169,8 +169,7 @@ function App() {
       <button
         onClick={() => {
           void bridge.lakehouse
-            .queryAll('', {
-              name: 'forbidden',
+            .queryAllById('forbidden', {
               limit: 1,
               signal: new AbortController().signal,
             })

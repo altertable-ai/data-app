@@ -3,6 +3,7 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   type Lakehouse,
+  type HostedLakehouse,
   type QueryDefinitions,
   type QueryParameters,
 } from '@altertable/data-app/contract';
@@ -112,6 +113,27 @@ test('config queries execute defaults and overrides with shared browser and HTTP
       statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 5 },
     },
+  ]);
+});
+
+test('hosted execution sends the registered query ID without a SQL statement', async () => {
+  const calls: { queryId: string; params?: QueryParameters }[] = [];
+  const hosted: HostedLakehouse = {
+    async queryAllById(queryId, { limit, params }) {
+      expect(limit).toBe(20);
+      calls.push({ queryId, params });
+      return { columns: [{ name: 'org_id' }], rows: [['org-1']] };
+    },
+  };
+  const client = createDataClient({
+    operations: { products: products({ orgId: 'org-1' }) },
+    lakehouse: hosted,
+  });
+  await expect(client.query('products', {})).resolves.toMatchObject({
+    data: { rows: [{ org_id: 'org-1' }] },
+  });
+  expect(calls).toEqual([
+    { queryId: 'products', params: { orgId: 'org-1', limit: 10 } },
   ]);
 });
 
