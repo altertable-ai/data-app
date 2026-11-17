@@ -20,6 +20,10 @@ import {
 } from 'recharts';
 
 import { chartField as field } from './chart-data.ts';
+import {
+  ChartRegistrationContext,
+  type ChartDataKey,
+} from './chart-interaction.tsx';
 import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
 import { ChartCursorChartContext } from './use-chart-cursor-group.tsx';
 
@@ -182,21 +186,20 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
     );
   }, [data, dataKey, props.type, props.scale]);
   const model = enabled ? dateLabelModel : null;
-  const cursorModel = useMemo(() => {
-    if (!data?.length || dataKey == null || props.type === 'category')
-      return null;
-    if (props.scale !== 'utc' && props.scale !== 'time') return null;
-    return timeModel(
-      data.map(row =>
-        typeof dataKey === 'function'
-          ? dataKey(row as Row)
-          : field(row, dataKey)
-      ),
-      props.scale === 'utc' || props.scale === 'time'
-    );
-  }, [data, dataKey, props.type, props.scale]);
+  const cursorModel =
+    props.type !== 'category' &&
+    (props.scale === 'utc' || props.scale === 'time')
+      ? dateLabelModel
+      : null;
   const register = context?.register;
   const id = props.xAxisId ?? 0;
+  const registerCategoryAxis = useContext(
+    ChartRegistrationContext
+  )?.registerCategoryAxis;
+  useLayoutEffect(() => {
+    if (dataKey == null) return;
+    return registerCategoryAxis?.('x', id, dataKey as ChartDataKey);
+  }, [registerCategoryAxis, id, dataKey]);
   useEffect(
     () => (dateLabelModel ? register?.(id, dateLabelModel.tooltip) : undefined),
     [register, id, dateLabelModel]

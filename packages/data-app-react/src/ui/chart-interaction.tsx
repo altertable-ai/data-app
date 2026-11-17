@@ -15,23 +15,39 @@ export type ChartBarPoint = ChartPoint & {
   seriesId: string;
   payload: unknown;
 };
+export type ChartDataKey = string | number | ((row: unknown) => unknown);
+export type ChartAxis = 'x' | 'y';
+
+export function chartAxisKey(axis: ChartAxis, id: string | number) {
+  return `${axis}:${typeof id}:${id}`;
+}
 
 type ChartInteractionApi = {
   isPointerInspection: boolean;
   activePoint: ChartPoint | undefined;
   seriesCount: number;
+  activeBar: ChartBarPoint | null;
+  getCategoryDataKey: (axisId: string | number) => ChartDataKey | undefined;
+  activeSeriesId: string | null;
+};
+
+type ChartRegistrationApi = {
   /** Line and area series register the sample at the current inspection position. */
   registerPoint: (id: string, x: number, y: number) => () => void;
   registerBar: (bar: ChartBarPoint) => () => void;
-  activeBar: ChartBarPoint | null;
-  categoryDataKey?: string | ((row: unknown) => unknown);
   registerSeries: (id: string) => () => void;
-  activeSeriesId: string | null;
+  registerCategoryAxis: (
+    axis: ChartAxis,
+    id: string | number,
+    dataKey: ChartDataKey
+  ) => () => void;
   setHoveredSeriesId: (id: string | null) => void;
 };
 
 export const ChartInteractionContext =
   createContext<ChartInteractionApi | null>(null);
+export const ChartRegistrationContext =
+  createContext<ChartRegistrationApi | null>(null);
 
 export function isChartSeriesActive(
   interaction: ChartInteractionApi | null,
@@ -47,8 +63,9 @@ export function isChartSeriesActive(
 export function useChartSeries(id?: string) {
   const generatedId = useId();
   const interaction = useContext(ChartInteractionContext);
+  const registration = useContext(ChartRegistrationContext);
   const seriesId = id ?? generatedId;
-  const registerSeries = interaction?.registerSeries;
+  const registerSeries = registration?.registerSeries;
   useEffect(() => registerSeries?.(seriesId), [registerSeries, seriesId]);
   return {
     id: seriesId,
@@ -63,11 +80,11 @@ export function ChartSeries({
   id: string;
   children: ReactNode;
 }) {
-  const interaction = useContext(ChartInteractionContext);
+  const registration = useContext(ChartRegistrationContext);
   return (
     <g
-      onPointerOver={() => interaction?.setHoveredSeriesId(id)}
-      onPointerDown={() => interaction?.setHoveredSeriesId(id)}
+      onPointerOver={() => registration?.setHoveredSeriesId(id)}
+      onPointerDown={() => registration?.setHoveredSeriesId(id)}
     >
       {children}
     </g>

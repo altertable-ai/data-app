@@ -600,6 +600,11 @@ test('brushed stacked bars inspect nested values and authored shapes after data 
   await expect
     .poll(() => chart.locator('[data-custom-active-shape="b"]').count())
     .toBe(1);
+  expect(
+    await chart
+      .locator('[data-custom-active-shape="b"]')
+      .getAttribute('data-inspection-active')
+  ).toBe('true');
 
   await chart.getByRole('button', { name: 'Update bars' }).evaluate(button => {
     (button as HTMLButtonElement).click();
@@ -626,6 +631,90 @@ test('brushed stacked bars inspect nested values and authored shapes after data 
     })
     .toBeLessThanOrEqual(20);
 });
+
+test('a mixed chart inspects the nearest line point or stacked bar and preserves authored shapes', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Mixed stacked inspection basic example',
+    exact: true,
+  });
+  const plot = chart.getByRole('application');
+  await plot.scrollIntoViewIfNeeded();
+  const a = (await chart
+    .locator('.recharts-bar-rectangle [name="Organization A"]')
+    .first()
+    .boundingBox())!;
+  const b = (await chart
+    .locator('.recharts-bar-rectangle [name="Organization B"]')
+    .first()
+    .boundingBox())!;
+  expect(
+    await chart
+      .locator('.recharts-bar-rectangle [name="Organization A"]')
+      .first()
+      .getAttribute('fill')
+  ).toBe('#13579b');
+  const tooltip = chart.getByRole('tooltip');
+  const linePoint = await chart
+    .locator('.recharts-line-curve')
+    .evaluate(path => {
+      const curve = path as SVGPathElement;
+      const point = curve.getPointAtLength(0);
+      const screen = point.matrixTransform(curve.getScreenCTM()!);
+      return { x: screen.x, y: screen.y };
+    });
+  await page.mouse.move(linePoint.x, linePoint.y);
+  await expect.poll(() => tooltip.textContent()).toContain('Trend : 11');
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization B : 3');
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await expect
+    .poll(() => tooltip.textContent())
+    .toContain('Organization A : 5');
+  await expect
+    .poll(() => chart.locator('[data-active-shape="a"]').count())
+    .toBe(1);
+  await chart
+    .getByRole('button', { name: 'Trend', exact: true })
+    .evaluate(button => {
+      button.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    });
+  await expect
+    .poll(() =>
+      chart
+        .locator('[data-active-shape="a"]')
+        .evaluate(element => Boolean(element.closest('g[opacity="0.2"]')))
+    )
+    .toBe(true);
+});
+
+for (const name of [
+  'Wrapped category axis inspection',
+  'Wrapped vertical category axis inspection',
+]) {
+  test(`${name} supplies the tooltip label for the selected axis ID`, async ({
+    page,
+  }) => {
+    await page.goto('/chart-legends');
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    await chart.getByRole('application').scrollIntoViewIfNeeded();
+    const bar = (await chart
+      .locator('.recharts-bar-rectangle path')
+      .first()
+      .boundingBox())!;
+    await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
+    const tooltip = chart.getByRole('tooltip');
+    await expect.poll(() => tooltip.textContent()).toContain('H0');
+    expect(await tooltip.textContent()).not.toContain('Wrong 0');
+  });
+}
 
 test('touch inspection retains only the tapped series after releasing the screen', async ({
   mobilePage: page,

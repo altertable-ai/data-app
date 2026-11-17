@@ -38,6 +38,8 @@ import {
 import { chartField } from './chart-data.ts';
 import {
   ChartInteractionContext,
+  ChartRegistrationContext,
+  type ChartDataKey,
   ChartSeries,
   useChartSeries,
   isChartSeriesActive,
@@ -70,7 +72,7 @@ function NearestChartDot({
   stroke,
 }: DotProps & { seriesId: string }) {
   const interaction = useContext(ChartInteractionContext);
-  const registerPoint = interaction?.registerPoint;
+  const registerPoint = useContext(ChartRegistrationContext)?.registerPoint;
   const legend = useChartLegendSeries(seriesId, undefined);
   useLayoutEffect(() => {
     if (legend.hidden || cx == null || cy == null) return;
@@ -88,19 +90,62 @@ function NearestChartDot({
   ) : null;
 }
 
+type InspectedBarProps = BarShapeProps & {
+  seriesId: string;
+  shape: BarProps<unknown, number | null>['shape'];
+  activeShape: BarProps<unknown, number | null>['activeBar'];
+  dimmed: boolean;
+};
+
+/** Recharts does not export its bar-shape dispatcher; keep this adapter isolated. */
+function renderBarShape(
+  option: InspectedBarProps['shape'],
+  props: BarShapeProps
+) {
+  if (isValidElement(option))
+    return cloneElement(option as ReactElement<BarShapeProps>, {
+      ...props,
+      ...option.props,
+    });
+  if (option === Rectangle) return <Rectangle {...props} />;
+  if (typeof option === 'function') return option(props, props.index);
+  if (option && typeof option === 'object')
+    return <Rectangle {...props} {...option} />;
+  return <Rectangle {...props} />;
+}
+
+function InspectedBarVisual({
+  seriesId,
+  shape,
+  activeShape,
+  dimmed,
+  ...props
+}: InspectedBarProps) {
+  const interaction = useContext(ChartInteractionContext);
+  const selected =
+    interaction?.isPointerInspection &&
+    interaction.activeBar?.seriesId === seriesId &&
+    interaction.activeBar.index === props.originalDataIndex;
+  const renderedProps = {
+    ...props,
+    isActive: Boolean(selected || props.isActive),
+    opacity: dimmed ? undefined : selected ? 0.75 : props.opacity,
+  };
+  const option =
+    selected && activeShape && activeShape !== true ? activeShape : shape;
+  const rendered = renderBarShape(option, renderedProps);
+  return dimmed ? <g opacity={0.2}>{rendered}</g> : rendered;
+}
+
 /** Shared series defaults; native props override every authored choice. */
 function InspectedBarShape({
   seriesId,
   shape,
   activeShape,
+  dimmed,
   ...props
-}: BarShapeProps & {
-  seriesId: string;
-  shape: BarProps<unknown, number | null>['shape'];
-  activeShape: BarProps<unknown, number | null>['activeBar'];
-}) {
-  const interaction = useContext(ChartInteractionContext);
-  const registerBar = interaction?.registerBar;
+}: InspectedBarProps) {
+  const registerBar = useContext(ChartRegistrationContext)?.registerBar;
   const { x, y, width, height, originalDataIndex, value, payload } = props;
   const reading = Array.isArray(value) ? value[1] - value[0] : value;
   useLayoutEffect(() => {
@@ -125,23 +170,15 @@ function InspectedBarShape({
     reading,
     payload,
   ]);
-  const selected =
-    interaction?.isPointerInspection &&
-    interaction.activeBar?.seriesId === seriesId &&
-    interaction.activeBar.index === originalDataIndex;
-  const renderedProps = { ...props, opacity: selected ? 0.75 : props.opacity };
-  const option =
-    selected && activeShape && activeShape !== true ? activeShape : shape;
-  if (isValidElement(option))
-    return cloneElement(option as ReactElement<BarShapeProps>, {
-      ...renderedProps,
-      ...option.props,
-    });
-  if (option === Rectangle) return <Rectangle {...renderedProps} />;
-  if (typeof option === 'function') return option(renderedProps, props.index);
-  if (option && typeof option === 'object')
-    return <Rectangle {...renderedProps} {...option} />;
-  return <Rectangle {...renderedProps} />;
+  return (
+    <InspectedBarVisual
+      {...props}
+      seriesId={seriesId}
+      shape={shape}
+      activeShape={activeShape}
+      dimmed={dimmed}
+    />
+  );
 }
 
 export function ChartBar<Row = unknown, Value = number | null>(
@@ -164,9 +201,10 @@ export function ChartBar<Row = unknown, Value = number | null>(
         seriesId={series.id}
         shape={props.shape}
         activeShape={props.activeBar}
+        dimmed={legend.dimmed}
       />
     ),
-    [series.id, props.shape, props.activeBar]
+    [series.id, props.shape, props.activeBar, legend.dimmed]
   );
   useLayoutEffect(
     () => (key && !props.hide ? registerBarAxis?.(key, axisId) : undefined),
@@ -332,6 +370,14 @@ export function ChartScatter<Row = unknown, Value = number>(
 export function ChartYAxis<Row = unknown, Value = number>(
   props: ComponentProps<typeof YAxis<Row, Value>>
 ) {
+  const registerCategoryAxis = useContext(
+    ChartRegistrationContext
+  )?.registerCategoryAxis;
+  const id = props.yAxisId ?? 0;
+  useLayoutEffect(() => {
+    if (props.dataKey == null) return;
+    return registerCategoryAxis?.('y', id, props.dataKey as ChartDataKey);
+  }, [registerCategoryAxis, id, props.dataKey]);
   const format = useContext(ChartValueFormat);
   const ticks = useYAxisTicks(props.yAxisId);
   const formatter = axisValueFormatter(
@@ -534,9 +580,6 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
       filterNull={activeBar ? false : props.filterNull}
       content={content => {
         if (legendInteraction?.suppressPlotInspection) return null;
-        const activeBar = interaction?.isPointerInspection
-          ? interaction.activeBar
-          : null;
         const selectedRow = activeBar?.payload;
         const payload = (
           interaction?.isPointerInspection &&
@@ -571,7 +614,7 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
                   value: value as typeof entry.value,
                 };
               });
-        const categoryKey = interaction?.categoryDataKey;
+        const categoryKey = interaction?.getCategoryDataKey(props.axisId ?? 0);
         const label =
           selectedRow == null || categoryKey == null
             ? content.label

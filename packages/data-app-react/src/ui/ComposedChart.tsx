@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   type PointerEvent,
   type ComponentProps,
@@ -41,7 +42,10 @@ import type { HorizontalGridProps } from './chart-data.ts';
 import { ChartDateAxes } from './chart-date-axis.tsx';
 import {
   ChartInteractionContext,
+  ChartRegistrationContext,
+  chartAxisKey,
   type ChartBarPoint,
+  type ChartDataKey,
   type ChartPoint,
 } from './chart-interaction.tsx';
 import {
@@ -120,25 +124,61 @@ function findNearestBar(
   return nearest;
 }
 
+function barCloserThanPoints(
+  bar: ChartBarPoint | null,
+  points: ReadonlyMap<string, ChartPoint>,
+  position: ChartPoint | null
+) {
+  if (!bar || !position) return false;
+  const dx = Math.max(bar.x - position.x, 0, position.x - bar.x - bar.width);
+  const dy = Math.max(bar.y - position.y, 0, position.y - bar.y - bar.height);
+  const barDistance = Math.hypot(dx, dy);
+  let pointDistance = Infinity;
+  for (const point of points.values()) {
+    pointDistance = Math.min(
+      pointDistance,
+      Math.hypot(point.x - position.x, point.y - position.y)
+    );
+  }
+  return barDistance <= pointDistance;
+}
+
 function categoryDataKey(
   children: ReactNode,
-  layout: 'horizontal' | 'vertical'
-): string | ((row: unknown) => unknown) | undefined {
+  layout: 'horizontal' | 'vertical',
+  axisId: string | number
+): ChartDataKey | undefined {
   for (const child of Children.toArray(children)) {
-    if (!isValidElement<{ children?: ReactNode; dataKey?: unknown }>(child))
+    if (
+      !isValidElement<{
+        children?: ReactNode;
+        dataKey?: unknown;
+        xAxisId?: string | number;
+        yAxisId?: string | number;
+      }>(child)
+    )
       continue;
     if (child.type === Fragment) {
-      const nested = categoryDataKey(child.props.children, layout);
-      if (nested) return nested;
+      const nested = categoryDataKey(child.props.children, layout, axisId);
+      if (nested != null) return nested;
     }
     if (
       child.type !== (layout === 'horizontal' ? XAxis : YAxis) &&
       child.type !== (layout === 'horizontal' ? NativeXAxis : NativeYAxis)
     )
       continue;
+    if (
+      ((layout === 'horizontal' ? child.props.xAxisId : child.props.yAxisId) ??
+        0) !== axisId
+    )
+      continue;
     const key = child.props.dataKey;
-    if (typeof key === 'string' || typeof key === 'function')
-      return key as string | ((row: unknown) => unknown);
+    if (
+      typeof key === 'string' ||
+      typeof key === 'number' ||
+      typeof key === 'function'
+    )
+      return key as ChartDataKey;
   }
   return undefined;
 }
@@ -469,23 +509,22 @@ function ComposedChartRoot<Row>({
   );
   const bars = useRef(new Map<string, ChartBarPoint>());
   const barRefreshFrame = useRef<number | null>(null);
-  const barLayout = useRef(layout);
-  useLayoutEffect(() => {
-    barLayout.current = layout;
-  }, [layout]);
   const refreshNearestBar = useCallback(() => {
     if (barRefreshFrame.current != null || !latestPointerPosition.current)
       return;
+    // Bar shapes register in separate layout effects; inspect the complete
+    // geometry once per frame instead of updating the chart for every bar.
     barRefreshFrame.current = requestAnimationFrame(() => {
       barRefreshFrame.current = null;
       const selected = findNearestBar(
         bars.current,
         latestPointerPosition.current,
-        barLayout.current
+        layout
       );
-      setNearestBar(current => (current === selected ? current : selected));
+      setNearestBar(selected);
+      setPointerPosition(latestPointerPosition.current);
     });
-  }, []);
+  }, [layout]);
   useEffect(
     () => () => {
       if (barRefreshFrame.current != null)
@@ -516,6 +555,27 @@ function ComposedChartRoot<Row>({
         return next;
       });
   }, []);
+  const [categoryAxisKeys, setCategoryAxisKeys] = useState<
+    ReadonlyMap<string, ChartDataKey>
+  >(() => new Map());
+  const registerCategoryAxis = useCallback(
+    (axis: 'x' | 'y', id: string | number, dataKey: ChartDataKey) => {
+      const key = chartAxisKey(axis, id);
+      setCategoryAxisKeys(current =>
+        current.get(key) === dataKey
+          ? current
+          : new Map(current).set(key, dataKey)
+      );
+      return () =>
+        setCategoryAxisKeys(current => {
+          if (current.get(key) !== dataKey) return current;
+          const next = new Map(current);
+          next.delete(key);
+          return next;
+        });
+    },
+    []
+  );
   useEffect(() => {
     // A new active sample moves the registered dots; re-evaluate the latest
     // pointer position even if its previous nearest series was unchanged.
@@ -553,13 +613,17 @@ function ComposedChartRoot<Row>({
     const nextPosition = { x: point.x, y: point.y };
     latestPointerPosition.current = nextPosition;
     const selected = findNearestBar(bars.current, nextPosition, layout);
-    setNearestBar(current => (current === selected ? current : selected));
-    setPointerPosition(current =>
-      findNearestSeriesId(hoveredSeriesId, points, current) ===
-      findNearestSeriesId(hoveredSeriesId, points, nextPosition)
-        ? current
-        : nextPosition
-    );
+    setNearestBar(selected);
+    setPointerPosition(current => {
+      const currentBar = findNearestBar(bars.current, current, layout);
+      const currentTarget = barCloserThanPoints(currentBar, points, current)
+        ? currentBar
+        : findNearestSeriesId(hoveredSeriesId, points, current);
+      const nextTarget = barCloserThanPoints(selected, points, nextPosition)
+        ? selected
+        : findNearestSeriesId(hoveredSeriesId, points, nextPosition);
+      return currentTarget === nextTarget ? current : nextPosition;
+    });
     return true;
   }
   function resetPointerInspection() {
@@ -571,7 +635,9 @@ function ComposedChartRoot<Row>({
     setPointerPosition(null);
     setNearestBar(null);
   }
-  const activeBar = points.size === 0 ? nearestBar : null;
+  const activeBar = barCloserThanPoints(nearestBar, points, pointerPosition)
+    ? nearestBar
+    : null;
   const activeSeriesId =
     activeBar?.seriesId ??
     findNearestSeriesId(hoveredSeriesId, points, pointerPosition);
@@ -649,6 +715,16 @@ function ComposedChartRoot<Row>({
     },
     []
   );
+  const registration = useMemo(
+    () => ({
+      registerPoint,
+      registerBar,
+      registerSeries,
+      registerCategoryAxis,
+      setHoveredSeriesId,
+    }),
+    [registerPoint, registerBar, registerSeries, registerCategoryAxis]
+  );
   return (
     <ChartCursorChartContext.Provider value={{ cursor, mouseHover }}>
       <ChartLegendInteractionContext.Provider
@@ -671,13 +747,12 @@ function ComposedChartRoot<Row>({
             activeSeriesId,
             activePoint:
               activeSeriesId == null ? undefined : points.get(activeSeriesId),
-            registerPoint,
-            registerBar,
             activeBar,
-            categoryDataKey: categoryDataKey(children, layout),
-            setHoveredSeriesId,
+            getCategoryDataKey: axisId =>
+              categoryAxisKeys.get(
+                chartAxisKey(layout === 'horizontal' ? 'x' : 'y', axisId)
+              ) ?? categoryDataKey(children, layout, axisId),
             seriesCount: seriesIds.size,
-            registerSeries,
           }}
         >
           <section
@@ -713,36 +788,38 @@ function ComposedChartRoot<Row>({
           >
             <ChartValueFormat.Provider value={valueFormat}>
               <ChartDateAxes data={data}>
-                <RechartsComposedChart
-                  data-atbl-focus="inset"
-                  {...props}
-                  data={data}
-                  width={width}
-                  height={height}
-                  responsive={responsive}
-                  layout={layout}
-                  aria-label={ariaLabel}
-                >
-                  {valueAxis === 'y' &&
-                    axisLayout.autoYAxis &&
-                    axisLayout.interactiveLegend && (
-                      <PlotOffsets onChange={trackPlotOffsets} />
+                <ChartRegistrationContext.Provider value={registration}>
+                  <RechartsComposedChart
+                    data-atbl-focus="inset"
+                    {...props}
+                    data={data}
+                    width={width}
+                    height={height}
+                    responsive={responsive}
+                    layout={layout}
+                    aria-label={ariaLabel}
+                  >
+                    {valueAxis === 'y' &&
+                      axisLayout.autoYAxis &&
+                      axisLayout.interactiveLegend && (
+                        <PlotOffsets onChange={trackPlotOffsets} />
+                      )}
+                    {horizontalGrid && !hasAuthoredGrid(children) && (
+                      <CartesianGrid />
                     )}
-                  {horizontalGrid && !hasAuthoredGrid(children) && (
-                    <CartesianGrid />
-                  )}
-                  {applyNativeLegendInteraction(
-                    children,
-                    focusedLegendKeys,
-                    legendHoveredKey,
-                    suppressPlotInspection,
-                    valueAxis,
-                    visibleBarAxisIds,
-                    fullAxisSpace,
-                    axisLayout,
-                    nativeKeyCounts
-                  )}
-                </RechartsComposedChart>
+                    {applyNativeLegendInteraction(
+                      children,
+                      focusedLegendKeys,
+                      legendHoveredKey,
+                      suppressPlotInspection,
+                      valueAxis,
+                      visibleBarAxisIds,
+                      fullAxisSpace,
+                      axisLayout,
+                      nativeKeyCounts
+                    )}
+                  </RechartsComposedChart>
+                </ChartRegistrationContext.Provider>
               </ChartDateAxes>
             </ChartValueFormat.Provider>
           </section>
