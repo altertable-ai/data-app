@@ -115,7 +115,8 @@ export function BarChart<Row extends BarChartItem>({
   const canvasRef = useRef<HTMLDivElement>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
-  const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
+  const maximum =
+    items.reduce((max, item) => Math.max(max, item.value), 0) || 1;
   const hasTimeAxis =
     items.length > 0 &&
     items.every(

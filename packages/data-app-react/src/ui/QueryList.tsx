@@ -190,8 +190,8 @@ function QueryNotebook({
           Could not copy SQL
         </output>
       )}
-      {queries.map(query => (
-        <QueryFigure key={query.name} {...query} />
+      {queries.map((query, index) => (
+        <QueryFigure key={`${query.name}:${index}`} {...query} />
       ))}
     </section>
   );
@@ -224,8 +224,8 @@ export function QueryList({
       <p className="altertable-query-unavailable">No queries in this view.</p>
     ) : null;
   }
-  const figures = shown.map(query => (
-    <QueryFigure key={query.name} {...query} />
+  const figures = shown.map((query, index) => (
+    <QueryFigure key={`${query.name}:${index}`} {...query} />
   ));
   if (expanded) return <QueryNotebook queries={shown} className={className} />;
 

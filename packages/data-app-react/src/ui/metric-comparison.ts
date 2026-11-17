@@ -58,8 +58,9 @@ export function comparisonChange({
   previous,
   favorableDirection,
 }: MetricComparison) {
+  // Divide by the baseline's magnitude so a negative baseline keeps the change's sign.
   const percent = previous?.value
-    ? (current.value / previous.value - 1) * 100
+    ? ((current.value - previous.value) / Math.abs(previous.value)) * 100
     : null;
   const direction =
     percent === null || Math.abs(percent) < 0.05
