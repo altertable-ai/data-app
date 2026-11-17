@@ -66,7 +66,11 @@ export {
   type FilterInput,
 } from './core/operation-filters.ts';
 
-export { MAX_QUERY_ROWS, type IsUnion } from './core/queries.ts';
+export {
+  MAX_QUERY_ROWS,
+  REGISTERED_QUERY_ID_PATTERN,
+  type IsUnion,
+} from './core/queries.ts';
 export { unsupportedParameterReference } from './core/parameter-sql.ts';
 
 export { facetSource, type FacetFilter } from './core/facets.ts';

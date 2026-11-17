@@ -9,6 +9,7 @@ import {
 import {
   isQueryParameters,
   MAX_QUERY_ROWS,
+  REGISTERED_QUERY_ID_PATTERN,
   type QueryParameters,
 } from './queries.ts';
 import { isRecord } from './record.ts';
@@ -291,7 +292,7 @@ export const registeredQueryRoute = /* @__PURE__ */ defineMessageRoute({
     };
     if (
       typeof query.queryId !== 'string' ||
-      !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(query.queryId) ||
+      !REGISTERED_QUERY_ID_PATTERN.test(query.queryId) ||
       typeof query.limit !== 'number' ||
       !Number.isSafeInteger(query.limit) ||
       query.limit < 1 ||

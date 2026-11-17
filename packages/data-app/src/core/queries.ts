@@ -10,6 +10,7 @@ import { isRecord } from './record.ts';
 import { unsupportedParameterReference } from './parameter-sql.ts';
 
 export const MAX_QUERY_ROWS = 10_000;
+export const REGISTERED_QUERY_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 
 const QUERY_CAST_ERROR = '##ERROR##';
 
@@ -243,9 +244,10 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
     Object.fromEntries(
       Object.entries(definitions).map(([name, query]) => {
         invariant(
-          !!name.trim() && !!query.statement.trim(),
-          'Queries need a name and SQL statement.'
+          REGISTERED_QUERY_ID_PATTERN.test(name),
+          `Invalid query name ${name}. Use 1–64 letters, digits, underscores, or hyphens, starting with a letter or digit.`
         );
+        invariant(!!query.statement.trim(), 'Queries need a SQL statement.');
         const unsupported = unsupportedParameterReference(query.statement);
         invariant(
           !unsupported,

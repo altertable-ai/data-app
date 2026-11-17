@@ -10,6 +10,7 @@ import {
 import {
   readRequestBody,
   RequestBodyTooLargeError,
+  REGISTERED_QUERY_ID_PATTERN,
   unsupportedParameterReference,
 } from '@altertable/data-app/internal';
 import { type BunPlugin } from 'bun';
@@ -176,6 +177,8 @@ export async function serveAppFile({
           !definition.statement.trim()
         )
           throw new Error(`Invalid registered query: ${id}.`);
+        if (!REGISTERED_QUERY_ID_PATTERN.test(id))
+          throw new Error(`Invalid registered query name: ${id}.`);
         const unsupported = unsupportedParameterReference(definition.statement);
         if (unsupported)
           throw new Error(

@@ -29,6 +29,36 @@ const app = defineDataApp({
     },
   },
 });
+test('registered query names use the bridge ID format', () => {
+  expect(() =>
+    defineDataApp({
+      title: 'Invalid query name',
+      description: '',
+      scope: { organization: 'demo', environment: 'test' },
+      queries: {
+        'bad.name': {
+          statement: 'SELECT 1',
+          params: {},
+          projections: { value: { type: 'number' } },
+        },
+      },
+    })
+  ).toThrow('Invalid query name bad.name');
+  expect(() =>
+    defineDataApp({
+      title: 'Valid query name',
+      description: '',
+      scope: { organization: 'demo', environment: 'test' },
+      queries: {
+        salesSql_2: {
+          statement: 'SELECT 1',
+          params: {},
+          projections: { value: { type: 'number' } },
+        },
+      },
+    })
+  ).not.toThrow();
+});
 async function execute(
   values: Record<string, unknown>,
   context: QueryParameters
