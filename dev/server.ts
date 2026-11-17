@@ -37,8 +37,6 @@ async function bundle(entry: string) {
     define: { 'import.meta.env': '{}' },
     minify: true,
   });
-  if (!result.success)
-    throw new Error(result.logs.map(log => log.message).join('\n'));
 
   const javascript = await result.outputs
     .find(output => output.path.endsWith('.js'))!
@@ -116,7 +114,7 @@ const serveReloadEvents =
     './fixtures/bridge-frame.ts',
   ]);
 const fixtureDatabase = new Database(':memory:');
-const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
+const port = Number(process.env.DATA_APP_GALLERY_PORT ?? 27418);
 // `bun run dev:gallery` provides a mocked Altertable API; tests keep deterministic fixtures.
 const lakehouse =
   isDevelopment && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;

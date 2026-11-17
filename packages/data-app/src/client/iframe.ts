@@ -1,3 +1,4 @@
+import { type DataAppAction, type DataAppActions } from '../core/actions.ts';
 import { createBridgeEndpoint } from '../core/bridge-endpoint.ts';
 import {
   PARENT_PARAM,
@@ -12,6 +13,7 @@ import {
   MessageRoutingError,
   type RoutedMessage,
 } from '../core/messages.ts';
+import { isRecord } from '../core/record.ts';
 import { randomUuid } from '../core/uuid.ts';
 import { appDiagnostics } from './diagnostics.ts';
 import { createFrameSizing } from './frame-sizing.ts';
@@ -84,13 +86,15 @@ export function createIframeTransport({
     }, 150);
   }
   const stateListeners = new Set<(state: unknown) => void>();
+  // The page actions last offered to the host, compared by value.
+  let actions: DataAppActions = {};
+  let actionsIdentity = '{}';
+  const actionListeners = new Set<(action: DataAppAction) => void>();
   const logger = createBridgeLogger(
     () =>
       !disposed &&
       !!sessionId &&
-      !!hostState &&
-      typeof hostState === 'object' &&
-      'logging' in hostState &&
+      isRecord(hostState) &&
       hostState.logging === true,
     entry => send('runtimeLog', { payload: entry })
   );
@@ -129,10 +133,14 @@ export function createIframeTransport({
         receiveState(message.state, 'new');
         if (first) for (const entry of pending.values()) entry.start();
         if (disposed) return;
+        if (actionsIdentity !== '{}') send('actionsUpdate', { actions });
         if (mode === 'url') send('runtimeReady', {});
       },
       stateUpdate(message) {
         receiveState(message.state, 'current');
+      },
+      actionRun(message) {
+        for (const listener of actionListeners) listener(message.action);
       },
       viewportUpdate(message) {
         frameSizing.viewport(message.top, message.bottom);
@@ -295,6 +303,7 @@ export function createIframeTransport({
     frame.removeEventListener('pagehide', disconnect);
     frame.removeEventListener('pageshow', resume);
     stateListeners.clear();
+    actionListeners.clear();
   }
 
   frame.addEventListener('pagehide', disconnect);
@@ -331,6 +340,24 @@ export function createIframeTransport({
     },
     ready() {
       if (!disposed && sessionId) send('runtimeReady', {});
+    },
+    /** Offers page actions to the host, replacing the previous set; `{}` withdraws them.
+     * Unchanged sets are not resent, so callers can report their latest set on every render.
+     * The current set is resent when the host reconnects. */
+    setActions(value: DataAppActions) {
+      const identity = JSON.stringify(value);
+      if (disposed || identity === actionsIdentity) return;
+      actions = value;
+      actionsIdentity = identity;
+      if (sessionId) send('actionsUpdate', { actions });
+    },
+    /** Receives host requests to run offered page actions. */
+    onAction(listener: (action: DataAppAction) => void) {
+      actionListeners.add(listener);
+
+      return () => {
+        actionListeners.delete(listener);
+      };
     },
     /** The UI owner calls this once its styles support content sizing; the parent's
      * `sizing: 'content'` presentation then applies until the returned release runs. */

@@ -5,7 +5,6 @@
 [data-atbl-focus='ring']:is(:focus-visible, [data-focus-visible]),
 [data-atbl-focus='ring']:has(> input:focus-visible),
 [data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
-[data-atbl-focus='inset'][data-atbl-internal-focus-state='focused'][data-focused],
 [data-atbl-internal-prose] a:focus-visible {
   outline: var(
     --atbl-focus-outline,
@@ -13,8 +12,7 @@
   );
   outline-offset: var(--atbl-focus-ring-offset);
 }
-[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
-[data-atbl-focus='inset'][data-atbl-internal-focus-state='focused'][data-focused] {
+[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]) {
   outline-offset: var(--atbl-focus-ring-inset);
 }
 /* Input groups own the outline instead of their individual text inputs. */

@@ -16,6 +16,7 @@ import {
   type CheckedOperationFilters,
   type FilterInput,
 } from '../core/operation-filters.ts';
+import { isRecord } from '../core/record.ts';
 export type {
   DateTimeRangeInput,
   DateTimeRangePolicy,
@@ -318,19 +319,13 @@ function operationInputContract(
     return { input: parseOwn, checks: operation.checks };
   }
   function input(value: unknown) {
-    invariant(
-      value && typeof value === 'object' && !Array.isArray(value),
-      'Expected operation input.'
-    );
+    invariant(isRecord(value), 'Expected operation input.');
     const own: Record<string, unknown> = {};
     const selected: Record<string, unknown> = {};
     for (const [name, field] of Object.entries(value))
       (Object.hasOwn(filters, name) ? selected : own)[name] = field;
     const parsed = parseOwn(own);
-    invariant(
-      !!parsed && typeof parsed === 'object',
-      'Expected parsed input object.'
-    );
+    invariant(isRecord(parsed), 'Expected parsed input object.');
     for (const name of Object.keys(parsed))
       invariant(
         !Object.hasOwn(filters, name),

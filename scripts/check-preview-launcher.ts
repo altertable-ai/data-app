@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { chromium } from 'playwright';
+import { chromium, type Browser } from 'playwright';
 
 /** Exercise the launcher from a packed runtime installation, outside the checkout. */
 export async function checkPreviewLauncher(runtimeDirectory: string) {
@@ -36,8 +36,9 @@ export async function checkPreviewLauncher(runtimeDirectory: string) {
     ALTERTABLE_LAKEHOUSE_USERNAME: undefined,
     ALTERTABLE_LAKEHOUSE_PASSWORD: undefined,
   };
-  const browser = await chromium.launch();
+  let browser: Browser | undefined;
   try {
+    browser = await chromium.launch();
     const imported = Bun.spawn(
       [
         process.execPath,
@@ -216,7 +217,7 @@ console.log('Caller retained control');
       'Packed preview launcher: rendered external TSX, pinned resolution, proxy SQL, reload, explicit stop, and SIGINT/SIGTERM cleanup verified.'
     );
   } finally {
-    await browser.close();
+    await browser?.close();
     await proxy.stop(true);
     await rm(sourceDirectory, { recursive: true, force: true });
   }

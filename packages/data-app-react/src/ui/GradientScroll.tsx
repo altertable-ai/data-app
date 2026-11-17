@@ -61,7 +61,10 @@ export function useScrollFade(axis: 'vertical' | 'horizontal') {
     }
     observer.observe(element);
     observeChildren();
-    const mutations = new MutationObserver(() => {
+    const mutations = new MutationObserver(records => {
+      for (const record of records)
+        for (const node of record.removedNodes)
+          if (node instanceof Element) observer.unobserve(node);
       observeChildren();
       measure();
     });

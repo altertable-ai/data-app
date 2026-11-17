@@ -15,6 +15,7 @@ import {
   type BridgeEnvelope,
   type BridgeHandlers,
 } from './bridge.ts';
+import { isRecord } from './record.ts';
 
 type ConnectionContext = Pick<BridgeEnvelope, 'sessionId' | 'token'> & {
   documentId?: string;
@@ -86,12 +87,7 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
     const envelope = parseBridgeEnvelope(event.data);
     if (!envelope) {
       const data: unknown = event.data;
-      if (
-        data &&
-        typeof data === 'object' &&
-        'channel' in data &&
-        data.channel === bridgeProtocol.channel
-      )
+      if (isRecord(data) && data.channel === bridgeProtocol.channel)
         drop('invalid_envelope', 'type' in data ? data.type : undefined);
       return;
     }

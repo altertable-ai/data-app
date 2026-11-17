@@ -1,13 +1,9 @@
+import { type IframeTransport } from '@altertable/data-app/client';
 import {
-  getDataAppTransport,
-  type IframeTransport,
-} from '@altertable/data-app/client';
-import {
-  localFrameBridge,
   isDataAppPresentation,
   type DataAppPresentation,
 } from '@altertable/data-app/internal';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 function presentationFromBridgeState(state: unknown) {
   const presentation =
@@ -19,42 +15,21 @@ function presentationFromBridgeState(state: unknown) {
 }
 
 /** The frame UI shares one bridge connection for presentation and content sizing. */
-export function useDataAppPresentation() {
-  const [presentation, setPresentation] = useState<
-    DataAppPresentation | undefined
-  >(() => presentationFromBridgeState(getDataAppTransport()?.snapshot()));
+export function useDataAppPresentation(
+  transport: IframeTransport | undefined
+): DataAppPresentation | undefined {
+  const subscribe = useCallback(
+    (listener: () => void) => transport?.subscribe(listener) ?? (() => {}),
+    [transport]
+  );
+  const state = useSyncExternalStore(
+    subscribe,
+    () => transport?.snapshot(),
+    () => undefined
+  );
 
-  useEffect(() => {
-    let disposed = false;
-    let detach: (() => void) | undefined;
+  // Bootstraps that predate content sizing cannot apply it.
+  useEffect(() => transport?.supportContentSizing?.(), [transport]);
 
-    function attach(bridge: IframeTransport) {
-      if (disposed) return;
-      const unsubscribe = bridge.subscribe(state =>
-        setPresentation(presentationFromBridgeState(state))
-      );
-      // Bootstraps that predate content sizing cannot apply it.
-      const releaseSizing = bridge.supportContentSizing?.();
-      setPresentation(presentationFromBridgeState(bridge.snapshot()));
-      detach = () => {
-        unsubscribe();
-        releaseSizing?.();
-      };
-    }
-
-    const bridge = getDataAppTransport();
-    if (bridge) attach(bridge);
-    else
-      void localFrameBridge()
-        ?.connect?.()
-        .then(attach)
-        .catch(() => {});
-
-    return () => {
-      disposed = true;
-      detach?.();
-    };
-  }, []);
-
-  return presentation;
+  return presentationFromBridgeState(state);
 }

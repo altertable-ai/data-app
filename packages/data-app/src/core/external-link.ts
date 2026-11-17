@@ -1,4 +1,5 @@
 import { defineMessageRoute } from './messages.ts';
+import { isRecord } from './record.ts';
 
 /** Absolute HTTPS destinations only; URLs must not contain embedded credentials. */
 export function parseExternalUrl(value: unknown): string {
@@ -53,12 +54,8 @@ export const openExternalLinkRoute = /* @__PURE__ */ defineMessageRoute({
     if (input.target === undefined) return { url };
     if (input.target === 'tab' || input.target === 'window')
       return { url, target: input.target };
-    if (
-      input.target === 'event' &&
-      input.keys &&
-      typeof input.keys === 'object'
-    ) {
-      const keys = input.keys as Record<string, unknown>;
+    if (input.target === 'event' && isRecord(input.keys)) {
+      const keys = input.keys;
       if (
         typeof keys.shiftKey === 'boolean' &&
         typeof keys.metaKey === 'boolean' &&

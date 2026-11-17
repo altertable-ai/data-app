@@ -49,7 +49,7 @@ const client = createDataClient<typeof operations>({
     return Promise.resolve({
       status: 200,
       body: {
-        data: period === 'last-365' ? 84 : 42,
+        data: 42,
         requestId: period,
         queriedAt: '2026-10-07T00:00:00Z',
         queryIds: [],
@@ -105,16 +105,7 @@ const content = view.content(source => (
 ));
 function App() {
   return (
-    <DataApp
-      view={view}
-      story={() => []}
-      datasets={[dataset]}
-      toolbarActions={
-        <button onClick={() => changePeriod('last-365')}>
-          Change displayed period
-        </button>
-      }
-    >
+    <DataApp view={view} story={() => []} datasets={[dataset]}>
       <DataSection content={content} />
     </DataApp>
   );

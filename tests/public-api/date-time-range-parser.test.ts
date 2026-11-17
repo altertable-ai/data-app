@@ -580,6 +580,20 @@ describe('parseDateTimeRangeInput', () => {
       reason: 'unrecognized',
       normalizedInput: 'since',
     });
+
+    expect(
+      parseDateTimeRangeInput('1782913084 - 1782913084', parserOptions)
+    ).toEqual({
+      ok: false,
+      reason: 'invalid-range',
+      normalizedInput: '1782913084 - 1782913084',
+    });
+
+    expect(parseDateTimeRangeInput('last 0 days', parserOptions)).toEqual({
+      ok: false,
+      reason: 'unrecognized',
+      normalizedInput: 'last 0 days',
+    });
   });
 });
 

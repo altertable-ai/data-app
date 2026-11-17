@@ -17,6 +17,7 @@ import { type CsvExport } from './csv-export.ts';
 import { type DataContext } from './data-context.ts';
 import { type SectionResult } from './DataSectionBoundary.tsx';
 import { DataViewToast } from './DataViewToast.tsx';
+import { HostActions } from './HostActions.tsx';
 import { InspectionContext } from './InspectionContext.tsx';
 import { InspectionProvider } from './InspectionProvider.tsx';
 import { Stack } from './Stack.tsx';
@@ -25,15 +26,19 @@ import { TextContent } from './TextContent.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
+import { useDataAppTransport } from './useDataAppTransport.ts';
 
 export type DataAppBaseProps = {
   children: ReactNode;
   dataContext: DataContext;
   /** Override the declared subtitle; null hides it. */
   description?: ReactNode;
-  /** Show page actions. Defaults to true; does not hide filters or data states. */
+  /** Show page actions. Defaults to true; does not hide filters or data states.
+   * Embedded surfaces have no toolbar: the host runs page actions through its bridge. */
   showToolbar?: boolean;
+  /** Standalone toolbar controls; embedded surfaces omit them. */
   toolbarActions?: ReactNode;
+  /** Standalone footer controls; embedded surfaces omit them. */
   footerActions?: ReactNode;
   /** Optional source, coverage, or methodology note below the app content.
    * Compose prose and inline components; typography and spacing are provided.
@@ -90,8 +95,12 @@ export function DataAppFrame<Data, Input>(
     toolbarActions,
   } = props;
   const app = useDataApp();
-  const presentation = useDataAppPresentation();
+  const transport = useDataAppTransport();
+  const presentation = useDataAppPresentation(transport);
   const isEmbedded = presentation?.surface === 'embedded';
+  // Page actions live in the in-frame toolbar when standalone and in the host when embedded.
+  const showActions = props.showToolbar !== false;
+  const hasToolbar = showActions && !isEmbedded;
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
   const bodyRef = useRef<ComponentRef<'div'>>(null);
   useEffect(() => {
@@ -109,62 +118,58 @@ export function DataAppFrame<Data, Input>(
       environment={app.scope.environment}
     />
   );
-  const toolbar =
-    props.showToolbar === false ? null : (
-      <AppToolbar
-        csvExport={
-          props.csvExport &&
-          (props.csvExport.loading ? null : props.csvExport.value)
+  const csvExport =
+    props.csvExport && (props.csvExport.loading ? null : props.csvExport.value);
+  const refresh = request
+    ? {
+        refreshing:
+          request.refreshing ??
+          (request.view.kind === 'loading' || request.view.kind === 'updating'),
+        onRefresh: () => void request.refetch(),
+        onCancel: request.cancel ? () => void request.cancel?.() : undefined,
+      }
+    : undefined;
+  const storyProps =
+    props.story &&
+    (findings.length
+      ? {
+          findings,
+          title: app.title,
+          scope,
+          dataContext,
+          theme: themeController,
         }
-        requestState={request?.view.kind}
-        refresh={
-          request
-            ? {
-                refreshing:
-                  request.refreshing ??
-                  (request.view.kind === 'loading' ||
-                    request.view.kind === 'updating'),
-                onRefresh: () => void request.refetch(),
-                onCancel: request.cancel
-                  ? () => void request.cancel?.()
-                  : undefined,
-              }
-            : undefined
-        }
-        story={
-          props.story &&
-          (findings.length
-            ? {
-                findings,
-                title: app.title,
-                scope,
-                dataContext,
-                theme: themeController,
-              }
-            : null)
-        }
-        aboutData={
-          <AboutData
-            id="data"
-            shortcut
-            dataContext={dataContext}
-            queries={request?.queries ?? queries}
-            iconOnly
-            variant="elevated"
-          />
-        }
-      >
-        {presentation?.annotations?.enabled && (
-          <AnnotationControls
-            rootRef={bodyRef}
-            presentation={presentation.annotations}
-            displayedInput={snapshot?.input}
-            view={snapshot?.state}
-          />
-        )}
-        {toolbarActions}
-      </AppToolbar>
-    );
+      : null);
+  const annotations = presentation?.annotations?.enabled ? (
+    <AnnotationControls
+      rootRef={bodyRef}
+      presentation={presentation.annotations}
+      displayedInput={snapshot?.input}
+      view={snapshot?.state}
+      trigger={hasToolbar}
+    />
+  ) : null;
+  const toolbar = hasToolbar ? (
+    <AppToolbar
+      csvExport={csvExport}
+      requestState={request?.view.kind}
+      refresh={refresh}
+      story={storyProps}
+      aboutData={
+        <AboutData
+          id="data"
+          shortcut
+          dataContext={dataContext}
+          queries={request?.queries ?? queries}
+          iconOnly
+          variant="elevated"
+        />
+      }
+    >
+      {annotations}
+      {toolbarActions}
+    </AppToolbar>
+  ) : null;
 
   const searchRegion =
     request?.searchControls && props.showSearch !== false ? (
@@ -197,8 +202,20 @@ export function DataAppFrame<Data, Input>(
             </>
           }
         >
+          {!hasToolbar && annotations}
           {isEmbedded ? (
-            toolbar
+            <>
+              {transport && showActions && (
+                <HostActions
+                  transport={transport}
+                  refresh={refresh}
+                  csvExport={csvExport}
+                  story={storyProps}
+                  dataContext={dataContext}
+                  queries={request?.queries ?? queries}
+                />
+              )}
+            </>
           ) : (
             <AppHeader
               scope={scope}

@@ -30,6 +30,7 @@ export function attachDataAppSource({
   onMessage,
   onStatusChange,
   onDiagnostic,
+  onActionsChange,
   repair,
   startupTimeoutMs = 30_000,
 }: DataAppSourceOptions): DataAppHost {
@@ -86,6 +87,7 @@ export function attachDataAppSource({
     onMessage,
     onStatusChange: status,
     onDiagnostic,
+    onActionsChange,
     repair,
     window: host,
   });
@@ -107,5 +109,6 @@ export function attachDataAppSource({
     dispose,
     setPresentation: bridge.setPresentation,
     setLogger: bridge.setLogger,
+    runAction: bridge.runAction,
   };
 }

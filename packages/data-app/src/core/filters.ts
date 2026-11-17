@@ -4,6 +4,7 @@ import {
   type FilterPresentation,
 } from './app-filters.ts';
 import { invariant } from './invariant.ts';
+import { isRecord } from './record.ts';
 
 export type NumberOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
 export type NumberSelection =
@@ -154,8 +155,7 @@ export function booleanFilter({
   invariant(!!key.trim(), 'Boolean filter requires a URL key.');
   function valid(value: BooleanSelection) {
     return (
-      !!value &&
-      typeof value === 'object' &&
+      isRecord(value) &&
       (value.kind === 'all' ||
         (value.kind === 'is' && typeof value.value === 'boolean'))
     );

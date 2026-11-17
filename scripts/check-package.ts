@@ -771,7 +771,6 @@ try {
     target: 'browser',
     external: ['react'],
   });
-  if (!embed.success) throw new Error('Packed React embedding build failed.');
   if (embed.outputs.some(output => output.path.endsWith('.css')))
     throw new Error('Embedding entry unexpectedly imports CSS.');
   const hostSource = await embed.outputs[0]!.text();
@@ -793,7 +792,6 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
     target: 'browser',
     format: 'iife',
   });
-  if (!bootstrap.success) throw new Error('Packed bootstrap build failed.');
   const bootstrapSource = await bootstrap.outputs[0]!.text();
   if (
     /createAppLocation|attachNavigation|replaceState|pushState|navigation\.update/.test(
@@ -808,10 +806,6 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
     target: 'browser',
     external: ['react', 'react-dom'],
   });
-  if (!browser.success)
-    throw new Error(
-      `Packed browser build failed: ${browser.logs.map(log => log.message).join('\n')}`
-    );
   const outputs = browser.outputs.map(output => output.path);
   if (outputs.some(path => path.endsWith('.css')))
     throw new Error('Packed browser build emitted a separate stylesheet.');
@@ -839,10 +833,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
     target: 'browser',
     format: 'iife',
   });
-  if (
-    !hosted.success ||
-    hosted.outputs.some(output => output.path.endsWith('.css'))
-  )
+  if (hosted.outputs.some(output => output.path.endsWith('.css')))
     throw new Error(
       'Packed hosted example must build as one JavaScript bundle.'
     );
@@ -859,7 +850,6 @@ export { Grid };
     minify: true,
     external: ['react', 'react-dom'],
   });
-  if (!shaken.success) throw new Error('Packed tree-shaking build failed.');
   const shakenSource = await shaken.outputs[0]!.text();
   if (!shakenSource.includes('altertable-grid'))
     throw new Error('Tree-shaking removed the used Grid component.');
@@ -908,14 +898,10 @@ if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('M
 `
   );
   await run(['bun', join(temporary, 'minimum.jsx')], temporary);
-  const minimumBuild = await Bun.build({
+  await Bun.build({
     entrypoints: [join(temporary, 'minimum.jsx')],
     target: 'browser',
   });
-  if (!minimumBuild.success)
-    throw new Error(
-      `Minimum React browser build failed: ${minimumBuild.logs.map(log => log.message).join('\n')}`
-    );
   console.log(
     'Packed documentation, exports, declarations, explicit styles, tree-shaking, and server imports verified.'
   );

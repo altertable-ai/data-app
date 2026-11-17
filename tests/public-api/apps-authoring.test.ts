@@ -35,12 +35,12 @@ describe('authoring', () => {
     const app = page.frameLocator('iframe');
     await expect
       .poll(() =>
-        app
-          .getByRole('group', { name: 'Page actions', exact: true })
-          .filter({ hasText: 'Loading data' })
-          .isVisible()
+        page
+          .getByRole('group', { name: 'Host page actions', exact: true })
+          .getByRole('button', { name: /refresh/ })
+          .getAttribute('aria-busy')
       )
-      .toBe(true);
+      .toBe('true');
 
     await expect
       .poll(() =>
@@ -80,13 +80,13 @@ describe('authoring', () => {
       .toBe(0);
     await expect
       .poll(() =>
-        app
+        page
           .getByRole('button', { name: 'Present story', exact: true })
           .isDisabled()
       )
       .toBe(true);
     const stableActions = ['Explore data', 'Export CSV', 'Present story'].map(
-      name => app.getByRole('button', { name, exact: true })
+      name => page.getByRole('button', { name, exact: true })
     );
     await expect.poll(() => stableActions[1]!.isDisabled()).toBe(true);
 
@@ -116,7 +116,7 @@ describe('authoring', () => {
       .evaluate(element => element.clientWidth);
     expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
     const queryCountBeforeStory = requests.length;
-    await app
+    await page
       .getByRole('button', { name: 'Present story', exact: true })
       .click();
     const story = app.getByRole('dialog');
@@ -162,12 +162,12 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        app
-          .getByRole('group', { name: 'Page actions', exact: true })
-          .getByText('Updating data', { exact: true })
-          .isVisible()
+        page
+          .getByRole('group', { name: 'Host page actions', exact: true })
+          .getByRole('button', { name: /refresh/ })
+          .getAttribute('aria-busy')
       )
-      .toBe(true);
+      .toBe('true');
     release!();
     gate = Promise.resolve();
     await expect
@@ -207,7 +207,7 @@ describe('authoring', () => {
           .isVisible()
       )
       .toBe(true);
-    await app
+    await page
       .getByRole('button', { name: 'Present story', exact: true })
       .click();
     await expect
@@ -251,7 +251,7 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        app
+        page
           .getByRole('button', { name: 'Present story', exact: true })
           .isDisabled()
       )
@@ -276,7 +276,7 @@ describe('authoring', () => {
       )
       .toBe(true);
     const before = requests.length;
-    await app
+    await page
       .getByRole('button', { name: 'Refresh data', exact: true })
       .click();
     await expect.poll(() => requests.length).toBeGreaterThan(before);
@@ -307,7 +307,7 @@ describe('authoring', () => {
     expect(totalRequests.every(request => request.limit === 1)).toBe(true);
     await expect
       .poll(() =>
-        app
+        page
           .getByRole('button', { name: 'Refresh data', exact: true })
           .isVisible()
       )
@@ -338,14 +338,14 @@ describe('authoring', () => {
         .toBe(true);
     await expect
       .poll(() =>
-        app
+        page
           .getByRole('button', { name: 'Export CSV', exact: true })
           .isDisabled()
       )
       .toBe(true);
     await expect
       .poll(() =>
-        app
+        page
           .getByRole('button', { name: 'Present story', exact: true })
           .isDisabled()
       )

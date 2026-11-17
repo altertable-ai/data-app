@@ -13,6 +13,7 @@ import type {
   AppearanceSettings,
   AppearanceOptions,
 } from '../authoring/appearance.ts';
+import { isRecord } from './record.ts';
 
 export type ThemeController = {
   getTheme: () => ThemePreference;
@@ -39,10 +40,6 @@ const defaults: AppearanceSettings = {
   typography: { body: 'system', heading: 'system' },
 };
 
-function record(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function oneOf<T extends string>(
   value: unknown,
   options: readonly T[]
@@ -65,8 +62,8 @@ function font(value: unknown): value is string {
 
 /** Preserve supported external settings and use defaults for invalid fields. */
 export function parseAppearance(value: unknown): AppearanceSettings {
-  if (!record(value)) return normalizeAppearance();
-  const typography = record(value.typography) ? value.typography : {};
+  if (!isRecord(value)) return normalizeAppearance();
+  const typography = isRecord(value.typography) ? value.typography : {};
 
   return normalizeAppearance({
     theme: oneOf(value.theme, ['light', 'dark', 'system'])

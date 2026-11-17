@@ -602,7 +602,7 @@ for (const source of ['bundle', 'packaged', 'url']) {
   });
 }
 
-test('a content-sized frame follows its app height and keeps its toolbar and sheets usable', async ({
+test('a content-sized frame follows its app height and keeps host actions and sheets usable', async ({
   page,
 }) => {
   await page.goto('/bundle-host?content-sizing=1');
@@ -610,16 +610,23 @@ test('a content-sized frame follows its app height and keeps its toolbar and she
   const app = page.frameLocator('iframe');
   const main = app.getByRole('main');
   await expect.poll(() => main.isVisible()).toBe(true);
-  const toolbarAction = app.getByRole('button', {
-    name: 'Custom toolbar action',
+  const actions = page.getByRole('group', {
+    name: 'Host page actions',
     exact: true,
   });
-  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
-  await app.getByRole('button', { name: 'Export', exact: true }).click();
+  const exportSummary = actions.getByRole('button', {
+    name: 'Export Summary CSV',
+    exact: true,
+  });
+  await expect.poll(() => exportSummary.isEnabled()).toBe(true);
+  expect(await app.getByRole('group', { name: 'Page actions' }).count()).toBe(
+    0
+  );
+  expect(
+    await app.getByRole('button', { name: 'Custom toolbar action' }).count()
+  ).toBe(0);
   const downloaded = page.waitForEvent('download');
-  await app
-    .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
-    .click();
+  await exportSummary.click();
   const download = await downloaded;
   expect(download.suggestedFilename()).toBe('Summary.csv');
   const chunks: Buffer[] = [];
@@ -652,7 +659,9 @@ test('a content-sized frame follows its app height and keeps its toolbar and she
   await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
   expect(await overflow()).toBe(0);
 
-  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  await actions
+    .getByRole('button', { name: 'Explore data', exact: true })
+    .click();
   const sheet = app.getByRole('dialog');
   const { height: viewport } = page.viewportSize()!;
   async function fitsViewport() {
@@ -686,7 +695,7 @@ test('a content-sized frame follows its app height and keeps its toolbar and she
   await expect
     .poll(async () => Math.round(await frameHeight()))
     .toBe(Math.round(viewport * 0.8));
-  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
+  await expect.poll(() => exportSummary.isEnabled()).toBe(true);
   await page
     .getByRole('button', { name: 'Toggle content sizing', exact: true })
     .click();
@@ -898,7 +907,7 @@ test('content-sized inspection fits a narrow viewport after resizing', async ({
   await app
     .getByRole('searchbox', { name: 'Group', exact: true })
     .fill('Alpha');
-  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  await page.getByRole('button', { name: 'Explore data', exact: true }).click();
   const sheet = app.getByRole('dialog');
   await expect.poll(() => sheet.isVisible()).toBe(true);
   await page.setViewportSize({ width: 375, height: 480 });

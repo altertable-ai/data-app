@@ -1,3 +1,4 @@
+import { formatNumber } from '@altertable/data-app/format';
 import { useRef, useState, type ComponentRef, type RefObject } from 'react';
 
 import type { ChartItem, ValueChartProps } from './chart-data.ts';
@@ -30,7 +31,7 @@ export function PieChart<Row extends PieChartItem>({
   unit,
   ariaLabel,
   showLegend = true,
-  formatValue = value => new Intl.NumberFormat().format(value),
+  formatValue = formatNumber,
   itemActions,
 }: PieChartProps<Row>) {
   validateValueChartItems('pie', items);

@@ -52,6 +52,21 @@ const previewConfig = {
   },
 } satisfies TsConfigJson;
 
+// Resolve the app's config before creating the temporary directory so failures leave nothing behind.
+const appBunfig = join(directory, 'bunfig.toml');
+const config = (
+  existsSync(appBunfig) ? Bun.TOML.parse(readFileSync(appBunfig, 'utf8')) : {}
+) as {
+  preload?: string[];
+  serve?: { static?: { plugins?: string[] } };
+};
+if (config.preload)
+  config.preload = config.preload.map(path => Bun.resolveSync(path, directory));
+config.serve ??= {};
+config.serve.static ??= {};
+const appPlugins = (config.serve.static.plugins ?? []).map(path =>
+  Bun.resolveSync(path, directory)
+);
 const configDirectory = mkdtempSync(join(tmpdir(), 'data-app-dev-dir-'));
 const tsconfig = join(configDirectory, 'tsconfig.json');
 
@@ -69,23 +84,7 @@ writeFileSync(
   },
 };`
 );
-const appBunfig = join(directory, 'bunfig.toml');
-const config = (
-  existsSync(appBunfig) ? Bun.TOML.parse(readFileSync(appBunfig, 'utf8')) : {}
-) as {
-  preload?: string[];
-  serve?: { static?: { plugins?: string[] } };
-};
-if (config.preload)
-  config.preload = config.preload.map(path => Bun.resolveSync(path, directory));
-config.serve ??= {};
-config.serve.static ??= {};
-config.serve.static.plugins = [
-  ...(config.serve.static.plugins ?? []).map(path =>
-    Bun.resolveSync(path, directory)
-  ),
-  plugin,
-];
+config.serve.static.plugins = [...appPlugins, plugin];
 const bunfig = join(configDirectory, 'bunfig.toml');
 writeFileSync(bunfig, Bun.TOML.stringify(config)!);
 

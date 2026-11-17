@@ -100,5 +100,47 @@ Pass `presentation={{ surface: 'embedded', theme: resolvedTheme }}`
 to `<DataAppBridge>` in either source or connection mode. Use `'standalone'` when the app should render its own page chrome.
 Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
-Inside an embedded surface, `<DataApp>` retains toolbar actions and hides its header
-and footer. See [parent presentation](embed.md#parent-presentation).
+Inside an embedded surface, `<DataApp>` hides its header, footer, and page
+toolbar. See [parent presentation](embed.md#parent-presentation).
+
+## Page actions
+
+Render the app's page actions in the parent with `onActionsChange`, and run them
+through the bridge's `ref`:
+
+```tsx
+import { useRef, useState } from 'react';
+import {
+  DataAppBridge,
+  type DataAppBridgeHandle,
+} from '@altertable/data-app-embed/react';
+import type { DataAppActions } from '@altertable/data-app-embed';
+
+// ... javascript bundle and router
+function Shell() {
+  const bridge = useRef<DataAppBridgeHandle>(null);
+  const [actions, setActions] = useState<DataAppActions>({});
+  return (
+    <>
+      {actions.refresh && (
+        <button
+          disabled={actions.refresh.refreshing}
+          onClick={() => bridge.current?.runAction({ type: 'refresh' })}
+        >
+          Refresh
+        </button>
+      )}
+      <DataAppBridge
+        ref={bridge}
+        title="Activity report"
+        source={{ type: 'bundle', javascript }}
+        presentation={{ surface: 'embedded', theme: 'light' }}
+        onActionsChange={setActions}
+        onMessage={router.dispatch}
+      />
+    </>
+  );
+}
+```
+
+See [page actions](embed.md#page-actions) for every action and its state.

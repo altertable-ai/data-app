@@ -16,6 +16,7 @@ import {
 } from './date-time-range-value.ts';
 import type { DateTimeRange } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
+import { isRecord } from './record.ts';
 
 /** A picker suggestion. Text ranges use the same natural-language parser as typed input. */
 export type DateTimeRangePreset = {
@@ -159,11 +160,8 @@ export function dateTimeRangeFilter<
     value: unknown,
     now = new Date()
   ): DateTimeRangeSelection {
-    invariant(
-      !!value && typeof value === 'object' && !Array.isArray(value),
-      'Choose a datetime range.'
-    );
-    const selection = value as Record<string, unknown>;
+    invariant(isRecord(value), 'Choose a datetime range.');
+    const selection = value;
     invariant(
       Object.keys(selection).every(
         name => name === 'range' || name === 'comparison'
@@ -245,11 +243,8 @@ export function dateTimeRangeFilter<
     presets,
     request,
     parseInput(value) {
-      invariant(
-        !!value && typeof value === 'object' && !Array.isArray(value),
-        'Invalid datetime request.'
-      );
-      const supplied = value as Record<string, unknown>;
+      invariant(isRecord(value), 'Invalid datetime request.');
+      const supplied = value;
       invariant(
         Object.keys(supplied).every(name =>
           ['range', 'comparison', 'selection', 'reference'].includes(name)

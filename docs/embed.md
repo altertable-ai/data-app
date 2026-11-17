@@ -230,8 +230,52 @@ host.setPresentation({ surface: 'embedded', theme: 'light' });
 Use `surface: 'embedded'` when the parent supplies page chrome and
 `'standalone'` when the app supplies it. Resolve the parent theme to `'light'` or
 `'dark'`. React `<DataApp>` applies presentation automatically: embedded surfaces
-keep toolbar actions and hide header/footer. Updates do not reload the iframe.
+hide the header, footer, and page toolbar, and offer its actions to the parent
+through [page actions](#page-actions). Updates do not reload the iframe.
 Call `host.setPresentation(undefined)` to restore standalone defaults.
+
+The parent also owns annotation mode whenever the app shows no toolbar, as on
+embedded surfaces: set `annotations.active` (omitted means inactive) and handle
+the `annotation:mode` route.
+
+### Page actions
+
+An embedded app shows no toolbar. It offers its page actions to the parent,
+which renders the controls and runs them through the bridge:
+
+```ts
+// ... iframe, authorized router, and refreshButton
+const host = attachDataAppBridge({
+  iframe,
+  source: { type: 'url', url: 'https://apps.example.com/report' },
+  presentation: { surface: 'embedded', theme: 'light' },
+  onActionsChange(actions) {
+    refreshButton.hidden = !actions.refresh;
+    refreshButton.disabled = actions.refresh?.refreshing ?? true;
+  },
+  onMessage: router.dispatch,
+});
+
+refreshButton.onclick = () => host.runAction({ type: 'refresh' });
+```
+
+`onActionsChange` receives the complete `DataAppActions` on every change. Render
+only the keys present:
+
+| Offered state                           | Run                               | Notes                                                                  |
+| --------------------------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| `refresh: { refreshing, cancellable }`  | `refresh`, `cancelRefresh`        | Cancel only while `refreshing` and `cancellable`.                      |
+| `exportCsv: { enabled, tables }`        | `exportCsv` with optional `table` | Omit `table` to export every dataset, as a ZIP when there are several. |
+| `presentStory: { enabled, presenting }` | `presentStory`, `closeStory`      | Shows the iframe fullscreen while presenting.                          |
+| `aboutData: { enabled }`                | `aboutData`                       | Opens the data inspector in the frame.                                 |
+
+Call `runAction()` from the user's click: the bridge needs that gesture to show
+a story fullscreen. It exits fullscreen when the story closes, and leaving
+fullscreen closes the story. `presentStory` and `aboutData` move focus into the
+frame; when that story closes, focus returns to the control that ran it unless
+the reader has moved elsewhere. The app ignores actions it does not currently
+offer. While the app reconnects, actions reset to `{}` and `runAction()` does
+nothing.
 
 ### Content sizing
 

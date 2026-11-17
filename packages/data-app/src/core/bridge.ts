@@ -1,4 +1,6 @@
+import { parseDataAppAction, parseDataAppActions } from './actions.ts';
 import { isLogEntry } from './logger.ts';
+import { isRecord } from './record.ts';
 
 /** Data app delivery protocol. IDs identify a document, a shell session, and an individual call. */
 const BRIDGE = 'altertable:data-app';
@@ -174,6 +176,19 @@ export const bridgeProtocol = {
       session: 'current',
       parse: fields => ({ height: length(fields, 'height') }),
     }),
+    /** The page actions the app currently offers; replaces the previous set. */
+    actionsUpdate: event({
+      wire: 'actions:update',
+      from: 'app',
+      session: 'current',
+      parse: fields => ({ actions: parseDataAppActions(fields.actions) }),
+    }),
+    actionRun: event({
+      wire: 'action:run',
+      from: 'host',
+      session: 'current',
+      parse: fields => ({ action: parseDataAppAction(fields.action) }),
+    }),
     /** CSS pixels of a content-sized frame hidden above and below the parent's visible area. */
     viewportUpdate: event({
       wire: 'viewport:update',
@@ -239,9 +254,7 @@ export function bridgeMessageMetadata(
     const payload = message.payload;
     if (
       message.route === 'data:query' &&
-      payload &&
-      typeof payload === 'object' &&
-      'operation' in payload &&
+      isRecord(payload) &&
       typeof payload.operation === 'string'
     )
       metadata.operation = payload.operation.slice(0, 256);

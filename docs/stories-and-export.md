@@ -2,7 +2,7 @@
 
 The bound `<DataApp>` from `@altertable/data-app-react` accepts an optional `story`
 callback and optional nonempty `datasets` list. Omit either prop to omit its toolbar
-control. Supplied features use the displayed snapshot, including during refresh or
+control, or the matching [page action](embed.md#page-actions) when embedded. Supplied features use the displayed snapshot, including during refresh or
 failure. A story callback returning `[]` leaves a disabled presentation action.
 Set `showToolbar={false}` to omit page actions together; data loading, error states,
 and declared filters remain available. Setup and static screens can use `<DataApp>`

@@ -3,8 +3,8 @@
  * @module @altertable/data-app-embed/react
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/react-embed.md
  */
-export { DataAppBridge, type DataAppBridgeProps } from './bridge.tsx';
 export {
-  DataAppRepairBanner,
-  type DataAppRepairProgress,
-} from './repair-banner.tsx';
+  DataAppBridge,
+  type DataAppBridgeHandle,
+  type DataAppBridgeProps,
+} from './bridge.tsx';

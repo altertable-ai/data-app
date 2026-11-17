@@ -52,7 +52,8 @@ function ComparisonContent({
   favorableDirection,
   emphasis = 'standard',
 }: UnboundComparisonProps) {
-  const max = Math.max(current.value, previous?.value ?? 0, 1);
+  const max =
+    Math.max(Math.abs(current.value), Math.abs(previous?.value ?? 0)) || 1;
   const { percent, tone, icon } = comparisonChange({
     current,
     previous,
@@ -72,7 +73,7 @@ function ComparisonContent({
           <strong>{current.formattedValue}</strong>
         </div>
         <span className="altertable-comparison-track">
-          <span style={{ width: `${(current.value / max) * 100}%` }} />
+          <span style={{ width: trackWidth(current.value, max) }} />
         </span>
       </div>
       {previous && (
@@ -82,9 +83,7 @@ function ComparisonContent({
             <strong>{previous.formattedValue}</strong>
           </div>
           <span className="altertable-comparison-track">
-            <span
-              style={{ width: `${((previous.value ?? 0) / max) * 100}%` }}
-            />
+            <span style={{ width: trackWidth(previous.value ?? 0, max) }} />
           </span>
         </div>
       )}
@@ -101,4 +100,8 @@ function ComparisonContent({
       </p>
     </figure>
   );
+}
+
+function trackWidth(value: number, max: number) {
+  return `${Math.max(0, value / max) * 100}%`;
 }

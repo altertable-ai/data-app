@@ -97,7 +97,7 @@ const readyWatcher = watch(
     }, 50);
   }
 );
-const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
+const port = Number(process.env.DATA_APP_GALLERY_PORT ?? 27418);
 console.log(`Mocked Altertable API: ${mockApiUrl}`);
 console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
 console.log(`Playground: http://127.0.0.1:${port}/playground`);

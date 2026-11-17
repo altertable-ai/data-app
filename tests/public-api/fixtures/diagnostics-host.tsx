@@ -2,11 +2,7 @@ import {
   createDataAppRepairSession,
   type DataAppRepairState,
 } from '@altertable/data-app-embed';
-import {
-  DataAppBridge,
-  DataAppRepairBanner,
-  type DataAppRepairProgress,
-} from '@altertable/data-app-embed/react';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 const params = new URLSearchParams(location.search);
@@ -52,7 +48,6 @@ function Host() {
   const [revision, setRevision] = useState(
     Number(sessionStorage.getItem('revision') ?? '1')
   );
-  const [progress, setProgress] = useState<DataAppRepairProgress>();
   const [mount, setMount] = useState(0);
   const [session, setSession] = useState(makeSession);
   const diagnostics = useSyncExternalStore(
@@ -70,8 +65,6 @@ function Host() {
   useEffect(() => {
     function listener() {
       setCount(requests.length);
-      // A new host request replaces activity from the previous attempt.
-      setProgress(undefined);
     }
     document.addEventListener('delivered', listener);
     return () => document.removeEventListener('delivered', listener);
@@ -98,34 +91,6 @@ function Host() {
       <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
         Change theme
       </button>
-      {params.has('progress') && (
-        <>
-          {(['working', 'building', 'loading', 'review'] as const).map(
-            phase => (
-              <button
-                key={phase}
-                onClick={() =>
-                  setProgress({
-                    phase,
-                    detail:
-                      'Checking the revenue calculation and fixing the reported errors.',
-                  })
-                }
-              >
-                {phase}
-              </button>
-            )
-          )}
-          <button
-            onClick={() => {
-              setProgress(undefined);
-              setRevision(revision + 1);
-            }}
-          >
-            Finish update
-          </button>
-        </>
-      )}
       {params.has('controlled-delivery') && (
         <>
           <button onClick={() => completeDelivery?.('accepted')}>
@@ -150,7 +115,20 @@ function Host() {
           overflow: 'hidden',
         }}
       >
-        <DataAppRepairBanner session={session} progress={progress} />
+        {/* Hosts render their own repair UI from the session snapshot. */}
+        {!!diagnostics.report?.failures.length && (
+          <section aria-label="App errors">
+            <button
+              disabled={
+                diagnostics.status === 'pending' ||
+                diagnostics.status === 'unsupported'
+              }
+              onClick={() => void session.requestRepair()}
+            >
+              Fix errors
+            </button>
+          </section>
+        )}
         <DataAppBridge
           key={`${revision}-${mount}`}
           source={{ type: 'bundle', javascript }}

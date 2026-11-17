@@ -34,7 +34,7 @@ import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import tooltips from '@/tests/public-api/fixtures/tooltips.html';
 
-const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
+const port = 0;
 async function bundle(entry: string, sourcemap = false) {
   const result = await Bun.build({
     entrypoints: [entry],
@@ -43,8 +43,6 @@ async function bundle(entry: string, sourcemap = false) {
     sourcemap: sourcemap ? 'inline' : 'none',
     define: { 'import.meta.env': '{}' },
   });
-  if (!result.success)
-    throw new Error(result.logs.map(log => log.message).join('\n'));
   return result.outputs[0]!.text();
 }
 const [

@@ -1,3 +1,4 @@
+import { createNavigationHandler } from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   AnnotationBar,
@@ -11,6 +12,7 @@ import {
   annotationModeRoute,
   annotationEditorStateRoute,
   annotationSendRoute,
+  navigationUpdateRoute,
   MessageRoutingError,
   type DataAppAnnotationDraft,
 } from '@altertable/data-app/contract';
@@ -49,11 +51,20 @@ const initialAnnotations: DataAppAnnotationDraft[] = params.has(
     ]
   : [];
 
+// Status outputs stay out of flow so their growing text never moves the frame.
+const offscreen = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+} as const;
+
 function Host() {
   const [drafts, setDrafts] = useState(initialAnnotations);
   const [failed, setFailed] = useState(params.has('annotation-error'));
   const [version, setVersion] = useState(1);
   const [active, setActive] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [sendFailed, setSendFailed] = useState(
     params.has('annotation-send-error')
@@ -74,6 +85,7 @@ function Host() {
       'annotation:mode': annotationModeRoute,
       'annotation:editor': annotationEditorStateRoute,
       'annotation:send': annotationSendRoute,
+      'navigation:update': navigationUpdateRoute,
     },
     {
       'annotation:draft'(draft) {
@@ -102,18 +114,33 @@ function Host() {
         return null;
       },
       'annotation:send': sendAnnotations,
+      'navigation:update': createNavigationHandler(),
     }
   );
   return (
     <>
-      <output aria-label="Annotation drafts">{JSON.stringify(drafts)}</output>
-      <output aria-label="Send attempts">{sendAttempts}</output>
-      <output aria-label="Submitted annotations">
+      <output aria-label="Annotation drafts" style={offscreen}>
+        {JSON.stringify(drafts)}
+      </output>
+      <output aria-label="Send attempts" style={offscreen}>
+        {sendAttempts}
+      </output>
+      <output aria-label="App refreshing" style={offscreen}>
+        {String(refreshing)}
+      </output>
+      <output aria-label="Submitted annotations" style={offscreen}>
         {JSON.stringify(submitted)}
       </output>
+      {params.has('annotations') && (
+        <button
+          aria-pressed={active}
+          onClick={() => setActive(value => !value)}
+        >
+          Annotate
+        </button>
+      )}
       {params.has('annotation-send') && (
         <>
-          <button onClick={() => setActive(value => !value)}>Annotate</button>
           <button onClick={() => setSendFailed(false)}>Allow submission</button>
           <AnnotationBar
             ref={annotationBarRef}
@@ -155,7 +182,7 @@ function Host() {
             ? {
                 annotations: {
                   enabled: true,
-                  ...(params.has('annotation-send') ? { active } : {}),
+                  active,
                   targets: drafts.map((draft, index) => ({
                     id: draft.id,
                     targetId: draft.target.id,
@@ -168,6 +195,9 @@ function Host() {
               }
             : {}),
         }}
+        onActionsChange={actions =>
+          setRefreshing(actions.refresh?.refreshing ?? false)
+        }
         onMessage={router.dispatch}
       />
     </>

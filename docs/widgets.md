@@ -24,7 +24,7 @@ only when changing spans or shell composition.
 Choose the component by the user's question. Compose dataset visuals inside
 `<VisualizationWidget>`; use `<MetricWidget>` for a headline value. Built-in
 charts come from `@altertable/data-app-react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
-are also available from `@altertable/data-app-react`.
+come from the root `@altertable/data-app-react` entry.
 
 | Question                         | Component and constraint                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------- |

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 /**
  * `alt` is Alt/Option, leaving character keys and browser refresh untouched; `mod` is ⌘ on Apple
@@ -84,6 +84,7 @@ export function useShortcut(
   enabled = true,
   allowWhileEditing = false
 ): void {
+  const runAction = useEffectEvent(action);
   useEffect(() => {
     if (!enabled) return;
 
@@ -101,11 +102,11 @@ export function useShortcut(
         return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      action();
+      runAction();
     }
 
     document.addEventListener('keydown', onKeyDown, true);
 
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [shortcut, enabled, allowWhileEditing, action]);
+  }, [shortcut, enabled, allowWhileEditing]);
 }

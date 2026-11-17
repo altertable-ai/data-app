@@ -28,6 +28,7 @@ export {
 } from './iframe.ts';
 export { createMessageClient } from './messages.ts';
 export { type DataAppLogger } from '../core/logger.ts';
+export { type DataAppAction, type DataAppActions } from '../core/actions.ts';
 export { createAnnotationClient } from './annotations.ts';
 export { appDiagnostics } from './diagnostics.ts';
 export {

@@ -10,6 +10,7 @@ import {
   expandParameterReferences,
   type StructuredParameter,
 } from './parameter-sql.ts';
+import { isRecord } from './record.ts';
 
 export const MAX_QUERY_ROWS = 10_000;
 
@@ -183,8 +184,7 @@ function serializeSelection(
     typeof value === 'string' ? JSON.parse(value) : value
   ) as DimensionSelection;
   const valid =
-    !!selection &&
-    typeof selection === 'object' &&
+    isRecord(selection) &&
     (selection.kind === 'all' ||
       ((selection.kind === 'include' || selection.kind === 'exclude') &&
         Array.isArray(selection.members) &&
@@ -222,21 +222,14 @@ function isQueryParameterValue(value: unknown): value is QueryParameterValue {
 }
 
 export function isQueryParameters(value: unknown): value is QueryParameters {
-  return (
-    !!value &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    Object.values(value).every(isQueryParameterValue)
-  );
+  return isRecord(value) && Object.values(value).every(isQueryParameterValue);
 }
 
 function snapshotField<Field extends QueryField>(
   field: Field
 ): Readonly<Field> {
   invariant(
-    field &&
-      typeof field === 'object' &&
-      !Array.isArray(field) &&
+    isRecord(field) &&
       (field.type === 'string' ||
         field.type === 'number' ||
         field.type === 'boolean' ||

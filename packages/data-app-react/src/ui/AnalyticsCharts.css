@@ -42,11 +42,6 @@
 .altertable-journey-scroll {
   max-height: 900px;
 }
-.altertable-analytics-note {
-  color: var(--atbl-muted);
-  margin: 8px 0;
-  overflow-wrap: anywhere;
-}
 .altertable-journey-plot {
   position: relative;
 }

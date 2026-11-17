@@ -19,6 +19,7 @@ import {
   type QueryDefinitions,
   type QueryParameters,
 } from './queries.ts';
+import { isRecord } from './record.ts';
 
 type Source = { query: string; queries: QueryDefinitions };
 export const dimensionSource = Symbol('data-app.dimensionSource');
@@ -189,11 +190,8 @@ export function attachDimensionSelectors(
     );
     selectors[name] = {
       input(value: unknown) {
-        invariant(
-          value && typeof value === 'object',
-          'Invalid dimension request.'
-        );
-        const member = (value as { member: unknown }).member;
+        invariant(isRecord(value), 'Invalid dimension request.');
+        const member = value.member;
         invariant(
           member === null ||
             filter.valid({

@@ -7,6 +7,7 @@ import {
   type OutputOf,
 } from './operation-types.ts';
 import { isQueryParameters, type QueryParameters } from './queries.ts';
+import { isRecord } from './record.ts';
 export {
   type OperationContracts,
   type DataQueryInput,
@@ -229,8 +230,7 @@ export function defineDataQueryRoute<
         (!Array.isArray(body.queries) ||
           !body.queries.every(
             query =>
-              query &&
-              typeof query === 'object' &&
+              isRecord(query) &&
               typeof query.name === 'string' &&
               typeof query.statement === 'string' &&
               (query.params === undefined || isQueryParameters(query.params)) &&
@@ -276,7 +276,7 @@ export type SqlQueryInput = {
 };
 
 /** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
-export const sqlQueryRoute = defineMessageRoute({
+export const sqlQueryRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): SqlQueryInput {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid SQL query.');

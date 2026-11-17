@@ -1,11 +1,15 @@
 import {
+  type DataAppActions,
   type DataAppLogger,
   type DataAppStatus,
   createNavigationHandler,
   createExternalLinkHandler,
   createSqlQueryHandler,
 } from '@altertable/data-app-embed';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
+import {
+  DataAppBridge,
+  type DataAppBridgeHandle,
+} from '@altertable/data-app-embed/react';
 import {
   AnnotationBar,
   type AnnotationBarHandle,
@@ -34,7 +38,17 @@ import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import '@/packages/data-app-react/src/ui/Tooltip.css';
 import '@/packages/data-app-react/src/ui/Kbd.css';
 
-import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
+import {
+  Moon,
+  Sun,
+  PanelsTopLeft,
+  AppWindow,
+  RefreshCw,
+  Square,
+  Download,
+  Presentation,
+  Info,
+} from 'lucide-react';
 import {
   StrictMode,
   useEffectEvent,
@@ -42,6 +56,7 @@ import {
   useRef,
   useState,
   type ComponentRef,
+  type RefObject,
 } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -107,7 +122,72 @@ const previewLabels = {
   standalone: 'Preview embedded app',
 };
 
+/** Page actions the embedded app offers, rendered by the host instead of an in-app toolbar. */
+function HostPageActions({
+  actions,
+  run,
+  portalRoot,
+}: {
+  actions: DataAppActions;
+  run: DataAppBridgeHandle['runAction'];
+  portalRoot: RefObject<HTMLElement | null>;
+}) {
+  const { refresh, exportCsv, presentStory, aboutData } = actions;
+  const items = [
+    refresh && {
+      label: refresh.refreshing
+        ? refresh.cancellable
+          ? 'Cancel refresh'
+          : 'Refreshing data'
+        : 'Refresh data',
+      icon: refresh.refreshing && refresh.cancellable ? Square : RefreshCw,
+      disabled: refresh.refreshing && !refresh.cancellable,
+      busy: refresh.refreshing,
+      run: () =>
+        run({ type: refresh.refreshing ? 'cancelRefresh' : 'refresh' }),
+    },
+    exportCsv && {
+      label:
+        exportCsv.tables.length > 1 ? 'Export all data (ZIP)' : 'Export CSV',
+      icon: Download,
+      disabled: !exportCsv.enabled,
+      run: () => run({ type: 'exportCsv' }),
+    },
+    presentStory && {
+      label: 'Present story',
+      icon: Presentation,
+      disabled: !presentStory.enabled,
+      run: () => run({ type: 'presentStory' }),
+    },
+    aboutData && {
+      label: 'Explore data',
+      icon: Info,
+      disabled: !aboutData.enabled,
+      run: () => run({ type: 'aboutData' }),
+    },
+  ].filter(item => !!item);
+  return items.map(item => (
+    <Tooltip
+      key={item.label}
+      content={item.label}
+      placement="bottom"
+      portalRoot={portalRoot}
+    >
+      <button
+        aria-label={item.label}
+        aria-busy={item.busy}
+        disabled={item.disabled}
+        onClick={item.run}
+      >
+        <item.icon size={16} aria-hidden="true" />
+      </button>
+    </Tooltip>
+  ));
+}
+
 function Host() {
+  const bridge = useRef<DataAppBridgeHandle>(null);
+  const [actions, setActions] = useState<DataAppActions>({});
   const [annotationFailure, setAnnotationFailure] = useState(
     hostOptions.has('annotation-error')
   );
@@ -177,9 +257,10 @@ function Host() {
           ? {
               annotations: {
                 enabled: true,
+                // Without an in-frame toolbar, the host always owns annotation mode.
+                active: annotating,
                 ...(isPlayground
                   ? {
-                      active: annotating,
                       pinsVisible,
                       showHint: annotations.length === 0,
                       readOnly: sending || !annotationsHost.ready,
@@ -336,6 +417,14 @@ function Host() {
       >
         Change surface
       </button>
+      {hostOptions.has('annotations') && (
+        <button
+          aria-pressed={annotating}
+          onClick={() => setAnnotating(value => !value)}
+        >
+          Annotate
+        </button>
+      )}
     </>
   );
   const testControls = (
@@ -379,6 +468,11 @@ function Host() {
               aria-label="Playground controls"
               className="playground-controls"
             >
+              <HostPageActions
+                actions={actions}
+                run={action => bridge.current?.runAction(action)}
+                portalRoot={hostRef}
+              />
               {showSizingControls && (
                 <>
                   <button
@@ -468,6 +562,15 @@ function Host() {
         <>
           {presentationControls}
           {testControls}
+          <TooltipProvider>
+            <fieldset aria-label="Host page actions">
+              <HostPageActions
+                actions={actions}
+                run={action => bridge.current?.runAction(action)}
+                portalRoot={hostRef}
+              />
+            </fieldset>
+          </TooltipProvider>
         </>
       )}
       {isPlayground && (annotating || annotationsHost.deletedAnnotationId) && (
@@ -534,8 +637,8 @@ function Host() {
           >
             <h1>An app inside a page</h1>
             <p>
-              Scroll the report, open its data inspector or story, and resize
-              the compact panel. The app toolbar stays available in both modes.
+              Scroll the report, open its data inspector or story from the page
+              actions above, and resize the compact panel.
             </p>
             <output aria-label="Scroll owner">
               {sizesToContent
@@ -560,6 +663,8 @@ function Host() {
           )}
           <DataAppBridge
             key={attempt}
+            ref={bridge}
+            onActionsChange={setActions}
             onStatusChange={nextStatus => {
               setStatus(nextStatus);
               if (nextStatus === 'failed' || nextStatus === 'disconnected')

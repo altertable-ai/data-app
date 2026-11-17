@@ -53,7 +53,7 @@ function ExportActions({ exportRows }: { exportRows: () => void }) {
 }
 ```
 
-`<AppLayout>` already provides shared timing. A standalone `<Tooltip>` works
+A standalone `<Tooltip>` works
 without a provider; wrap adjacent custom controls in `<TooltipProvider>` to share
 the first-hover delay and open subsequent hints immediately. Keyboard focus opens
 hints immediately. The pointer can move onto the hint to keep it visible; Escape
