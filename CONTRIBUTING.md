@@ -7,6 +7,9 @@ bun install --frozen-lockfile
 bash scripts/install-test-browser.sh
 ```
 
+Docker must be running for the SQL-backed business-evidence browser tests. They
+start an isolated Altertable mock using the same pinned image as the gallery.
+
 ## Workflow
 
 1. **Locate the owner.** Use the code map below. Read additional guidance only

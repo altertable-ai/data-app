@@ -12,6 +12,7 @@ import appearance from '@/tests/public-api/fixtures/appearance.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
+import businessEvidence from '@/tests/public-api/fixtures/business-evidence.html';
 import chartCursors from '@/tests/public-api/fixtures/chart-cursors.html';
 import chartGrids from '@/tests/public-api/fixtures/chart-grids.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
@@ -99,6 +100,7 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   port,
   routes: {
+    '/business-evidence': businessEvidence,
     '/exploration': exploration,
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
