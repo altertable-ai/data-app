@@ -5,6 +5,7 @@ import {
   parseCount,
   DataSourceError,
   searchFilter,
+  choiceFilter,
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import { expect, test, vi } from 'vitest';
@@ -39,6 +40,49 @@ function lakehouse(): Lakehouse {
     },
   };
 }
+
+test('operation filters support names inherited from Object.prototype and require own input fields', async () => {
+  const toString = choiceFilter({
+    key: 'format',
+    options: [{ id: 'plain', label: 'Plain' }],
+    defaultValue: 'plain',
+  });
+  const operation = defineOperation({
+    filters: { toString },
+    queries: {},
+    policy: { maxQueryRows: 1, maxDurationMs: 100 },
+    async run(_context, input) {
+      return input.toString;
+    },
+  });
+  const client = createDataClient({
+    operations: { format: operation },
+    lakehouse: lakehouse(),
+  });
+  expect((await client.query('format', { toString: 'plain' })).data).toBe(
+    'plain'
+  );
+  const inherited = Object.create({ toString: 'plain' });
+  await expect(client.query('format', inherited)).rejects.toMatchObject({
+    code: 'invalid_input',
+  });
+});
+
+test('operation filters reject prototype setters from unchecked declarations', () => {
+  const filters = Object.fromEntries([
+    ['__proto__', searchFilter({ key: 'search' })],
+  ]);
+  expect(() =>
+    defineOperation({
+      filters: filters as never,
+      queries: {},
+      policy: { maxQueryRows: 1, maxDurationMs: 100 },
+      async run() {
+        return null;
+      },
+    })
+  ).toThrow('Filter names must not include __proto__.');
+});
 
 test('app operation registry derives filters and executes in the browser', async () => {
   const app = defineDataApp({
