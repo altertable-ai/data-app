@@ -1,24 +1,32 @@
 import {
+  choiceFilter,
   dateTimeRangeFilter,
   displayChoice,
 } from '@altertable/data-app/contract';
 
-// Declare each filter once in this browser-safe module: operations read them on
-// the server, and the browser client renders their controls.
 const findingPeriod = {
-  from: new Date('2026-03-09T00:00:00Z'),
+  from: new Date('2026-03-02T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-const period = dateTimeRangeFilter({
+export const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
-  comparison: 'off',
   presets: [{ label: 'Finding period', range: findingPeriod }],
 });
-const grain = displayChoice({
+export const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'Alpha',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
+export const grain = displayChoice({
   key: 'grain',
   label: 'Grain',
   defaultValue: 'day',
@@ -28,7 +36,7 @@ const grain = displayChoice({
   ],
   presentation: { control: 'widget' },
 });
-const breakdown = displayChoice({
+export const breakdown = displayChoice({
   key: 'breakdown',
   label: 'Breakdown',
   defaultValue: 'segment',
@@ -39,10 +47,8 @@ const breakdown = displayChoice({
   presentation: { control: 'widget' },
 });
 
-/** The filters each operation reads. */
 export const operationFilters = {
-  sampleTotal: { period },
-  samplesOverTime: { period, grain },
-  samplesByMember: { period, breakdown },
-  sampleRows: { period, grain, breakdown },
+  samplesOverTime: { period: periodFilter, groupName, grain },
+  samplesByMember: { period: periodFilter, groupName, breakdown },
+  sampleRows: { period: periodFilter, groupName, grain, breakdown },
 };

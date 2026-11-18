@@ -342,14 +342,9 @@ test('extracts the Finding exploration declaration', async () => {
     scope: { organization: 'demo', environment: 'sample' },
     // One query per widget.
     queries: {
-      sampleTotal: {
-        params: {
-          period_from: { type: 'string' },
-          period_to: { type: 'string' },
-        },
-      },
       samplesOverTime: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },
@@ -357,6 +352,7 @@ test('extracts the Finding exploration declaration', async () => {
       },
       samplesByMember: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           breakdown: { type: 'string', defaultValue: 'segment' },
@@ -364,6 +360,7 @@ test('extracts the Finding exploration declaration', async () => {
       },
       sampleRows: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },

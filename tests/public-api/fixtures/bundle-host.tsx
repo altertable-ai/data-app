@@ -32,10 +32,10 @@ const { frameURL } = await fetch('/__test/config').then(response =>
   response.json()
 );
 const params = new URLSearchParams(location.search);
-const starter = location.pathname === '/starter-data-app';
+const starter = location.pathname.startsWith('/starter-');
 const javascript = await fetch(
   starter
-    ? '/__test/starter-data-app'
+    ? `/__test${location.pathname}`
     : params.has('manual-sizing')
       ? '/__test/content-sizing'
       : '/__test/bundle'

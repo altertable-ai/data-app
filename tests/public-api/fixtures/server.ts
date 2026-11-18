@@ -5,6 +5,8 @@ import { serveLocalApp } from '@altertable/data-app-bun';
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import { dataApp as localStarterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
+import localFinding from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
+import localMetric from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
@@ -52,6 +54,8 @@ async function bundle(entry: string, sourcemap = false) {
   return result.outputs[0]!.text();
 }
 const [
+  findingStarter,
+  metricStarter,
   app,
   starter,
   frame,
@@ -60,6 +64,12 @@ const [
   contentSizing,
   diagnostics,
 ] = await Promise.all([
+  bundle(
+    'packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
+  ),
+  bundle(
+    'packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
+  ),
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
   bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
@@ -93,6 +103,10 @@ const server = Bun.serve({
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
+    '/starter-finding-data-app': bundleHost,
+    '/starter-metric-data-app': bundleHost,
+    '/local-finding': localFinding,
+    '/local-metric': localMetric,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
@@ -137,6 +151,10 @@ const server = Bun.serve({
     if (url.pathname === '/__test/bundle') return new Response(app);
     if (url.pathname === '/__test/content-sizing')
       return new Response(contentSizing);
+    if (url.pathname === '/__test/starter-finding-data-app')
+      return new Response(findingStarter);
+    if (url.pathname === '/__test/starter-metric-data-app')
+      return new Response(metricStarter);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
     if (url.pathname === '/__test/silent')

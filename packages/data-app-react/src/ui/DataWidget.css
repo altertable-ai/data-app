@@ -19,13 +19,14 @@
 }
 .altertable-data-widget-heading-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--atbl-space-md);
   min-height: 30px;
 }
 .altertable-data-widget-heading-row > .altertable-widget-heading {
-  flex: 1;
+  flex: 1 1 max-content;
   min-width: 0;
 }
 .altertable-data-widget-help {

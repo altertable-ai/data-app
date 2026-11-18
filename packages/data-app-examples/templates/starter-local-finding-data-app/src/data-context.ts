@@ -4,7 +4,6 @@ import { dataApp } from '#config';
 
 // The browser imports operations by type only, so name their queries here.
 const queryNames = {
-  sampleTotal: 'sampleTotal',
   samplesOverTime: 'samplesOverTime',
   samplesByMember: 'samplesByMember',
   sampleRows: 'sampleRows',

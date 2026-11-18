@@ -3,7 +3,9 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
-  Stack,
+  Grid,
+  GridItem,
+  DataValue,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 
@@ -67,7 +69,12 @@ const groupContent = sampleCountsView.content(result => (
     dataset={sampleCounts}
     source={result}
     title="Sample count"
-    description="Select a group to filter both charts; choose All groups to reset."
+    description={
+      <>
+        Showing <DataValue scope={result.scope} />. Select a group to explore
+        its segments.
+      </>
+    }
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -90,7 +97,11 @@ const segmentContent = segmentCountsView.content(result => (
     dataset={segmentCounts}
     source={result}
     title="Samples by segment"
-    description="Segment breakdown for the selected group scope."
+    description={
+      <>
+        Showing <DataValue scope={result.scope} />.
+      </>
+    }
   >
     {(rows, actions) => (
       <BarChart
@@ -110,10 +121,14 @@ const segmentContent = segmentCountsView.content(result => (
 export function App() {
   return (
     <DataApp view={sampleCountsView} showToolbar={false}>
-      <Stack>
-        <DataSection content={groupContent} label="Sample count" />
-        <DataSection content={segmentContent} label="Samples by segment" />
-      </Stack>
+      <Grid columns={3}>
+        <GridItem span={2}>
+          <DataSection content={groupContent} />
+        </GridItem>
+        <GridItem>
+          <DataSection content={segmentContent} />
+        </GridItem>
+      </Grid>
     </DataApp>
   );
 }

@@ -2,14 +2,23 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-  MetricWidget,
+  Button,
+  DataValue,
+  Grid,
+  GridItem,
+  TextContent,
   Stack,
   TableWidget,
   VisualizationWidget,
 } from '@altertable/data-app-react';
-import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
+import {
+  BarChart,
+  ComposedChart,
+  useAppFilters,
+} from '@altertable/data-app-react/ui';
 
 import { sampleDataContext } from '#app/data-context.ts';
+import { periodFilter, groupName, grain, breakdown } from '#app/filters.ts';
 import { operations } from '#app/operations.ts';
 const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
@@ -17,22 +26,6 @@ const emptyFallback = {
   title: 'No samples in this period',
   description: 'No observations are available for this period.',
 };
-const totalView = defineView({
-  dataContext: sampleDataContext,
-  operation: 'sampleTotal',
-});
-const totalSamples = totalView.metric(
-  {
-    id: 'total-samples',
-    label: 'Samples',
-    glossaryId: 'sampleCount',
-    format: count,
-  },
-  total => ({
-    current: total.current,
-    ...(total.previous !== null && { previous: total.previous }),
-  })
-);
 const trendView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesOverTime',
@@ -83,15 +76,16 @@ const sampleRows = rowsView.dataset({
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
 // The Finding's text is shown above the app; keep content to charts and captions.
-const totalContent = totalView.content(result => (
-  <MetricWidget metric={totalSamples} source={result} />
-));
 const trendContent = trendView.content(result => (
   <VisualizationWidget
     dataset={trend}
     source={result}
     title="Samples over time"
-    description="Includes the previous period when comparison is on."
+    description={
+      <>
+        Showing <DataValue scope={result.scope} />.
+      </>
+    }
     breakdown={trendView.breakdown('grain')}
   >
     {rows => (
@@ -112,7 +106,12 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="Samples by member"
+    title="By member"
+    description={
+      <>
+        Showing <DataValue scope={result.scope} />.
+      </>
+    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
@@ -130,16 +129,68 @@ const memberContent = memberView.content(result => (
   </VisualizationWidget>
 ));
 const rowsContent = rowsView.content(result => (
-  <TableWidget dataset={sampleRows} source={result} title="Samples" />
+  <TableWidget
+    dataset={sampleRows}
+    source={result}
+    title="Sample details"
+    description={
+      <>
+        Showing <DataValue scope={result.scope} />. Up to 500 period and member
+        totals.
+      </>
+    }
+  />
 ));
+// Controls describe the requested scope; each widget caption describes its displayed result.
+function FindingScope() {
+  const filters = useAppFilters({
+    period: periodFilter,
+    groupName,
+    grain,
+    breakdown,
+  });
+  const scopeChanged =
+    !periodFilter.same(filters.values.period, periodFilter.defaultValue) ||
+    !groupName.same(filters.values.groupName, groupName.defaultValue);
+  const displayChanged =
+    !grain.same(filters.values.grain, grain.defaultValue) ||
+    !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
+  return (
+    <TextContent>
+      <p>
+        Finding scope: Mar 2–15, 2026 UTC · group Alpha. Queries use current
+        source data.
+      </p>
+      {scopeChanged && (
+        <p>
+          <output>Exploration: scope changed</output>
+        </p>
+      )}
+      {(scopeChanged || displayChanged) && (
+        <Button size="compact" onClick={() => filters.resetAll()}>
+          Back to finding
+        </Button>
+      )}
+    </TextContent>
+  );
+}
 export function App() {
   return (
-    <DataApp view={totalView} showToolbar={false}>
+    <DataApp view={trendView} showToolbar={false}>
       <Stack>
-        <DataSection content={totalContent} />
-        <DataSection content={trendContent} />
-        <DataSection content={memberContent} />
-        <DataSection content={rowsContent} />
+        <FindingScope />
+        <Grid columns={3}>
+          <GridItem span={2}>
+            <DataSection content={trendContent} />
+          </GridItem>
+          <GridItem>
+            <DataSection content={memberContent} />
+          </GridItem>
+        </Grid>
+        <details>
+          <summary>View detailed data</summary>
+          <DataSection content={rowsContent} />
+        </details>
       </Stack>
     </DataApp>
   );
