@@ -62,7 +62,10 @@ export function DataBoundary<T, Input>({
             : undefined
         }
       >
-        <div className="altertable-data-boundary-content" aria-busy={updating}>
+        <div
+          className="altertable-data-boundary-content"
+          aria-busy={view.kind === 'loading' || updating}
+        >
           {view.kind === 'loading'
             ? loadingFallback
             : view.kind === 'empty'
