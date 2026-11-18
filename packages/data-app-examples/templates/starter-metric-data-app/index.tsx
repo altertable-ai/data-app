@@ -8,7 +8,6 @@ import {
   Ranking,
   Grid,
   GridItem,
-  DataValue,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
@@ -177,11 +176,6 @@ const groupContent = sampleCountsView.content(result => (
     dataset={sampleCounts}
     source={result}
     title="Sample count"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -205,11 +199,6 @@ const segmentContent = segmentCountsView.content(result => (
     dataset={segmentCounts}
     source={result}
     title="Samples by segment"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
   >
     {rows => (
       <Ranking

@@ -222,3 +222,6 @@ export {
   DateTimeRangePicker,
   type DateTimeRangePickerProps,
 } from './DateTimeRangePicker.tsx';
+
+export { Notice } from './Notice.tsx';
+export type { NoticeProps } from './Notice.tsx';

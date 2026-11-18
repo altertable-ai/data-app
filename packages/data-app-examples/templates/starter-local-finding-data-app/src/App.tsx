@@ -3,16 +3,16 @@ import {
   DataApp,
   DataSection,
   Button,
-  DataValue,
   Grid,
   GridItem,
-  TextContent,
+  Notice,
   Stack,
   TableWidget,
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app-react';
 import {
+  AppIcon,
   Tabs,
   TabList,
   Tab,
@@ -24,7 +24,13 @@ import {
 } from '@altertable/data-app-react/ui';
 
 import { sampleDataContext } from '#app/data-context.ts';
-import { periodFilter, groupName, grain, breakdown } from '#app/filters.ts';
+import {
+  findingPeriodLabel,
+  periodFilter,
+  groupName,
+  grain,
+  breakdown,
+} from '#app/filters.ts';
 import { operations } from '#app/operations.ts';
 const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
@@ -87,11 +93,6 @@ const trendContent = trendView.content(result => (
     dataset={trend}
     source={result}
     title="Samples over time"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
     breakdown={trendView.breakdown('grain')}
   >
     {rows => (
@@ -113,11 +114,6 @@ const memberContent = memberView.content(result => (
     dataset={byMember}
     source={result}
     title="Breakdown"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
@@ -134,19 +130,9 @@ const memberContent = memberView.content(result => (
   </VisualizationWidget>
 ));
 const rowsContent = rowsView.content(result => (
-  <TableWidget
-    dataset={sampleRows}
-    source={result}
-    title="Sample details"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />. Up to 500 period and member
-        totals.
-      </>
-    }
-  />
+  <TableWidget dataset={sampleRows} source={result} title="Sample details" />
 ));
-// Controls describe the requested scope; each widget caption describes its displayed result.
+// Keep the original finding identifiable during exploration.
 function FindingScope() {
   const filters = useAppFilters({
     period: periodFilter,
@@ -162,16 +148,27 @@ function FindingScope() {
     !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
   if (!scopeChanged && !displayChanged) return null;
   return (
-    <TextContent>
-      {scopeChanged && (
-        <p>
-          <output>Exploration: scope changed</output>
-        </p>
-      )}
-      <Button size="compact" onClick={() => filters.resetAll()}>
-        Back to finding
-      </Button>
-    </TextContent>
+    <Notice
+      title={
+        scopeChanged
+          ? 'Exploring a different scope'
+          : 'Viewing a different breakdown'
+      }
+      description={
+        <>
+          Original finding · {findingPeriodLabel} {periodFilter.policy.timeZone}{' '}
+          ·{' '}
+          {groupName.describe?.(groupName.defaultValue) ??
+            groupName.defaultValue}
+        </>
+      }
+      action={
+        <Button size="compact" onClick={() => filters.resetAll()}>
+          <AppIcon name="previous" size={14} />
+          Back to finding
+        </Button>
+      }
+    />
   );
 }
 const views = ['overview', 'data'] as const;

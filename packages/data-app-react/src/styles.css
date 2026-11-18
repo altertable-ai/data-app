@@ -39,6 +39,7 @@
 @import './ui/StatusPanel.css' layer(atbl.components);
 @import './ui/GettingStarted.css' layer(atbl.components);
 @import './ui/Stack.css' layer(atbl.components);
+@import './ui/Notice.css' layer(atbl.components);
 @import './ui/Inspect.css' layer(atbl.components);
 @import './ui/WidgetViewTabs.css' layer(atbl.components);
 @import './ui/HelpPopover.css' layer(atbl.components);

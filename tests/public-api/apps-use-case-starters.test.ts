@@ -59,7 +59,8 @@ for (const runtime of ['hosted', 'local'] as const) {
           exact: true,
         }),
       });
-    await expect.poll(() => trend.textContent()).toContain('group Alpha');
+    await expect.poll(() => trend.textContent()).toContain('32');
+    expect(await trend.getByText(/^Showing /).count()).toBe(0);
     expect(await app.getByText(/Finding scope:/).count()).toBe(0);
     expect(
       await app
@@ -67,31 +68,45 @@ for (const runtime of ['hosted', 'local'] as const) {
         .count()
     ).toBe(0);
     expect(
-      await app.getByText('Exploration: scope changed', { exact: true }).count()
+      await app
+        .getByText('Exploring a different scope', { exact: true })
+        .count()
     ).toBe(0);
     // A display choice changes representation, not the business population.
     await trend.getByRole('button', { name: /Day/ }).click();
     await app.getByRole('option', { name: 'Week', exact: true }).click();
     expect(
-      await app.getByText('Exploration: scope changed', { exact: true }).count()
+      await app
+        .getByText('Exploring a different scope', { exact: true })
+        .count()
     ).toBe(0);
     mode = 'pending';
     await app.getByRole('button', { name: /Alpha/ }).click();
     await app.getByRole('option', { name: 'Beta', exact: true }).click();
     await expect
       .poll(() =>
-        app.getByText('Exploration: scope changed', { exact: true }).isVisible()
+        app
+          .getByText('Exploring a different scope', { exact: true })
+          .isVisible()
       )
       .toBe(true);
     await expect.poll(() => Boolean(pending)).toBe(true);
-    expect(await trend.textContent()).toContain('group Alpha');
-    expect(await trend.textContent()).not.toContain('group Beta');
-    // Only the primary query needs holding; other sections retain their own scopes.
+    expect(await trend.textContent()).toContain('32');
+    expect(await trend.getByText(/^Showing /).count()).toBe(0);
+    expect(await app.getByRole('complementary').textContent()).toContain(
+      'Original finding · Mar 2–15, 2026 UTC · Alpha'
+    );
+    // The original chart stays visible while the requested population changes.
     mode = 'error';
     pending!();
     await expect.poll(() => app.getByRole('alert').count()).toBeGreaterThan(0);
-    expect(await trend.textContent()).toContain('group Alpha');
-    expect(await trend.textContent()).not.toContain('group Beta');
+    expect(await trend.textContent()).toContain('32');
+    await expect
+      .poll(async () =>
+        (await app.getByRole('alert').allTextContents()).join(' ')
+      )
+      .toContain('group Alpha');
+    expect(await trend.getByText(/^Showing /).count()).toBe(0);
     expect(await app.getByText(/Finding scope:/).count()).toBe(0);
     await app
       .getByRole('button', { name: 'Back to finding', exact: true })
@@ -103,7 +118,9 @@ for (const runtime of ['hosted', 'local'] as const) {
       .poll(() => trend.getByRole('button', { name: /Day/ }).isVisible())
       .toBe(true);
     expect(
-      await app.getByText('Exploration: scope changed', { exact: true }).count()
+      await app
+        .getByText('Exploring a different scope', { exact: true })
+        .count()
     ).toBe(0);
     const dates = app.getByRole('combobox', {
       name: 'Date range',
@@ -114,7 +131,9 @@ for (const runtime of ['hosted', 'local'] as const) {
     await dates.press('Enter');
     await expect
       .poll(() =>
-        app.getByText('Exploration: scope changed', { exact: true }).isVisible()
+        app
+          .getByText('Exploring a different scope', { exact: true })
+          .isVisible()
       )
       .toBe(true);
     mode = 'ready';
@@ -128,13 +147,11 @@ for (const runtime of ['hosted', 'local'] as const) {
     await app.getByRole('option', { name: 'Group', exact: true }).click();
     await app.getByRole('button', { name: /Alpha/ }).click();
     await app.getByRole('option', { name: 'Beta', exact: true }).click();
-    await expect.poll(() => trend.textContent()).toContain('group Beta');
+    await expect.poll(() => trend.textContent()).toContain('8');
     await app
       .getByRole('button', { name: 'Back to finding', exact: true })
       .click();
-    await expect
-      .poll(() => trend.textContent())
-      .toContain('Mar 2–15, 2026 UTC · group Alpha');
+    await expect.poll(() => trend.textContent()).toContain('32');
     expect(await trend.getByRole('button', { name: /Day/ }).isVisible()).toBe(
       true
     );
@@ -142,7 +159,9 @@ for (const runtime of ['hosted', 'local'] as const) {
       await distribution.getByRole('button', { name: /Segment/ }).isVisible()
     ).toBe(true);
     expect(
-      await app.getByText('Exploration: scope changed', { exact: true }).count()
+      await app
+        .getByText('Exploring a different scope', { exact: true })
+        .count()
     ).toBe(0);
     await page.setViewportSize({ width: 360, height: 900 });
     const heading = distribution.getByRole('heading', {
@@ -178,7 +197,7 @@ for (const runtime of ['hosted', 'local'] as const) {
           .getByRole('region', { name: 'Sample details', exact: true })
           .textContent()
       )
-      .toContain('group Alpha');
+      .toContain('Online');
     const overview = app.getByRole('tab', { name: 'Overview', exact: true });
     await overview.click();
     await overview.press('ArrowRight');
@@ -190,7 +209,9 @@ for (const runtime of ['hosted', 'local'] as const) {
       )
       .toBe('true');
     expect(
-      await app.getByText('Exploration: scope changed', { exact: true }).count()
+      await app
+        .getByText('Exploring a different scope', { exact: true })
+        .count()
     ).toBe(0);
   });
 }
@@ -241,7 +262,6 @@ for (const runtime of ['hosted', 'local'] as const) {
     });
     await expect.poll(() => segments.textContent()).toContain('Online');
     await app.getByRole('button', { name: /Beta.*Drill into group/ }).click();
-    await expect.poll(() => segments.textContent()).toContain('group Beta');
     await expect.poll(() => segments.textContent()).not.toContain('Online');
     expect(await segments.textContent()).toContain('Partner');
     expect(

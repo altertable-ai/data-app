@@ -6,16 +6,16 @@ import {
   DataApp,
   DataSection,
   Button,
-  DataValue,
   Grid,
   GridItem,
-  TextContent,
+  Notice,
   Stack,
   TableWidget,
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app-react';
 import {
+  AppIcon,
   Tabs,
   TabList,
   Tab,
@@ -32,6 +32,7 @@ import {
   parseCount,
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 // One query per widget: each section loads its own result when it nears the viewport.
 export const dataApp = defineDataApp({
   title: 'Sample finding',
@@ -107,6 +108,10 @@ const findingPeriod = {
   from: new Date('2026-03-02T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
+const findingPeriodLabel = formatDateRange({
+  start: findingPeriod.from.toISOString().slice(0, 10),
+  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
+});
 const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
@@ -275,11 +280,6 @@ const trendContent = trendView.content(result => (
     dataset={trend}
     source={result}
     title="Samples over time"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
     breakdown={trendView.breakdown('grain')}
   >
     {rows => (
@@ -301,11 +301,6 @@ const memberContent = memberView.content(result => (
     dataset={byMember}
     source={result}
     title="Breakdown"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />.
-      </>
-    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
@@ -322,19 +317,9 @@ const memberContent = memberView.content(result => (
   </VisualizationWidget>
 ));
 const rowsContent = rowsView.content(result => (
-  <TableWidget
-    dataset={sampleRows}
-    source={result}
-    title="Sample details"
-    description={
-      <>
-        Showing <DataValue scope={result.scope} />. Up to 500 period and member
-        totals.
-      </>
-    }
-  />
+  <TableWidget dataset={sampleRows} source={result} title="Sample details" />
 ));
-// Controls describe the requested scope; each widget caption describes its displayed result.
+// Keep the original finding identifiable during exploration.
 function FindingScope() {
   const filters = useAppFilters({
     period: periodFilter,
@@ -350,16 +335,27 @@ function FindingScope() {
     !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
   if (!scopeChanged && !displayChanged) return null;
   return (
-    <TextContent>
-      {scopeChanged && (
-        <p>
-          <output>Exploration: scope changed</output>
-        </p>
-      )}
-      <Button size="compact" onClick={() => filters.resetAll()}>
-        Back to finding
-      </Button>
-    </TextContent>
+    <Notice
+      title={
+        scopeChanged
+          ? 'Exploring a different scope'
+          : 'Viewing a different breakdown'
+      }
+      description={
+        <>
+          Original finding · {findingPeriodLabel} {periodFilter.policy.timeZone}{' '}
+          ·{' '}
+          {groupName.describe?.(groupName.defaultValue) ??
+            groupName.defaultValue}
+        </>
+      }
+      action={
+        <Button size="compact" onClick={() => filters.resetAll()}>
+          <AppIcon name="previous" size={14} />
+          Back to finding
+        </Button>
+      }
+    />
   );
 }
 const views = ['overview', 'data'] as const;

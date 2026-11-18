@@ -1130,6 +1130,12 @@ MultiChoiceFilter.valid: (value: readonly string[]) => boolean
 MultiChoiceFilter.same: (left: readonly string[], right: readonly string[]) => boolean
 MultiChoiceFilter.options: readonly ChoiceOption[]
 MultiChoiceFilter.maxSelected: number
+Notice (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: NoticeProps) — Quiet contextual feedback with an optional action. Content wraps before its action on narrow containers.
+Notice.title: ReactNode
+Notice.description?: ReactNode
+Notice.action?: ReactNode
+Notice.…: plus props inherited from React
+NoticeProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as Notice.*
 NumberField (component, @altertable/data-app-react/ui): (props: NumberFieldProps) — Localized numeric entry. Empty input is null rather than zero.
 NumberField.label: string
 NumberField.value: number | null

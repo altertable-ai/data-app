@@ -116,6 +116,7 @@ export const dataAppStyleClasses = {
     component: 'GridItem',
     kind: 'root',
   },
+  'altertable-notice': { component: 'Notice', kind: 'root' },
   'altertable-text-content': {
     component: 'TextContent',
     kind: 'root',
