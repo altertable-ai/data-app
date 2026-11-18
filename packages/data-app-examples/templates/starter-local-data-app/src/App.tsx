@@ -6,7 +6,11 @@ import {
   GridItem,
   MetricWidget,
   TableWidget,
+  VisualizationWidget,
+  Stack,
 } from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
+import { formatCount } from '@altertable/data-app/format';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import { operations } from '#app/operations.ts';
@@ -58,18 +62,50 @@ const totalSamples = sampleTotalView.metric(
 const totalContent = sampleTotalView.content(result => (
   <MetricWidget metric={totalSamples} source={result} />
 ));
+const groupActions = sampleCounts.actions(
+  action => ({
+    filter: action.filter({
+      label: 'Filter to group',
+      target: sampleCountsView.filter(),
+      values: row => ({ groupName: row.groupName }),
+    }),
+  }),
+  { primary: 'filter' }
+);
 const overviewContent = sampleCountsView.content(result => (
   <Grid columns={3}>
-    <GridItem>
-      <DataSection content={totalContent} label="Sample total" />
-    </GridItem>
     <GridItem span={2}>
-      <TableWidget
+      <VisualizationWidget
         dataset={sampleCounts}
         source={result}
-        title="Counts by group"
-        pagination={false}
-      />
+        title="Samples by group"
+        actions={groupActions}
+      >
+        {(rows, actions) => (
+          <BarChart
+            ariaLabel="Sample counts by group"
+            unit="samples"
+            items={rows.map(row => ({
+              ...row,
+              id: row.groupName,
+              label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
+              value: row.sampleCount,
+            }))}
+            itemActions={actions}
+          />
+        )}
+      </VisualizationWidget>
+    </GridItem>
+    <GridItem>
+      <Stack>
+        <DataSection content={totalContent} label="Sample total" />
+        <TableWidget
+          dataset={sampleCounts}
+          source={result}
+          title="Counts by group"
+          pagination={false}
+        />
+      </Stack>
     </GridItem>
   </Grid>
 ));

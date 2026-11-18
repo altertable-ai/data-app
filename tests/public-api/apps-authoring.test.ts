@@ -92,10 +92,23 @@ describe('authoring', () => {
       .poll(() =>
         app
           .getByRole('region', { name: 'Sample total' })
-          .getByText('2.2M', { exact: true })
+          .getByText('3M', { exact: true })
           .isVisible()
       )
       .toBe(true);
+    const chart = app.getByLabel('Sample counts by group', { exact: true });
+    await expect.poll(() => chart.isVisible()).toBe(true);
+    for (const label of [
+      'Alpha · 2.2M',
+      'Gamma · 650K',
+      'Delta · 150K',
+      'Beta · 0',
+    ])
+      await expect
+        .poll(() =>
+          chart.getByRole('button', { name: `${label}: Actions` }).isVisible()
+        )
+        .toBe(true);
     await expect
       .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
       .toBe(0);
@@ -104,6 +117,23 @@ describe('authoring', () => {
       .toBe(0);
 
     const group = app.getByRole('searchbox', { name: 'Group', exact: true });
+    await chart
+      .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
+      .click();
+    await app
+      .getByRole('menuitem', { name: 'Filter to group', exact: true })
+      .click();
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Gamma 650,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        app
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('650K', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
     await group.fill('Beta');
     await expect
       .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
@@ -123,6 +153,21 @@ describe('authoring', () => {
         app.getByText('No matching groups', { exact: true }).isVisible()
       )
       .toBe(true);
+    await group.fill('Delta');
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Delta 150,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        app
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('150K', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() => app.getByText('This widget couldn’t render').count())
+      .toBe(0);
 
     expect(requests.map(request => request.queryId)).toContain(
       'sampleCountsByGroup'
@@ -163,7 +208,7 @@ describe('authoring', () => {
       .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
       .toBe(true);
     await expect
-      .poll(() => overview.getByText('2.2M', { exact: true }).isVisible())
+      .poll(() => overview.getByText('3M', { exact: true }).isVisible())
       .toBe(true);
   });
 
@@ -283,11 +328,30 @@ describe('authoring', () => {
         page.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible()
       )
       .toBe(true);
+    const chart = page.getByLabel('Sample counts by group', { exact: true });
+    await expect.poll(() => chart.isVisible()).toBe(true);
     await expect
       .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
       .toBe(0);
 
     const group = page.getByRole('searchbox', { name: 'Group', exact: true });
+    await chart
+      .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
+      .click();
+    await page
+      .getByRole('menuitem', { name: 'Filter to group', exact: true })
+      .click();
+    await expect
+      .poll(() => page.getByRole('row', { name: 'Gamma 650,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('650K', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
     await group.fill('Beta');
     await expect
       .poll(() => page.getByRole('row', { name: 'Beta 0' }).isVisible())
@@ -307,5 +371,20 @@ describe('authoring', () => {
         page.getByText('No matching groups', { exact: true }).isVisible()
       )
       .toBe(true);
+    await group.fill('Delta');
+    await expect
+      .poll(() => page.getByRole('row', { name: 'Delta 150,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('150K', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() => page.getByText('This widget couldn’t render').count())
+      .toBe(0);
   });
 });

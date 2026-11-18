@@ -8,7 +8,7 @@ const queryNames = {
 } as const satisfies Record<string, keyof typeof dataApp.queries>;
 export const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional recorded sample counts for two groups, including a measured zero.',
+    'Fictional recorded sample counts for four groups, including a measured zero.',
   glossary: {
     sampleCount: {
       term: 'Sample count',

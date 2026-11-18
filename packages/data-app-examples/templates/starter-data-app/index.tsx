@@ -5,12 +5,16 @@ import {
   DataApp,
   DataSection,
   TableWidget,
+  VisualizationWidget,
+  Stack,
   Grid,
   GridItem,
   mountDataApp,
   MetricWidget,
 } from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
 import { parseCount, searchFilter } from '@altertable/data-app/contract';
+import { formatCount } from '@altertable/data-app/format';
 
 export const dataApp = defineDataApp({
   title: 'Sample counts',
@@ -24,10 +28,10 @@ export const dataApp = defineDataApp({
         sample_count: { type: 'number' },
       },
       statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Gamma', 650000), ('Delta', 150000), ('Beta', 0))
 SELECT group_name, sample_count FROM sample_counts
 WHERE $groupName = '' OR group_name = $groupName
-ORDER BY group_name LIMIT $limit`,
+ORDER BY sample_count DESC, group_name LIMIT $limit`,
       params: {
         groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },
@@ -36,7 +40,7 @@ ORDER BY group_name LIMIT $limit`,
     sampleTotal: {
       projections: { sample_count: { type: 'number' } },
       statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Gamma', 650000), ('Delta', 150000), ('Beta', 0))
 SELECT CAST(SUM(sample_count) AS BIGINT) AS sample_count FROM sample_counts
 WHERE $groupName = '' OR group_name = $groupName
 HAVING COUNT(*) > 0`,
@@ -75,7 +79,7 @@ const queryNames = {
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional recorded sample counts for two groups, including a measured zero.',
+    'Fictional recorded sample counts for four groups, including a measured zero.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
@@ -132,18 +136,50 @@ const totalSamples = sampleTotalView.metric(
 const totalContent = sampleTotalView.content(result => (
   <MetricWidget metric={totalSamples} source={result} />
 ));
+const groupActions = sampleCounts.actions(
+  action => ({
+    filter: action.filter({
+      label: 'Filter to group',
+      target: sampleCountsView.filter(),
+      values: row => ({ groupName: row.groupName }),
+    }),
+  }),
+  { primary: 'filter' }
+);
 const overviewContent = sampleCountsView.content(result => (
   <Grid columns={3}>
-    <GridItem>
-      <DataSection content={totalContent} label="Sample total" />
-    </GridItem>
     <GridItem span={2}>
-      <TableWidget
+      <VisualizationWidget
         dataset={sampleCounts}
         source={result}
-        title="Counts by group"
-        pagination={false}
-      />
+        title="Samples by group"
+        actions={groupActions}
+      >
+        {(rows, actions) => (
+          <BarChart
+            ariaLabel="Sample counts by group"
+            unit="samples"
+            items={rows.map(row => ({
+              ...row,
+              id: row.groupName,
+              label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
+              value: row.sampleCount,
+            }))}
+            itemActions={actions}
+          />
+        )}
+      </VisualizationWidget>
+    </GridItem>
+    <GridItem>
+      <Stack>
+        <DataSection content={totalContent} label="Sample total" />
+        <TableWidget
+          dataset={sampleCounts}
+          source={result}
+          title="Counts by group"
+          pagination={false}
+        />
+      </Stack>
     </GridItem>
   </Grid>
 ));

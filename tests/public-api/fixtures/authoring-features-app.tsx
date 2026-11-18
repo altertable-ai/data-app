@@ -20,7 +20,7 @@ export const dataApp = defineDataApp({
   description: 'A host-action fixture.',
   scope: { organization: 'test', environment: 'fixture' },
   queries: {
-    sampleCountsByGroup: {
+    authoringCountsByGroup: {
       projections: {
         group_name: { type: 'string' },
         sample_count: { type: 'number' },
@@ -35,7 +35,7 @@ ORDER BY group_name LIMIT $limit`,
         limit: { type: 'number', defaultValue: 10 },
       },
     },
-    sampleTotal: {
+    authoringTotal: {
       projections: { sample_count: { type: 'number' } },
       statement: `
 WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
@@ -53,7 +53,7 @@ const operations = dataApp.defineOperations({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15_000 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleCountsByGroup', { groupName });
+      const result = await query('authoringCountsByGroup', { groupName });
       return result.rows.map(row => ({
         groupName: row.group_name,
         sampleCount: parseCount(row.sample_count),
@@ -64,7 +64,7 @@ const operations = dataApp.defineOperations({
     filters: { groupName },
     policy: { maxQueryRows: 1, maxDurationMs: 15_000 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleTotal', { groupName });
+      const result = await query('authoringTotal', { groupName });
       const row = result.rows[0];
       return row ? { sampleCount: parseCount(row.sample_count) } : null;
     },
@@ -80,7 +80,10 @@ const context = createDataContext(queryNames)({
     sampleCount: {
       term: 'Sample count',
       definition: 'Recorded samples in the selected group.',
-      queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
+      queryNames: [
+        queryNames.authoringCountsByGroup,
+        queryNames.authoringTotal,
+      ],
     },
   },
 });
