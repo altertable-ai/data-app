@@ -69,7 +69,7 @@ const groupContent = sampleCountsView.content(result => (
   <VisualizationWidget
     dataset={sampleCounts}
     source={result}
-    title="Sample count"
+    title="Samples by group"
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -79,7 +79,7 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: `${row.groupName} · ${formatCount(row.sampleCount)}`,
+          label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
           value: row.sampleCount,
         }))}
         horizontalGrid={false}
@@ -98,7 +98,6 @@ const segmentContent = segmentCountsView.content(result => (
       <Ranking
         aria-label="Sample counts by segment"
         items={rows.map(row => ({
-          ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,

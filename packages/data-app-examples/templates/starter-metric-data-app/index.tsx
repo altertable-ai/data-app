@@ -106,11 +106,12 @@ const queryNames = {
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'The starter_sample_counts semantic view measures fictional samples by group and segment. Replace it with the requested semantic metric before publishing.',
+    'The starter_sample_counts semantic view measures fictional sample volume by group and segment. The source has no time dimension.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
-      definition: 'A fixture value: Alpha is 2,200,000 and Beta is 600,000.',
+      definition:
+        'Sum of recorded sample counts in the selected group scope. Additive across groups and segments.',
       queryNames: [
         queryNames.sampleCountsByGroup,
         queryNames.sampleCountsBySegment,
@@ -175,7 +176,7 @@ const groupContent = sampleCountsView.content(result => (
   <VisualizationWidget
     dataset={sampleCounts}
     source={result}
-    title="Sample count"
+    title="Samples by group"
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -185,7 +186,7 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: `${row.groupName} · ${formatCount(row.sampleCount)}`,
+          label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
           value: row.sampleCount,
         }))}
         horizontalGrid={false}
@@ -204,7 +205,6 @@ const segmentContent = segmentCountsView.content(result => (
       <Ranking
         aria-label="Sample counts by segment"
         items={rows.map(row => ({
-          ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,
