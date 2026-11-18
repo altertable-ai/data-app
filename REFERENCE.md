@@ -384,7 +384,7 @@ DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
 DataAppOperationRegistry (type, @altertable/data-app, @altertable/data-app/config): <Operations>
-DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Run operations in a hosted iframe using its installed query bridge.
+DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Run operations in the browser using its installed query bridge.
 DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode

@@ -15,7 +15,7 @@ const client = operations.createDataClient();
 `run()` executes in the browser. Hosted apps send each named query through
 `data:query`; local apps install `installLocalQueryLakehouse()` before mounting
 and send it to `POST /api/query/:queryId`. Both backends execute only registered
-SQL. The local Bun server receives `dataApp.queries` through `serveLocalApp()`.
+SQL. The local Bun server receives `app: dataApp` through `serveLocalApp()`.
 Keep `run()` and its imports browser-safe in this mode.
 
 For direct client calls, render `response.data` and label it with `response.input`

@@ -3,6 +3,7 @@
  * @module @altertable/data-app-bun
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/server-bun.md
  */
+import { type DataAppConfig } from '@altertable/data-app';
 import {
   DataSourceError,
   registeredQueryRoute,
@@ -25,13 +26,11 @@ import {
 /** Serve one app and its registered queries on localhost through the CLI's lakehouse proxy. */
 export function serveLocalApp({
   page,
-  queries,
-  title,
+  app,
   port = Number(process.env.PORT ?? 25837),
 }: {
   page: Bun.HTMLBundle;
-  queries: QueryDefinitions;
-  title: string;
+  app: Pick<DataAppConfig, 'title' | 'queries'>;
   port?: number;
 }) {
   const lakehouse = localLakehouse();
@@ -43,11 +42,11 @@ export function serveLocalApp({
     routes: { '/': page },
     fetch(request) {
       if (new URL(request.url).pathname.startsWith('/api/query/'))
-        return handleLocalQuery(request, queries, lakehouse);
+        return handleLocalQuery(request, app.queries, lakehouse);
       return new Response('Not found', { status: 404 });
     },
   });
-  console.log(`${title} running at ${server.url}`);
+  console.log(`${app.title} running at ${server.url}`);
 
   return server;
 }

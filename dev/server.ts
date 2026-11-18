@@ -141,22 +141,19 @@ if (!lakehouse) {
 if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
-  queries: starterApp.queries,
-  title: starterApp.title,
+  app: starterApp,
   port: port + 2,
 });
 if (isDevelopment)
   serveLocalApp({
     page: metricStarterPage,
-    queries: metricStarterApp.queries,
-    title: 'Local metric starter',
+    app: metricStarterApp,
     port: port + 3,
   });
 if (isDevelopment)
   serveLocalApp({
     page: findingStarterPage,
-    queries: findingStarterApp.queries,
-    title: 'Local finding starter',
+    app: findingStarterApp,
     port: port + 4,
   });
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');

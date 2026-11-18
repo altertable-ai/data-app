@@ -1,11 +1,11 @@
 import { createDataContext } from '@altertable/data-app-react';
 
-import { dataApp } from '#config';
+import { operations } from '#app/operations.ts';
 
 const queryNames = {
-  sampleCountsByGroup: 'sampleCountsByGroup',
-  sampleCountsBySegment: 'sampleCountsBySegment',
-} as const satisfies Record<string, keyof typeof dataApp.queries>;
+  ...operations.sampleCountsByGroup.queryNames,
+  ...operations.sampleCountsBySegment.queryNames,
+};
 export const sampleDataContext = createDataContext(queryNames)({
   description:
     'The starter_sample_counts semantic view measures fictional samples by group and segment. Replace it with the requested semantic metric before publishing.',

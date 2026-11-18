@@ -14,8 +14,7 @@ import { dataApp } from './app.ts';
 
 serveLocalApp({
   page,
-  queries: dataApp.queries,
-  title: dataApp.title,
+  app: dataApp,
 });
 ```
 
