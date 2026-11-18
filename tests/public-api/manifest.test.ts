@@ -313,9 +313,9 @@ test('extracts the standalone starter declaration', async () => {
     title: 'Infrastructure costs',
     scope: { organization: 'demo', environment: 'sample' },
     queries: {
-      costsByService: {
+      costBreakdown: {
         projections: {
-          service_name: { type: 'string' },
+          member_name: { type: 'string' },
           cost_cents: { type: 'number' },
         },
         params: {
@@ -433,7 +433,7 @@ describe('manifest override', () => {
       changed(text, manifest => {
         manifest.title = 'Renamed';
         // @ts-expect-error Literal values are not narrowed to the config shape.
-        manifest.queries.costsByService.params.limit.defaultValue = 25;
+        manifest.queries.costBreakdown.params.limit.defaultValue = 25;
       })
     ).toBe(
       text

@@ -83,7 +83,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('region', { name: 'Total cost' })
+          .getByRole('region', { name: 'Cost summary' })
           .getByText('$13,200.00', { exact: true })
           .isVisible()
       )
@@ -372,7 +372,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('region', { name: 'Total cost', exact: true })
+          .getByRole('region', { name: 'Cost summary', exact: true })
           .getByText('$13,200.00', { exact: true })
           .isVisible()
       )

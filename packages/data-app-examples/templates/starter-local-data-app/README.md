@@ -23,10 +23,13 @@ CLI proxy. Missing credentials stop startup.
 
 ## Explore the example
 
-The fictional September 2026 allocation shows costs by service. Select a service
-to inspect its contributing customers, then inspect a widget for the registered
-query, parameters, and cost definition. Customer allocations reconcile to their
-service; services reconcile to the total. Logging demonstrates a recorded zero.
+Choose a billing month and customer to explore the fictional cost dashboard.
+Compare weekly allocations, switch the cost breakdown between services and
+customers, and inspect the service mix for each customer. Select a service to see
+its contributing customer allocations. Widget inspection exposes the registered
+query, selected parameters, and cost definitions. All views use the same scope;
+weekly batches, customer allocations, and services reconcile to the total.
+Logging demonstrates a recorded zero.
 
 ## Build the app
 
