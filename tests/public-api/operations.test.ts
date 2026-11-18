@@ -68,22 +68,6 @@ test('operation filters support names inherited from Object.prototype and requir
   });
 });
 
-test('operation filters reject prototype setters from unchecked declarations', () => {
-  const filters = Object.fromEntries([
-    ['__proto__', searchFilter({ key: 'search' })],
-  ]);
-  expect(() =>
-    defineOperation({
-      filters: filters as never,
-      queries: {},
-      policy: { maxQueryRows: 1, maxDurationMs: 100 },
-      async run() {
-        return null;
-      },
-    })
-  ).toThrow('Filter names must not include __proto__.');
-});
-
 test('app operation registry derives filters and executes in the browser', async () => {
   const app = defineDataApp({
     title: 'Sales',

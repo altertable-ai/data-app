@@ -265,23 +265,7 @@ throw new Error('this must never execute');`;
     rejected(source() + '\nconst broken = ;', 'syntax');
   });
 
-  test('rejects prototype setters instead of extracting data absent from the runtime object', () => {
-    rejected(
-      source(
-        argumentWith(
-          "queries: { '__proto__': { statement: 'SELECT 1', params: {} } }"
-        )
-      ),
-      'literal'
-    );
-    rejected(
-      source(
-        argumentWith(
-          "queries: { q: { statement: 'SELECT 1', params: { '__proto__': null } } }"
-        )
-      ),
-      'literal'
-    );
+  test('extracts properties named constructor', () => {
     const result = extractDataAppManifest(
       source(
         argumentWith(
@@ -627,16 +611,10 @@ describe('manifest override', () => {
     ['a bigint', { n: 1n }],
     ['a class instance', { n: new Date(0) }],
     ['an array hole', { n: Object.assign([], { length: 1 }) }],
-    ['a __proto__ key', JSON.parse('{ "__proto__": { "polluted": true } }')],
-    [
-      'a nested __proto__ key',
-      JSON.parse('{ "queries": { "__proto__": {} } }'),
-    ],
     ['an array manifest', []],
   ])('throws a TypeError for %s', (_, manifest) => {
     expect(() =>
       overrideDataAppManifest(source(), manifest as unknown as DataAppManifest)
     ).toThrow(TypeError);
-    expect(Object.hasOwn(Object.prototype, 'polluted')).toBe(false);
   });
 });

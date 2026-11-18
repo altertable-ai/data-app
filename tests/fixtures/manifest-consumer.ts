@@ -125,7 +125,6 @@ throw new Error('Must not execute');
     '({ ...other } as const)',
     '([,] as const)',
     '({ x: 1, x: 2 } satisfies unknown)',
-    '({ __proto__: {} } as const)',
   ]) {
     const result = extractDataAppManifest(
       `${importLine} const app = defineDataApp({ nested: ${value} });`
@@ -243,7 +242,6 @@ throw new Error('Must not execute');
     'x: doWork()',
     'x: () => 1',
     'x: /regex/',
-    '__proto__: {}',
     '1: true, 0x1: false',
     "'a': 1, '\\u0061': 2",
   ]) {

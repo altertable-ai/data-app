@@ -68,22 +68,16 @@ export type CheckedFilterDeclarations<Collection extends FilterCollection> =
     ? never
     : string extends keyof Collection
       ? Collection
-      : '__proto__' extends keyof Collection
-        ? never
-        : {
-            [Name in keyof Collection]: true extends IsUnion<Collection[Name]>
-              ? never
-              : Collection[Name];
-          };
+      : {
+          [Name in keyof Collection]: true extends IsUnion<Collection[Name]>
+            ? never
+            : Collection[Name];
+        };
 
 /** Name filters once in the app. URL keys must be unique across its controls. */
 export function defineAppFilters<const Collection extends FilterCollection>(
   filters: Collection
 ): Collection {
-  invariant(
-    !Object.hasOwn(filters, '__proto__'),
-    'Filter names must not include __proto__.'
-  );
   const owners = new Map<string, string>();
   for (const [name, filter] of Object.entries(filters)) {
     const presentation = filter.presentation;

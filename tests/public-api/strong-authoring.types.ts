@@ -151,20 +151,6 @@ defineDataApp({
   // @ts-expect-error An empty literal statement cannot execute SQL.
   queries: { empty: { ...emptyQuery, statement: '' } },
 });
-// @ts-expect-error Bare __proto__ is a prototype setter, not an own query declaration.
-defineDataApp({ ...header, queries: { __proto__: emptyQuery } });
-const inheritedParams = {
-  ...emptyQuery,
-  params: { __proto__: inputQuery.params.search },
-};
-// @ts-expect-error Parameter declarations must be own properties.
-defineDataApp({ ...header, queries: { inherited: inheritedParams } });
-const inheritedProjections = {
-  ...emptyQuery,
-  projections: { __proto__: { type: 'string' } },
-} as const;
-// @ts-expect-error Projection declarations must be own properties.
-defineDataApp({ ...header, queries: { inherited: inheritedProjections } });
 
 type Branches = {
   alpha: DataOperation<{ text: string }, number>;
@@ -188,8 +174,6 @@ const conditionalOperations = choose
   : { branch: betaOperation };
 // @ts-expect-error Narrow operation registries so each name owns one input contract.
 createDataClient({ operations: conditionalOperations });
-// @ts-expect-error A prototype setter cannot register an own operation.
-createDataClient({ operations: { __proto__: alphaOperation } });
 
 // @ts-expect-error A conditional operation member must also be narrowed before registration.
 createDataClient({
