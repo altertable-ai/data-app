@@ -15,7 +15,6 @@ import {
   Ranking,
 } from '@altertable/data-app-react';
 import {
-  AppIcon,
   Tabs,
   TabList,
   Tab,
@@ -351,7 +350,6 @@ function FindingScope() {
       }
       action={
         <Button size="compact" onClick={() => filters.resetAll()}>
-          <AppIcon name="previous" size={14} />
           Back to finding
         </Button>
       }
