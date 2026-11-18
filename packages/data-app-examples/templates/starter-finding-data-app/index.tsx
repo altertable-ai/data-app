@@ -1,7 +1,8 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataContext, mountDataApp } from '@altertable/data-app-react';
 import {
+  createDataContext,
   createDataHooks,
+  mountDataApp,
   DataApp,
   DataSection,
   Button,
@@ -25,6 +26,7 @@ import {
   parseCount,
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 // One query per widget: each section loads its own result when it nears the viewport.
 export const dataApp = defineDataApp({
   title: 'Sample finding',
@@ -100,6 +102,11 @@ const findingPeriod = {
   from: new Date('2026-03-02T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
+// Calendar labels include the final UTC day; query bounds keep an exclusive end.
+const findingPeriodLabel = formatDateRange({
+  start: findingPeriod.from.toISOString().slice(0, 10),
+  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
+});
 const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
@@ -345,8 +352,10 @@ function FindingScope() {
   return (
     <TextContent>
       <p>
-        Finding scope: Mar 2–15, 2026 UTC · group Alpha. Queries use current
-        source data.
+        Finding scope: {findingPeriodLabel} {periodFilter.policy.timeZone} ·
+        group{' '}
+        {groupName.describe?.(groupName.defaultValue) ?? groupName.defaultValue}
+        . Queries use current source data.
       </p>
       {scopeChanged && (
         <p>

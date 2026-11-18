@@ -3,11 +3,17 @@ import {
   dateTimeRangeFilter,
   displayChoice,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 
 const findingPeriod = {
   from: new Date('2026-03-02T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
+// Calendar labels include the final UTC day; query bounds keep an exclusive end.
+export const findingPeriodLabel = formatDateRange({
+  start: findingPeriod.from.toISOString().slice(0, 10),
+  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
+});
 export const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,

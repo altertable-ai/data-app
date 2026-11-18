@@ -18,7 +18,13 @@ import {
 } from '@altertable/data-app-react/ui';
 
 import { sampleDataContext } from '#app/data-context.ts';
-import { periodFilter, groupName, grain, breakdown } from '#app/filters.ts';
+import {
+  findingPeriodLabel,
+  periodFilter,
+  groupName,
+  grain,
+  breakdown,
+} from '#app/filters.ts';
 import { operations } from '#app/operations.ts';
 const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
@@ -158,8 +164,10 @@ function FindingScope() {
   return (
     <TextContent>
       <p>
-        Finding scope: Mar 2–15, 2026 UTC · group Alpha. Queries use current
-        source data.
+        Finding scope: {findingPeriodLabel} {periodFilter.policy.timeZone} ·
+        group{' '}
+        {groupName.describe?.(groupName.defaultValue) ?? groupName.defaultValue}
+        . Queries use current source data.
       </p>
       {scopeChanged && (
         <p>
