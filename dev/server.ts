@@ -34,6 +34,11 @@ import metricStarterPage from '@/packages/data-app-examples/templates/starter-lo
 import { dataApp as hostedMetricStarterApp } from '@/packages/data-app-examples/templates/starter-metric-data-app/index';
 
 const defaultRegisteredQueries: QueryDefinitions = {
+  connection: {
+    projections: { connection_check: { type: 'number' } },
+    statement: 'SELECT 1 AS connection_check',
+    params: {},
+  },
   ...hostedStarterApp.queries,
   ...starterApp.queries,
 };
@@ -130,6 +135,34 @@ const serveReloadEvents =
     './fixtures/bridge-frame.ts',
   ]);
 const fixtureDatabase = new Database(':memory:');
+function starterQueryResult(
+  statement: string,
+  limit: number,
+  params: QueryParameters = {}
+) {
+  const definition = Object.values(defaultRegisteredQueries).find(
+    query => query.statement === statement
+  );
+  if (!definition) return undefined;
+  return {
+    columns: Object.entries(definition.projections).map(
+      ([name, projection]) => ({
+        name,
+        type: projection.type === 'number' ? 'INTEGER' : 'VARCHAR',
+      })
+    ),
+    rows: fixtureDatabase
+      .query(statement)
+      .values(
+        Object.fromEntries(
+          Object.entries(params).map(([key, value]) => [`$${key}`, value])
+        )
+      )
+      .slice(0, limit),
+    queryId: 'starter-query',
+  };
+}
+
 const port = Number(process.env.DATA_APP_GALLERY_PORT ?? 27418);
 // `bun run dev:gallery` provides a mocked Altertable API; tests keep deterministic fixtures.
 const lakehouse =
@@ -277,15 +310,29 @@ Bun.serve({
       const query = (await request.json()) as {
         statement: string;
         limit: number;
+        params?: QueryParameters;
       };
       if (
         request.headers.get('authorization') !== 'Bearer local-test-fixture' ||
-        query.statement !== 'SELECT 1 AS connection_check' ||
-        query.limit !== 1
+        !Number.isSafeInteger(query.limit) ||
+        query.limit < 1 ||
+        query.limit > 10
       )
         return new Response('Rejected fixture query', { status: 403 });
+      const result = starterQueryResult(
+        query.statement,
+        query.limit,
+        query.params
+      );
+      if (!result)
+        return new Response('Rejected fixture query', { status: 403 });
       return new Response(
-        '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
+        [
+          JSON.stringify({ query_id: result.queryId }),
+          JSON.stringify(result.columns),
+          ...result.rows.map(row => JSON.stringify(row)),
+          '',
+        ].join('\n')
       );
     }
     if (path === '/api/query') {
@@ -335,36 +382,10 @@ Bun.serve({
           );
         }
       }
-      if (
-        statement.trim().startsWith('WITH sample_counts(') &&
-        query.limit === 10
-      ) {
-        const rows = fixtureDatabase
-          .query(statement)
-          .values(
-            Object.fromEntries(
-              Object.entries(query.params ?? {}).map(([key, value]) => [
-                `$${key}`,
-                value,
-              ])
-            )
-          );
-        return Response.json({
-          columns: [{ name: 'group_name' }, { name: 'sample_count' }],
-          rows,
-          queryId: 'sample-query',
-        });
-      }
-      if (statement !== 'SELECT 1 AS connection_check' || query.limit !== 1)
-        return Response.json(
-          { error: 'Unexpected SQL request' },
-          { status: 400 }
-        );
-      return Response.json({
-        columns: [{ name: 'connection_check' }],
-        rows: [[1]],
-        queryId: 'sql-query',
-      });
+      const result = starterQueryResult(statement, query.limit, query.params);
+      return result
+        ? Response.json(result)
+        : Response.json({ error: 'Unexpected SQL request' }, { status: 400 });
     }
 
     return new Response('Not found', { status: 404 });

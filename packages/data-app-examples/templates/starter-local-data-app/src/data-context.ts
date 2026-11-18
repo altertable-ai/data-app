@@ -2,21 +2,19 @@ import { createDataContext } from '@altertable/data-app-react';
 
 import { dataApp } from '#config';
 
-const connectionQueryNames = { connection: 'connection' } satisfies Record<
-  string,
-  keyof typeof dataApp.queries
->;
-
-/** Setup context only. Replace it with the exploration's scope, exact definitions, limitations,
- * and query evidence after inspecting the source data. */
-export const dataContext = createDataContext(connectionQueryNames)({
+const queryNames = {
+  sampleCountsByGroup: 'sampleCountsByGroup',
+  sampleTotal: 'sampleTotal',
+} as const satisfies Record<string, keyof typeof dataApp.queries>;
+export const sampleDataContext = createDataContext(queryNames)({
   description:
-    'This starter runs a lightweight query to verify that the selected lakehouse profile can execute SQL. It does not check access to individual datasets. Replace the check with a query that answers a real question before sharing the app.',
+    'Fictional recorded sample counts for two groups, including a measured zero.',
   glossary: {
-    connectionVerified: {
-      term: 'Connected',
-      definition: 'The latest connection-check query completed successfully.',
-      queryNames: [connectionQueryNames.connection],
+    sampleCount: {
+      term: 'Sample count',
+      definition:
+        'Number of recorded samples. Totals sum the groups in the selected scope; zero denotes a measured count.',
+      queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
     },
   },
 });

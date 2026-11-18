@@ -19,11 +19,11 @@ for the requested change. For a new app, use the starter supplied by the authori
 | Local Finding           | `starter-local-finding-data-app`                                    |
 
 Choose the runtime and use case supplied by the app brief. Each starter is editable
-source; replace fixture queries and sample content before publishing. The hosted starter demonstrates query → operation
-→ context → view → dataset → widget composition, including a story example.
+source; replace fixture queries and sample content before publishing. The starters demonstrate query → operation
+→ context → view → dataset → widget composition.
 Hosted apps stay in one file with public package imports
 and a literal `defineDataApp()` declaration. Local apps use the same composition
-with their existing server/client wiring. Replace fixture data and connectivity screens; edit
+with their existing server/client wiring. Replace fixture queries and example content; edit
 app-owned files, not installed packages.
 
 ## Connect data and components

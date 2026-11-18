@@ -4,15 +4,13 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-  DataValue,
   TableWidget,
-  Stack,
-  TextContent,
+  Grid,
+  GridItem,
   mountDataApp,
   MetricWidget,
 } from '@altertable/data-app-react';
 import { parseCount, searchFilter } from '@altertable/data-app/contract';
-import { formatMetric } from '@altertable/data-app/format';
 
 export const dataApp = defineDataApp({
   title: 'Sample counts',
@@ -39,8 +37,9 @@ ORDER BY group_name LIMIT $limit`,
       projections: { sample_count: { type: 'number' } },
       statement: `
 WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
-SELECT CAST(COALESCE(SUM(sample_count), 0) AS BIGINT) AS sample_count FROM sample_counts
-WHERE $groupName = '' OR group_name = $groupName`,
+SELECT CAST(SUM(sample_count) AS BIGINT) AS sample_count FROM sample_counts
+WHERE $groupName = '' OR group_name = $groupName
+HAVING COUNT(*) > 0`,
       params: { groupName: { type: 'string', defaultValue: '' } },
     },
   },
@@ -65,7 +64,8 @@ export const operations = dataApp.defineOperations({
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleTotal', { groupName });
-      return { sampleCount: parseCount(queryResult.rows[0]?.sample_count) };
+      const row = queryResult.rows[0];
+      return row ? { sampleCount: parseCount(row.sample_count) } : null;
     },
   }),
 });
@@ -75,12 +75,12 @@ const queryNames = {
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Two SQL VALUES rows demonstrate the host query path. Replace them with inspected source data before publishing findings.',
+    'Fictional recorded sample counts for two groups, including a measured zero.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
       definition:
-        'A fixture value: Alpha is 2,200,000 and Beta is a measured zero.',
+        'Number of recorded samples. Totals sum the groups in the selected scope; zero denotes a measured count.',
       queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
     },
   },
@@ -111,6 +111,11 @@ const sampleCounts = sampleCountsView.dataset({
 const sampleTotalView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleTotal',
+  isEmpty: total => total === null,
+  emptyFallback: {
+    title: 'No total for this selection',
+    description: 'Choose a matching group to inspect its recorded samples.',
+  },
 });
 const totalSamples = sampleTotalView.metric(
   {
@@ -119,74 +124,33 @@ const totalSamples = sampleTotalView.metric(
     label: 'Total samples',
     format: { kind: 'count', compact: true },
   },
-  total => ({ current: total.sampleCount })
+  total => {
+    if (total === null) throw new Error('No measured total in this selection.');
+    return { current: total.sampleCount };
+  }
 );
 const totalContent = sampleTotalView.content(result => (
-  <Stack>
-    <TextContent>
-      <p>
-        Showing <DataValue scope={result.scope} />
-      </p>
-    </TextContent>
-    <MetricWidget
-      metric={totalSamples}
-      source={result}
-      description="Sum of the fixture counts in the selected groups."
-    />
-  </Stack>
+  <MetricWidget metric={totalSamples} source={result} />
 ));
-const countsContent = sampleCountsView.content(result => (
-  <TableWidget
-    dataset={sampleCounts}
-    source={result}
-    title="Counts by group"
-    description="Alpha and Beta demonstrate measured values, including zero."
-    pagination={false}
-  />
+const overviewContent = sampleCountsView.content(result => (
+  <Grid columns={3}>
+    <GridItem>
+      <DataSection content={totalContent} label="Sample total" />
+    </GridItem>
+    <GridItem span={2}>
+      <TableWidget
+        dataset={sampleCounts}
+        source={result}
+        title="Counts by group"
+        pagination={false}
+      />
+    </GridItem>
+  </Grid>
 ));
 function App() {
   return (
-    <DataApp
-      view={sampleCountsView}
-      summaryViews={[sampleTotalView]}
-      datasets={[sampleCounts]}
-      story={(countsSnapshot, totalSnapshot) => {
-        const total = totalSamples.read(totalSnapshot);
-        const scope = sampleCountsView.scope(countsSnapshot);
-        return [
-          {
-            id: 'total-samples',
-            headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
-            context: `Demonstration values for ${scope}.`,
-            visual: (
-              <MetricWidget metric={totalSamples} source={totalSnapshot} />
-            ),
-            visualKind: 'metric',
-            evidence: totalSamples,
-          },
-          {
-            id: 'counts-by-group',
-            headline: 'Counts by group',
-            context: `Demonstration values for ${scope}.`,
-            visual: (
-              <TableWidget
-                dataset={sampleCounts}
-                source={countsSnapshot}
-                pagination={false}
-              />
-            ),
-            evidence: sampleCounts,
-          },
-        ];
-      }}
-    >
-      <Stack>
-        <TextContent>
-          <h2>Sample counts</h2>
-        </TextContent>
-        <DataSection content={totalContent} label="Sample total" />
-        <DataSection content={countsContent} label="Group counts" />
-      </Stack>
+    <DataApp view={sampleCountsView} summaryViews={[sampleTotalView]}>
+      <DataSection content={overviewContent} label="Sample overview" />
     </DataApp>
   );
 }

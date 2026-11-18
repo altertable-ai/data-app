@@ -23,8 +23,8 @@ CLI proxy. Missing credentials stop startup.
 
 ## Build the app
 
-Replace the connectivity check with bounded operations, views, and the content
-specified by the app brief. Change identity, appearance, and queries in `app.ts`.
+Use inspected source data to answer the app brief. Replace the sample queries
+and views, and set identity and appearance in `app.ts`.
 
 ```fish
 bun run check

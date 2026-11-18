@@ -9,6 +9,7 @@ import localFinding from '@/packages/data-app-examples/templates/starter-local-f
 import localMetric from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
+import { dataApp as authoringFeaturesApp } from '@/tests/public-api/fixtures/authoring-features-app';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
@@ -38,9 +39,18 @@ import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import tooltips from '@/tests/public-api/fixtures/tooltips.html';
 
+const localSmokeQueries = {
+  connection: {
+    projections: { connection_check: { type: 'number' } },
+    statement: 'SELECT 1 AS connection_check',
+    params: {},
+  },
+} as const;
 const registeredQueries: Readonly<Record<string, { statement: string }>> = {
   ...hostedStarterApp.queries,
   ...localStarterApp.queries,
+  ...authoringFeaturesApp.queries,
+  ...localSmokeQueries,
 };
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
@@ -59,6 +69,7 @@ const [
   metricStarter,
   app,
   starter,
+  authoringFeatures,
   frame,
   annotations,
   annotationState,
@@ -73,6 +84,7 @@ const [
   ),
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
   bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
+  bundle('tests/public-api/fixtures/authoring-features-app.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
   bundle('tests/public-api/fixtures/annotations-app.tsx'),
   bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
@@ -105,10 +117,12 @@ const server = Bun.serve({
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
+    '/starter-authoring-features': bundleHost,
     '/starter-finding-data-app': bundleHost,
     '/starter-metric-data-app': bundleHost,
     '/local-finding': localFinding,
     '/local-metric': localMetric,
+    '/local-data-app': starterPage,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
@@ -159,6 +173,8 @@ const server = Bun.serve({
       return new Response(metricStarter);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
+    if (url.pathname === '/__test/starter-authoring-features')
+      return new Response(authoringFeatures);
     if (url.pathname === '/__test/silent')
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
@@ -181,12 +197,19 @@ const server = Bun.serve({
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
-    if (url.pathname === '/api/query') {
-      const { queryId, limit, params } = (await request.json()) as {
-        queryId: string;
+    if (
+      url.pathname === '/api/query' ||
+      url.pathname.startsWith('/api/query/')
+    ) {
+      const payload = (await request.json()) as {
+        queryId?: string;
         limit: number;
         params?: Record<string, string | number>;
       };
+      const queryId =
+        payload.queryId ??
+        decodeURIComponent(url.pathname.slice('/api/query/'.length));
+      const { limit, params } = payload;
       const statement = Object.hasOwn(registeredQueries, queryId)
         ? registeredQueries[queryId]?.statement
         : undefined;
@@ -222,7 +245,7 @@ const server = Bun.serve({
 process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
 const local = serveLocalApp({
   page: starterPage,
-  queries: localStarterApp.queries,
+  queries: { ...localStarterApp.queries, ...localSmokeQueries },
   title: 'Local starter',
   port: 0,
 });

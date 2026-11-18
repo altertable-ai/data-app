@@ -1,12 +1,82 @@
-import { GettingStarted } from '@altertable/data-app-react/ui';
+import {
+  createDataHooks,
+  DataApp,
+  DataSection,
+  Grid,
+  GridItem,
+  MetricWidget,
+  TableWidget,
+} from '@altertable/data-app-react';
 
-import { dataContext } from '#app/data-context.ts';
+import { sampleDataContext } from '#app/data-context.ts';
 import { operations } from '#app/operations.ts';
 
-const client = operations.createDataClient();
-
-/** Connectivity-only screen. Investigate the requested question, then replace this with a view
- * that leads with a supported finding and explores the useful angles behind it. */
+const { defineView } = createDataHooks(operations.createDataClient());
+const sampleCountsView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsByGroup',
+  isEmpty: sampleCounts => sampleCounts.length === 0,
+  emptyFallback: {
+    title: 'No matching groups',
+    description: 'Try Alpha, Beta, or clear the group filter.',
+  },
+});
+const sampleCounts = sampleCountsView.dataset({
+  name: 'Sample counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  columns: {
+    groupName: { label: 'Group', value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+  },
+  evidence: {
+    id: 'counts-by-group',
+    glossaryIds: ['sampleCount'],
+  },
+});
+const sampleTotalView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleTotal',
+  isEmpty: total => total === null,
+  emptyFallback: {
+    title: 'No total for this selection',
+    description: 'Choose a matching group to inspect its recorded samples.',
+  },
+});
+const totalSamples = sampleTotalView.metric(
+  {
+    id: 'total-samples',
+    glossaryId: 'sampleCount',
+    label: 'Total samples',
+    format: { kind: 'count', compact: true },
+  },
+  total => {
+    if (total === null) throw new Error('No measured total in this selection.');
+    return { current: total.sampleCount };
+  }
+);
+const totalContent = sampleTotalView.content(result => (
+  <MetricWidget metric={totalSamples} source={result} />
+));
+const overviewContent = sampleCountsView.content(result => (
+  <Grid columns={3}>
+    <GridItem>
+      <DataSection content={totalContent} label="Sample total" />
+    </GridItem>
+    <GridItem span={2}>
+      <TableWidget
+        dataset={sampleCounts}
+        source={result}
+        title="Counts by group"
+        pagination={false}
+      />
+    </GridItem>
+  </Grid>
+));
 export function App() {
-  return <GettingStarted dataContext={dataContext} client={client} />;
+  return (
+    <DataApp view={sampleCountsView} summaryViews={[sampleTotalView]}>
+      <DataSection content={overviewContent} label="Sample overview" />
+    </DataApp>
+  );
 }

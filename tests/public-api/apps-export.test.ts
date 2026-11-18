@@ -43,7 +43,7 @@ describe('export', () => {
         await route.fulfill({ status: 503, json: { error: 'Unavailable' } });
       else await route.continue();
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/starter-authoring-features');
     const app = page.frameLocator('iframe');
     const actions = page.getByRole('group', {
       name: 'Host page actions',
@@ -147,7 +147,7 @@ describe('export', () => {
   test('embedded export failures stay visible and allow retry', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?export-error');
+    await page.goto('/starter-authoring-features?export-error');
     const app = page.frameLocator('iframe');
     const button = page.getByRole('button', {
       name: 'Export CSV',

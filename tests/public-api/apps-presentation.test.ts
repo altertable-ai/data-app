@@ -14,7 +14,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
   test('a host presents the story fullscreen and the exploration resumes on close', async ({
     page,
   }) => {
-    await page.goto(`/starter-data-app?${search}`);
+    await page.goto(`/starter-authoring-features?${search}`);
     const app = page.frameLocator('iframe');
     const launch = page.getByRole('button', {
       name: 'Present story',
@@ -65,7 +65,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
   test('closing a story run from the keyboard returns focus to its host launcher', async ({
     page,
   }) => {
-    await page.goto(`/starter-data-app?${search}`);
+    await page.goto(`/starter-authoring-features?${search}`);
     const app = page.frameLocator('iframe');
     const launch = page.getByRole('button', {
       name: 'Present story',
@@ -100,7 +100,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
   test('a reader who moves to another host control keeps it when the story closes', async ({
     page,
   }) => {
-    await page.goto(`/starter-data-app?${search}`);
+    await page.goto(`/starter-authoring-features?${search}`);
     // Without fullscreen, host controls stay reachable while the story is open.
     await page.evaluate(() => {
       HTMLIFrameElement.prototype.requestFullscreen = () =>
@@ -129,7 +129,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
     page,
   }) => {
     await page.goto(
-      `/starter-data-app?${search}present=1&step=counts-by-group`
+      `/starter-authoring-features?${search}present=1&step=counts-by-group`
     );
     const app = page.frameLocator('iframe');
     await expect

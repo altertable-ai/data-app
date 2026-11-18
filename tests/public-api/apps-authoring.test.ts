@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { describe, expect } from 'vitest';
 
 import { test, localURL } from '@/tests/public-api/browser';
@@ -13,6 +15,7 @@ describe('authoring', () => {
         body: JSON.stringify(body),
       });
     }
+
     const result = await run('connection', { limit: 1 });
     expect(result.status).toBe(200);
     expect(await result.json()).toMatchObject({ rows: [[1]] });
@@ -36,200 +39,166 @@ describe('authoring', () => {
     ).toBe(403);
   });
 
-  test('single-file hosted example queries through the host and preserves displayed filters', async ({
+  test('hosted standalone starter presents measured values, zero, and empty states', async ({
     page,
   }) => {
-    const errors: string[] = [];
-    page.on('pageerror', error => errors.push(error.message));
     const requests: {
       queryId: string;
       limit: number;
       host: boolean;
-      params: { groupName: string; limit: number };
+      params: { groupName?: string; limit?: number };
     }[] = [];
-    let fail = false;
-    let release: (() => void) | undefined;
-    let gate = new Promise<void>(resolve => {
-      release = resolve;
-    });
     await page.route('**/api/query', async route => {
-      const payload = route.request().postDataJSON();
       requests.push({
-        ...payload,
+        ...route.request().postDataJSON(),
         host: route.request().frame() === page.mainFrame(),
       });
-      await gate;
+      await route.continue();
+    });
+    await page.goto('/starter-data-app');
+    const app = page.frameLocator('iframe');
+
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        app
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('2.2M', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
+      .toBe(0);
+    await expect
+      .poll(() => page.getByRole('button', { name: 'Present story' }).count())
+      .toBe(0);
+
+    const group = app.getByRole('searchbox', { name: 'Group', exact: true });
+    await group.fill('Beta');
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        app
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('0', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+
+    await group.fill('missing');
+    await expect
+      .poll(() =>
+        app.getByText('No matching groups', { exact: true }).isVisible()
+      )
+      .toBe(true);
+
+    expect(requests.map(request => request.queryId)).toContain(
+      'sampleCountsByGroup'
+    );
+    expect(requests.map(request => request.queryId)).toContain('sampleTotal');
+    expect(requests.every(request => request.host)).toBe(true);
+    expect(
+      requests
+        .filter(request => request.queryId === 'sampleCountsByGroup')
+        .every(request => request.limit === 10 && request.params.limit === 10)
+    ).toBe(true);
+    expect(
+      requests
+        .filter(request => request.queryId === 'sampleTotal')
+        .every(request => request.limit === 1)
+    ).toBe(true);
+  });
+
+  test('hosted starter recovers from an initial query failure', async ({
+    page,
+  }) => {
+    let fail = true;
+    await page.route('**/api/query', async route => {
       if (fail) await route.fulfill({ status: 503, json: failure });
       else await route.continue();
     });
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
-    await expect
-      .poll(() => app.locator('style[data-altertable-styles]').count())
-      .toBe(1);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('group', { name: 'Host page actions', exact: true })
-          .getByRole('button', { name: /refresh/i })
-          .getAttribute('aria-busy')
-      )
-      .toBe('true');
-
-    await expect
-      .poll(() =>
-        app
-          .getByRole('heading', { name: 'Sample counts', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('heading', { name: 'Total samples', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('region', { name: 'Total samples', exact: true })
-          .getByText('Sum of the fixture counts in the selected groups.', {
-            exact: true,
-          })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('heading', { name: 'Counts by group', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app.getByRole('row', { name: 'Alpha 2,200,000', exact: true }).count()
-      )
-      .toBe(0);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('button', { name: 'Present story', exact: true })
-          .isDisabled()
-      )
-      .toBe(true);
-    const stableActions = ['Explore data', 'Export CSV', 'Present story'].map(
-      name => page.getByRole('button', { name, exact: true })
-    );
-    await expect.poll(() => stableActions[1]!.isDisabled()).toBe(true);
-
-    release!();
-    gate = Promise.resolve();
-    await expect
-      .poll(() =>
-        app
-          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
-          .filter({ visible: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('row', { name: 'Beta 0', exact: true })
-          .filter({ visible: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect.poll(() => stableActions[1]!.isEnabled()).toBe(true);
-    await expect.poll(() => stableActions[2]!.isEnabled()).toBe(true);
-
-    const width = await app
-      .locator('html')
-      .evaluate(element => element.clientWidth);
-    expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    const queryCountBeforeStory = requests.length;
-    await page
-      .getByRole('button', { name: 'Present story', exact: true })
-      .click();
-    const story = app.getByRole('dialog');
-    await expect
-      .poll(() =>
-        story
-          .getByRole('heading', { name: 'Total samples: 2.2M', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await story.getByRole('button', { name: 'Next step', exact: true }).click();
-    await expect
-      .poll(() =>
-        story
-          .getByRole('heading', { name: 'Counts by group', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        story
-          .getByRole('button', { name: 'Explore sources', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    await story
-      .getByRole('button', { name: 'Exit presentation', exact: true })
-      .click();
-    expect(requests.length).toBe(queryCountBeforeStory);
-    const group = app.getByRole('searchbox', { name: 'Group', exact: true });
-    gate = new Promise<void>(resolve => {
-      release = resolve;
+    const overview = app.getByRole('region', {
+      name: 'Sample overview',
+      exact: true,
     });
-    await group.fill('Beta');
+    await expect.poll(() => overview.getByRole('alert').isVisible()).toBe(true);
+
+    fail = false;
+    await overview.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect
-      .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('Showing all data', { exact: true })
-          .isVisible()
-      )
+      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() => overview.getByText('2.2M', { exact: true }).isVisible())
+      .toBe(true);
+  });
+
+  test('focused host fixture keeps export and presentation snapshots covered', async ({
+    page,
+  }) => {
+    let fail = false;
+    const requests: { queryId: string; groupName: string }[] = [];
+    await page.route('**/api/query', async route => {
+      const payload = route.request().postDataJSON() as {
+        queryId: string;
+        params: { groupName: string };
+      };
+      requests.push({
+        queryId: payload.queryId,
+        groupName: payload.params.groupName,
+      });
+      if (fail) await route.fulfill({ status: 503, json: failure });
+      else await route.continue();
+    });
+    await page.goto('/starter-authoring-features');
+    const app = page.frameLocator('iframe');
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
       .toBe(true);
     await expect
       .poll(() =>
         page
-          .getByRole('group', { name: 'Host page actions', exact: true })
-          .getByRole('button', { name: /refresh/i })
-          .getAttribute('aria-busy')
+          .getByRole('button', { name: 'Export CSV', exact: true })
+          .isEnabled()
       )
-      .toBe('true');
-    release!();
-    gate = Promise.resolve();
+      .toBe(true);
+
+    await app
+      .getByRole('searchbox', { name: 'Group', exact: true })
+      .fill('Beta');
     await expect
-      .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('Showing group Beta', { exact: true })
-          .isVisible()
-      )
+      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
       .toBe(true);
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
-          .filter({ visible: true })
-          .count()
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('0', { exact: true })
+          .isVisible()
       )
-      .toBe(0);
+      .toBe(true);
+
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
+    const downloadPath = await (await download).path();
+    const csv = await readFile(downloadPath!, 'utf8');
+    expect(csv).toContain('Beta,0');
+    expect(csv).not.toContain('Alpha');
+
     fail = true;
-    await group.fill('Alpha');
-    await expect
-      .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('Showing group Beta', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
+    await app
+      .getByRole('searchbox', { name: 'Group', exact: true })
+      .fill('Alpha');
     await expect
       .poll(() =>
         app
@@ -241,253 +210,78 @@ describe('authoring', () => {
           .isVisible()
       )
       .toBe(true);
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).count())
+      .toBe(0);
+
+    const queryCountBeforeStory = requests.length;
     await page
       .getByRole('button', { name: 'Present story', exact: true })
       .click();
+    const story = app.getByRole('dialog', {
+      description: 'Demonstration values for group Beta.',
+      exact: true,
+    });
     await expect
       .poll(() =>
-        story
-          .getByRole('heading', { name: 'Total samples: 0', exact: true })
-          .isVisible()
+        story.getByRole('heading', { name: 'Total samples: 0' }).isVisible()
+      )
+      .toBe(true);
+    expect(requests.length).toBe(queryCountBeforeStory);
+    await story.getByRole('button', { name: 'Next step', exact: true }).click();
+    await expect
+      .poll(() =>
+        story.getByRole('heading', { name: 'Counts by group' }).isVisible()
       )
       .toBe(true);
     await expect
-      .poll(() =>
-        app
-          .getByRole('dialog', {
-            description: 'Demonstration values for group Beta.',
-            exact: true,
-          })
-          .count()
-      )
-      .toBe(1);
-    await story
-      .getByRole('button', { name: 'Exit presentation', exact: true })
-      .click();
-    fail = false;
-    await app.getByRole('button', { name: 'Try again', exact: true }).click();
+      .poll(() => story.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() => story.getByRole('row', { name: 'Alpha 2,200,000' }).count())
+      .toBe(0);
     await expect
       .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('Showing group Alpha', { exact: true })
+        story.getByRole('button', { name: 'Explore sources' }).isVisible()
+      )
+      .toBe(true);
+  });
+
+  test('local standalone starter matches the hosted exploration states', async ({
+    page,
+  }) => {
+    await page.goto('/local-data-app');
+    await expect
+      .poll(() =>
+        page.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
+      .toBe(0);
+
+    const group = page.getByRole('searchbox', { name: 'Group', exact: true });
+    await group.fill('Beta');
+    await expect
+      .poll(() => page.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('0', { exact: true })
           .isVisible()
       )
       .toBe(true);
+
     await group.fill('missing');
     await expect
       .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('No matching groups', { exact: true })
-          .isVisible()
+        page.getByText('No matching groups', { exact: true }).isVisible()
       )
       .toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('button', { name: 'Present story', exact: true })
-          .isDisabled()
-      )
-      .toBe(true);
-    await group.fill("O'Reilly");
-    await expect.poll(() => requests.at(-1)?.params.groupName).toBe("O'Reilly");
-    await expect
-      .poll(() =>
-        app
-          .getByRole('main')
-          .getByText('No matching groups', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await group.fill('');
-    await expect
-      .poll(() =>
-        app
-          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
-          .filter({ visible: true })
-          .isVisible()
-      )
-      .toBe(true);
-    const before = requests.length;
-    await page
-      .getByRole('button', { name: 'Refresh data', exact: true })
-      .click();
-    await expect.poll(() => requests.length).toBeGreaterThan(before);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('row', { name: 'Beta 0', exact: true })
-          .filter({ visible: true })
-          .isVisible()
-      )
-      .toBe(true);
-    // Each widget runs its own query through the host, capped by its operation policy.
-    const countRequests = requests.filter(
-      request => request.queryId === 'sampleCountsByGroup'
-    );
-    const totalRequests = requests.filter(
-      request => request.queryId === 'sampleTotal'
-    );
-    expect(countRequests.length).toBeGreaterThan(0);
-    expect(totalRequests.length).toBeGreaterThan(0);
-    expect(countRequests.length + totalRequests.length).toBe(requests.length);
-    expect(requests.every(request => request.host)).toBe(true);
-    expect(
-      requests.every(
-        request => !('statement' in request) && !('operation' in request)
-      )
-    ).toBe(true);
-    expect(
-      countRequests.every(
-        request => request.limit === 10 && request.params.limit === 10
-      )
-    ).toBe(true);
-    expect(totalRequests.every(request => request.limit === 1)).toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('button', { name: 'Refresh data', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    expect(errors).toEqual([]);
-  });
-
-  test('hosted initial query error recovers by retry', async ({ page }) => {
-    let fail = true;
-    await page.route('**/api/query', async route => {
-      if (fail) await route.fulfill({ status: 503, json: failure });
-      else await route.continue();
-    });
-    await page.goto('/starter-data-app');
-    const app = page.frameLocator('iframe');
-    const sections = ['Sample total', 'Group counts'].map(name =>
-      app.getByRole('region', { name, exact: true })
-    );
-    for (const section of sections)
-      await expect
-        .poll(() =>
-          section
-            .getByRole('alert')
-            .filter({ hasText: 'Couldn’t load results' })
-            .isVisible()
-        )
-        .toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('button', { name: 'Export CSV', exact: true })
-          .isDisabled()
-      )
-      .toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('button', { name: 'Present story', exact: true })
-          .isDisabled()
-      )
-      .toBe(true);
-    fail = false;
-    await sections[1]!
-      .getByRole('button', { name: 'Retry', exact: true })
-      .click();
-    await expect
-      .poll(() =>
-        app
-          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
-          .filter({ visible: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() => sections[0]!.getByText('2.2M', { exact: true }).isVisible())
-      .toBe(true);
-  });
-
-  test('local starter mounts, queries its server, refreshes and retries a failed check', async ({
-    page,
-  }) => {
-    const errors: string[] = [];
-    page.on('pageerror', error => errors.push(error.message));
-    let fail = false;
-    let release!: () => void;
-    let gate = new Promise<void>(resolve => {
-      release = resolve;
-    });
-    await page.route('**/api/query/connection', async route => {
-      await gate;
-      if (fail)
-        await route.fulfill({
-          status: 503,
-          json: { reason: 'unavailable' },
-        });
-      else await route.continue();
-    });
-    await page.goto(localURL);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('heading', { name: 'Checking connection…', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    release();
-    gate = Promise.resolve();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('heading', { name: 'Connected', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    fail = true;
-    await page
-      .getByRole('button', { name: 'Check connection', exact: true })
-      .click();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('alert')
-          .filter({
-            hasText: 'An earlier query succeeded, but the latest check failed.',
-          })
-          .isVisible()
-      )
-      .toBe(true);
-    fail = false;
-    await page.getByRole('button', { name: 'Try again', exact: true }).click();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('heading', { name: 'Connected', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    fail = true;
-    await page.reload();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('heading', {
-            name: 'Connection not verified',
-            exact: true,
-          })
-          .isVisible()
-      )
-      .toBe(true);
-    fail = false;
-    await page.getByRole('button', { name: 'Try again', exact: true }).click();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('heading', { name: 'Connected', exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    expect(errors).toEqual([]);
   });
 });

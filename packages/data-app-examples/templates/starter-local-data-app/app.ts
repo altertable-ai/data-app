@@ -1,28 +1,34 @@
 import { defineDataApp } from '@altertable/data-app';
 
 export const dataApp = defineDataApp({
-  title: 'Getting started',
-  description: 'Check your lakehouse connection, then build an exploration.',
-  scope: {
-    organization: 'Your organization',
-    environment: 'your environment',
-  },
-  appearance: {
-    theme: 'light',
-    baseColor: 'neutral',
-    density: 'comfortable',
-    cornerRadius: 'medium',
-    elevation: 'subtle',
-    typography: {
-      body: 'system',
-      heading: 'system',
-    },
-  },
+  title: 'Sample counts',
+  description: 'Explore sample counts by group.',
+  scope: { organization: 'demo', environment: 'sample' },
+  appearance: { theme: 'system' },
   queries: {
-    connection: {
-      projections: { connection_check: { type: 'number' } },
-      statement: 'SELECT 1 AS connection_check',
-      params: {},
+    sampleCountsByGroup: {
+      projections: {
+        group_name: { type: 'string' },
+        sample_count: { type: 'number' },
+      },
+      statement: `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+SELECT group_name, sample_count FROM sample_counts
+WHERE $groupName = '' OR group_name = $groupName
+ORDER BY group_name LIMIT $limit`,
+      params: {
+        groupName: { type: 'string', defaultValue: '' },
+        limit: { type: 'number', defaultValue: 10 },
+      },
+    },
+    sampleTotal: {
+      projections: { sample_count: { type: 'number' } },
+      statement: `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+SELECT CAST(SUM(sample_count) AS BIGINT) AS sample_count FROM sample_counts
+WHERE $groupName = '' OR group_name = $groupName
+HAVING COUNT(*) > 0`,
+      params: { groupName: { type: 'string', defaultValue: '' } },
     },
   },
 });
