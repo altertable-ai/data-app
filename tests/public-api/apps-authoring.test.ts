@@ -66,6 +66,7 @@ describe('authoring', () => {
   test('hosted standalone starter presents measured values, zero, and empty states', async ({
     page,
   }) => {
+    let emptyDelta = false;
     const requests: {
       queryId: string;
       limit: number;
@@ -73,10 +74,21 @@ describe('authoring', () => {
       params: { groupName?: string; limit?: number };
     }[] = [];
     await page.route('**/api/query', async route => {
+      const payload = route.request().postDataJSON() as {
+        queryId: string;
+        limit: number;
+        params: { groupName?: string; limit?: number };
+      };
       requests.push({
-        ...route.request().postDataJSON(),
+        ...payload,
         host: route.request().frame() === page.mainFrame(),
       });
+      if (emptyDelta && payload.params.groupName === 'Delta') {
+        const response = await route.fetch();
+        const result = (await response.json()) as { rows: unknown[] };
+        await route.fulfill({ response, json: { ...result, rows: [] } });
+        return;
+      }
       await route.continue();
     });
     await page.goto('/starter-data-app');
@@ -116,7 +128,6 @@ describe('authoring', () => {
       .poll(() => page.getByRole('button', { name: 'Present story' }).count())
       .toBe(0);
 
-    const group = app.getByRole('searchbox', { name: 'Group', exact: true });
     await chart
       .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
       .click();
@@ -134,7 +145,10 @@ describe('authoring', () => {
           .isVisible()
       )
       .toBe(true);
-    await group.fill('Beta');
+    await app
+      .getByRole('button', { name: /Gamma.*Group|Group.*Gamma/ })
+      .click();
+    await app.getByRole('option', { name: 'Beta', exact: true }).click();
     await expect
       .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
       .toBe(true);
@@ -147,13 +161,30 @@ describe('authoring', () => {
       )
       .toBe(true);
 
-    await group.fill('missing');
+    await app.getByRole('button', { name: /Beta.*Group|Group.*Beta/ }).click();
+    await app.getByRole('option', { name: 'All groups', exact: true }).click();
+    await expect
+      .poll(() =>
+        app
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('3M', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    emptyDelta = true;
+    await app
+      .getByRole('button', { name: /All groups.*Group|Group.*All groups/ })
+      .click();
+    await app.getByRole('option', { name: 'Delta', exact: true }).click();
     await expect
       .poll(() =>
         app.getByText('No matching groups', { exact: true }).isVisible()
       )
       .toBe(true);
-    await group.fill('Delta');
+    emptyDelta = false;
+    await page
+      .getByRole('button', { name: 'Refresh data', exact: true })
+      .click();
     await expect
       .poll(() => app.getByRole('row', { name: 'Delta 150,000' }).isVisible())
       .toBe(true);
@@ -322,6 +353,19 @@ describe('authoring', () => {
   test('local standalone starter matches the hosted exploration states', async ({
     page,
   }) => {
+    let emptyDelta = false;
+    await page.route('**/api/query/*', async route => {
+      const payload = route.request().postDataJSON() as {
+        params: { groupName?: string };
+      };
+      if (emptyDelta && payload.params.groupName === 'Delta') {
+        const response = await route.fetch();
+        const result = (await response.json()) as { rows: unknown[] };
+        await route.fulfill({ response, json: { ...result, rows: [] } });
+        return;
+      }
+      await route.continue();
+    });
     await page.goto('/local-data-app');
     await expect
       .poll(() =>
@@ -334,7 +378,6 @@ describe('authoring', () => {
       .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
       .toBe(0);
 
-    const group = page.getByRole('searchbox', { name: 'Group', exact: true });
     await chart
       .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
       .click();
@@ -352,7 +395,10 @@ describe('authoring', () => {
           .isVisible()
       )
       .toBe(true);
-    await group.fill('Beta');
+    await page
+      .getByRole('button', { name: /Gamma.*Group|Group.*Gamma/ })
+      .click();
+    await page.getByRole('option', { name: 'Beta', exact: true }).click();
     await expect
       .poll(() => page.getByRole('row', { name: 'Beta 0' }).isVisible())
       .toBe(true);
@@ -365,13 +411,30 @@ describe('authoring', () => {
       )
       .toBe(true);
 
-    await group.fill('missing');
+    await page.getByRole('button', { name: /Beta.*Group|Group.*Beta/ }).click();
+    await page.getByRole('option', { name: 'All groups', exact: true }).click();
+    await expect
+      .poll(() =>
+        page
+          .getByRole('region', { name: 'Sample total' })
+          .getByText('3M', { exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    emptyDelta = true;
+    await page
+      .getByRole('button', { name: /All groups.*Group|Group.*All groups/ })
+      .click();
+    await page.getByRole('option', { name: 'Delta', exact: true }).click();
     await expect
       .poll(() =>
         page.getByText('No matching groups', { exact: true }).isVisible()
       )
       .toBe(true);
-    await group.fill('Delta');
+    emptyDelta = false;
+    await page
+      .getByRole('button', { name: 'Refresh data', exact: true })
+      .click();
     await expect
       .poll(() => page.getByRole('row', { name: 'Delta 150,000' }).isVisible())
       .toBe(true);

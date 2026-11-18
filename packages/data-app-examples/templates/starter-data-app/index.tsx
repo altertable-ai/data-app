@@ -13,7 +13,7 @@ import {
   MetricWidget,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { parseCount, searchFilter } from '@altertable/data-app/contract';
+import { parseCount, choiceFilter } from '@altertable/data-app/contract';
 import { formatCount } from '@altertable/data-app/format';
 
 export const dataApp = defineDataApp({
@@ -50,24 +50,54 @@ HAVING COUNT(*) > 0`,
 });
 // Declare each filter once; operations list the filters they read, and views,
 // controls, and scope derive from them.
-const groupName = searchFilter({ key: 'group', label: 'Group' });
+const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'all',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Gamma', label: 'Gamma' },
+    { id: 'Delta', label: 'Delta' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
+type SampleGroup = Exclude<typeof groupName.defaultValue, 'all'>;
+
+/** The fixture queries read an empty group name as every group. */
+function queryGroup(groupName: string) {
+  return groupName === 'all' ? '' : groupName;
+}
 export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsByGroup', { groupName });
-      return queryResult.rows.map(row => ({
-        groupName: row.group_name,
-        sampleCount: parseCount(row.sample_count),
-      }));
+      const queryResult = await query('sampleCountsByGroup', {
+        groupName: queryGroup(groupName),
+      });
+      return queryResult.rows.map(
+        (row): { groupName: SampleGroup; sampleCount: number } => {
+          const groupName = row.group_name;
+          if (
+            groupName !== 'Alpha' &&
+            groupName !== 'Gamma' &&
+            groupName !== 'Delta' &&
+            groupName !== 'Beta'
+          )
+            throw new Error('Unexpected fixture group.');
+          return { groupName, sampleCount: parseCount(row.sample_count) };
+        }
+      );
     },
   }),
   sampleTotal: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleTotal', { groupName });
+      const queryResult = await query('sampleTotal', {
+        groupName: queryGroup(groupName),
+      });
       const row = queryResult.rows[0];
       return row ? { sampleCount: parseCount(row.sample_count) } : null;
     },
@@ -96,7 +126,7 @@ const sampleCountsView = defineView({
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
     title: 'No matching groups',
-    description: 'Try Alpha, Beta, or clear the group filter.',
+    description: 'Choose another group or select All groups.',
   },
 });
 const sampleCounts = sampleCountsView.dataset({

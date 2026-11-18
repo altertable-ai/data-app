@@ -22,7 +22,7 @@ const sampleCountsView = defineView({
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
     title: 'No matching groups',
-    description: 'Try Alpha, Beta, or clear the group filter.',
+    description: 'Choose another group or select All groups.',
   },
 });
 const sampleCounts = sampleCountsView.dataset({
