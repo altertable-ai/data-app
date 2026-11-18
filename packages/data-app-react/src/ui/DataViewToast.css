@@ -48,7 +48,7 @@
   min-height: 32px;
 }
 .altertable-data-view-toast-spinner {
-  animation: altertable-data-view-toast-spin 1s linear infinite;
+  animation: altertable-data-view-toast-spin 900ms linear infinite;
 }
 @keyframes altertable-data-view-toast-spin {
   to {
@@ -57,6 +57,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-data-view-toast-spinner {
-    animation: none;
+    animation: altertable-busy-pulse 1.2s ease-in-out infinite alternate;
   }
 }

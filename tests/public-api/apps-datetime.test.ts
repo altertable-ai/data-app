@@ -136,6 +136,26 @@ test('calendar starts from applied dates, requires a complete selection, and Esc
   expect(await input.getAttribute('aria-expanded')).toBe('false');
 });
 
+test('pressing an open calendar month or year select again closes only that select', async ({
+  page,
+}) => {
+  await page.goto('/datetime');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  const calendar = page.getByRole('dialog', { name: 'Date range calendar' });
+  const year = calendar.getByRole('button', { name: /Year/ });
+  await year.click();
+  const years = page.getByRole('listbox');
+  await expect.poll(() => years.isVisible()).toBe(true);
+  // The open select's underlay covers its trigger, so press its position.
+  const box = (await year.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(() => years.count()).toBe(0);
+  expect(await calendar.isVisible()).toBe(true);
+  expect(await input.getAttribute('aria-expanded')).toBe('true');
+});
+
 test('formatted date segments support arrow selection and rapid edits before Enter', async ({
   page,
 }) => {

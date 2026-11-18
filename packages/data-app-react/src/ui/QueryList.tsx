@@ -90,6 +90,8 @@ function QueryFigure(query: DisclosedQuery) {
             }
           >
             <Button
+              variant="ghost"
+              size="icon-compact"
               className="altertable-query-action"
               aria-label={
                 copyState === 'copied' ? 'Copied SQL' : `Copy SQL for ${name}`

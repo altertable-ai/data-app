@@ -10,6 +10,17 @@
 [data-atbl-control='help'] {
   cursor: var(--atbl-cursor-help);
 }
+/* Pressing or double-clicking a control must not select its label. Text
+   fields and inline help terms in prose stay selectable. */
+[data-atbl-control='action'],
+:is(
+  [data-atbl-internal-surface='control'],
+  [data-atbl-internal-surface='option'],
+  [data-atbl-internal-surface='tab']
+):not([data-atbl-control='text'], [data-atbl-control='help']) {
+  -webkit-user-select: none;
+  user-select: none;
+}
 [data-atbl-control='text'] {
   cursor: text;
   font-size: var(--atbl-control-text-size, var(--atbl-type-body-size));
@@ -46,7 +57,8 @@
   [data-disabled],
   [aria-disabled='true']
 ),
-[data-atbl-control]:has(> input:disabled) {
+[data-atbl-control]:has(> input:disabled),
+[data-atbl-internal-surface='field']:has(input:disabled) {
   opacity: var(--atbl-control-disabled-opacity);
 }
 [data-atbl-control][aria-busy='true']:not(
@@ -57,10 +69,24 @@
   ) {
   cursor: var(--atbl-cursor-busy);
 }
-:where(
-    [data-atbl-internal-surface='control'],
-    [data-atbl-internal-surface='option']
-  ):is(:hover, [data-hovered], [data-focused], [data-open='true']):not(
+/* Options also fill on virtual focus; controls fill on hover only, so a trigger
+   that regains focus after its popup closes does not look stuck on hover. */
+:where([data-atbl-internal-surface='control']):is(
+    :hover,
+    [data-hovered],
+    [data-open='true']
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ),
+:where([data-atbl-internal-surface='option']):is(
+    :hover,
+    [data-hovered],
+    [data-focused],
+    [data-open='true']
+  ):not(
     :disabled,
     [data-disabled],
     [aria-disabled='true'],
@@ -200,4 +226,16 @@
   [aria-disabled='true']
 ) {
   color: var(--atbl-muted);
+}
+
+/* Forced colors drop fills and shadows, so selection needs an outline. */
+@media (forced-colors: active) {
+  :is(
+    [data-atbl-internal-surface],
+    .react-aria-Tab,
+    .react-aria-CalendarCell
+  )[data-selected] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }

@@ -20,7 +20,7 @@
 .altertable-pie-plot
   svg:has(.altertable-pie-slice[data-active])
   .altertable-pie-slice:not([data-active]) {
-  opacity: 0.3;
+  opacity: var(--atbl-internal-chart-muted-opacity);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-pie-slice {
@@ -43,12 +43,15 @@
 .altertable-pie-legend .altertable-chart-legend-overflow {
   padding-block-start: var(--atbl-space-sm);
 }
+/* Rows keep a hover gutter but their text lines up with the widget heading. */
 .altertable-pie-legend .altertable-tooltip-trigger button {
+  --atbl-control-open-surface: var(--atbl-subtle);
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  width: calc(100% + 8px);
   min-width: 0;
+  margin-inline: -4px;
   padding: 8px 4px;
   border: 0;
   background: transparent;
@@ -59,9 +62,6 @@
 }
 .altertable-pie-legend [data-open] > button {
   background: var(--atbl-subtle);
-}
-.altertable-pie-legend .altertable-tooltip-trigger button:focus {
-  outline: none;
 }
 .altertable-pie-label {
   overflow-wrap: anywhere;
@@ -109,7 +109,7 @@
 .altertable-pie-plot
   svg:has(.altertable-pie-slice:focus-visible)
   .altertable-pie-slice:not(:focus-visible) {
-  opacity: 0.3;
+  opacity: var(--atbl-internal-chart-muted-opacity);
 }
 .altertable-pie-slice:focus-visible {
   filter: brightness(1.15);

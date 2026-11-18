@@ -53,3 +53,9 @@
   white-space: nowrap;
   border: 0;
 }
+/* Reduced motion keeps a busy signal: spinners pulse instead of turning. */
+@keyframes altertable-busy-pulse {
+  to {
+    opacity: 0.35;
+  }
+}

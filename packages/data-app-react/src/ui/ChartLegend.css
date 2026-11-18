@@ -34,12 +34,12 @@
   min-width: 0;
   max-width: 100%;
 }
-.altertable-chart-legend-item[data-inactive] {
-  opacity: var(--atbl-control-disabled-opacity);
-}
-.altertable-chart-legend-item[data-legend-muted],
-.altertable-chart-legend-item[data-legend-excluded] {
-  opacity: 0.4;
+.altertable-chart-legend-item:is(
+  [data-inactive],
+  [data-legend-muted],
+  [data-legend-excluded]
+) {
+  opacity: var(--atbl-internal-chart-muted-opacity);
 }
 .altertable-chart-legend-marker {
   display: inline-block;
@@ -73,7 +73,15 @@
   text-align: left;
 }
 .altertable-chart-legend-action:where(button) {
-  cursor: pointer;
+  transition: color var(--atbl-duration-fast) var(--atbl-ease-standard);
+}
+.altertable-chart-legend-action:where(button):hover {
+  color: var(--atbl-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-chart-legend-action {
+    transition: none;
+  }
 }
 .altertable-chart-legend[data-layout='vertical'][data-align='center'] {
   justify-items: center;

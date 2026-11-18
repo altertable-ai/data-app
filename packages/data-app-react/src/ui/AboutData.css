@@ -36,7 +36,7 @@
 .altertable-about-glossary-entry > h3 {
   margin: 0;
   font-size: var(--atbl-type-body-size);
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
   letter-spacing: -0.01em;
 }
 .altertable-about-glossary-entry > p {
@@ -50,45 +50,14 @@
 }
 .altertable-about-tabbar {
   position: sticky;
-  top: -24px;
+  top: calc(-1 * var(--atbl-internal-sheet-body-inset, 0px));
   z-index: 2;
-  margin-top: -24px;
-  padding: 24px 0 14px;
+  margin-top: calc(-1 * var(--atbl-internal-sheet-body-inset, 0px));
+  padding: var(--atbl-internal-sheet-body-inset, 0px) 0 14px;
   background: var(--atbl-surface);
-}
-@media (max-width: 600px) {
-  .altertable-about-tabbar {
-    margin-top: -20px;
-    padding-top: 20px;
-    top: -20px;
-  }
-}
-.altertable-about-tabs .react-aria-TabList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  width: 100%;
-  max-width: 100%;
-  padding: 3px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--atbl-subtle);
 }
 .altertable-about-tabs .react-aria-TabPanels {
   padding-top: 14px;
-}
-.altertable-about-tabs .react-aria-Tab {
-  margin: 0;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 8px;
-  font-size: var(--atbl-type-meta-size);
-  font-weight: var(--atbl-type-label-weight);
-}
-.altertable-about-tabs .react-aria-Tab[data-selected] {
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: 0 0 0 1px var(--atbl-border);
 }
 .altertable-about-tabs .react-aria-TabPanel {
   min-width: 0;

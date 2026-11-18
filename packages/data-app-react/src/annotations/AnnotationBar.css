@@ -54,7 +54,6 @@
   color: var(--bar-muted);
   width: auto;
   font: inherit;
-  transition: none;
 }
 .altertable-annotation-bar .altertable-annotation-bar-count {
   white-space: nowrap;
@@ -77,7 +76,7 @@
   border-radius: 12px;
   color: var(--atbl-annotation-on-accent);
   padding-inline: 14px;
-  font-weight: 600;
+  font-weight: var(--atbl-type-label-weight);
   line-height: 1.25;
 }
 .altertable-annotation-bar-panel {
@@ -122,16 +121,17 @@
 }
 .altertable-annotation-bar-open strong {
   color: var(--bar-text);
-  font-weight: 600;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-annotation-bar-open span {
   font-size: 13px;
   color: var(--bar-muted);
   overflow-wrap: anywhere;
 }
-.altertable-annotation-bar-panel
-  .altertable-annotation-bar-open:hover:not(:disabled) {
-  background: transparent;
+/* State paint goes through the shared control tokens. */
+.altertable-annotation-bar-panel .altertable-annotation-bar-open {
+  --atbl-control-hover-surface: transparent;
+  --atbl-control-pressed-surface: transparent;
 }
 .altertable-annotation-bar-error {
   position: absolute;
@@ -171,12 +171,13 @@
 .altertable-annotation-bar .altertable-button:hover:not(:disabled),
 .altertable-annotation-bar-panel .altertable-button:hover:not(:disabled) {
   color: var(--bar-text);
-  background: var(--atbl-subtle);
+}
+.altertable-annotation-bar .altertable-annotation-bar-send {
+  --atbl-control-hover-surface: var(--atbl-annotation-accent-hover);
 }
 .altertable-annotation-bar
   .altertable-annotation-bar-send:hover:not(:disabled) {
   color: var(--atbl-annotation-on-accent);
-  background: var(--atbl-annotation-accent-hover);
 }
 .altertable-annotation-bar .altertable-button:disabled,
 .altertable-annotation-bar-panel .altertable-button:disabled {
@@ -197,7 +198,7 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  animation: annotation-bar-spin 1s linear infinite;
+  animation: annotation-bar-spin 900ms linear infinite;
 }
 @keyframes annotation-bar-spin {
   to {
@@ -214,13 +215,12 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-annotation-bar-spinner {
-    animation: none;
+    animation: altertable-busy-pulse 1.2s ease-in-out infinite alternate;
   }
 }
 
-.altertable-annotation-bar .altertable-button[aria-pressed='true'] {
-  color: var(--bar-text);
-  background: var(--atbl-subtle);
+.altertable-annotation-bar .altertable-button {
+  --atbl-control-selected-text: var(--bar-text);
 }
 
 .altertable-annotation-undo {

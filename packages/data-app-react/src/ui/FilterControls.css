@@ -8,11 +8,15 @@
   font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
     var(--atbl-font);
 }
+/* Group labels match Field: muted label size, label weight above the control
+   and meta weight beside it. */
 .altertable-number-field > label,
 .altertable-radio-group > .altertable-control-label,
-.altertable-checkbox-group > label {
+.altertable-checkbox-group > :is(label, legend),
+.altertable-number-range-field legend {
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-number-field [data-atbl-internal-surface='field'] {
   min-height: var(--atbl-control-height);
@@ -44,7 +48,6 @@
 .altertable-number-range-field legend {
   padding: 0;
   margin-bottom: var(--atbl-space-xs);
-  font-size: var(--atbl-type-label-size);
 }
 .altertable-number-range-field .altertable-number-field {
   flex: 1 1 110px;
@@ -58,17 +61,33 @@
 .altertable-radio {
   display: inline-flex;
   align-items: center;
-  gap: var(--atbl-space-xs);
+  gap: var(--atbl-control-gap);
   border-radius: var(--atbl-radius-control);
 }
+/* Radio and checkbox marks share size, border, and hover. */
 .altertable-radio-mark {
   display: grid;
   flex: none;
   place-items: center;
+  box-sizing: border-box;
   width: 1em;
   height: 1em;
   border: 1px solid var(--atbl-muted);
   border-radius: 50%;
+  font-size: var(--atbl-control-icon-size);
+  transition: border-color var(--atbl-duration-fast) var(--atbl-ease-standard);
+}
+:is(.altertable-checkbox:hover, .altertable-radio[data-hovered])
+  :is(
+    .altertable-selection-mark[data-multiple]:not([data-selected]),
+    .altertable-radio-mark
+  ) {
+  border-color: var(--atbl-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-radio-mark {
+    transition: none;
+  }
 }
 .altertable-radio[data-selected] .altertable-radio-mark::after {
   content: '';
@@ -82,25 +101,49 @@
   align-items: center;
   gap: var(--atbl-space-sm);
 }
+/* Same track as segmented tabs: the selected segment is raised, so hover
+   (a tint of the track) never reads as selection. */
 .altertable-segmented-options {
   display: inline-flex;
+  gap: 2px;
   min-width: 0;
+  min-height: var(--atbl-control-height);
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
 }
 .altertable-segmented-control .altertable-radio {
-  padding: var(--atbl-control-padding-block) var(--atbl-control-padding-inline);
-  min-height: var(--atbl-control-height);
+  --atbl-control-hover-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 5%,
+    var(--atbl-subtle)
+  );
+  --atbl-control-pressed-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 9%,
+    var(--atbl-subtle)
+  );
+  --atbl-control-selected-surface: var(--atbl-surface);
+  padding: 0 calc(var(--atbl-control-padding-inline) - 3px);
   box-sizing: border-box;
-  border: 1px solid var(--atbl-border);
-  border-radius: 0;
+  border-radius: calc(var(--atbl-radius-control) - 3px);
+  color: var(--atbl-muted);
+  font-weight: var(--atbl-type-label-weight);
+  transition:
+    color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    box-shadow var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
-.altertable-segmented-options .altertable-radio:first-child {
-  border-radius: var(--atbl-radius-control) 0 0 var(--atbl-radius-control);
+.altertable-segmented-control .altertable-radio[data-selected] {
+  --atbl-control-hover-surface: var(--atbl-surface);
+  --atbl-control-pressed-surface: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-control);
 }
-.altertable-segmented-control .altertable-radio:last-child {
-  border-radius: 0 var(--atbl-radius-control) var(--atbl-radius-control) 0;
-}
-.altertable-segmented-control .altertable-radio + .altertable-radio {
-  margin-inline-start: -1px;
+@media (prefers-reduced-motion: reduce) {
+  .altertable-segmented-control .altertable-radio {
+    transition: none;
+  }
 }
 .altertable-segmented-control .altertable-radio-mark {
   display: none;
@@ -112,6 +155,14 @@
   align-items: center;
   gap: var(--atbl-space-sm);
   min-width: 0;
+}
+/* A label above a field must not lift its control off the shared row edge. */
+.altertable-filter-bar {
+  align-items: flex-end;
+}
+.altertable-filter-bar > .altertable-checkbox {
+  min-block-size: var(--atbl-control-height);
+  align-items: center;
 }
 .altertable-filter-bar > * {
   max-width: 100%;
@@ -129,7 +180,6 @@
   padding: 0;
 }
 .altertable-checkbox-group legend {
-  color: var(--atbl-muted);
   margin-bottom: var(--atbl-space-xs);
 }
 
@@ -141,6 +191,7 @@
 :is(.altertable-filter-bar, .altertable-control-bar)
   .altertable-number-field
   > label {
+  font-weight: var(--atbl-type-meta-weight);
   white-space: nowrap;
 }
 :is(.altertable-filter-bar, .altertable-control-bar)
@@ -159,7 +210,7 @@
 
 .altertable-select-trigger {
   justify-content: space-between;
-  font-size: var(--atbl-control-text-size, var(--atbl-type-body-size));
+  font-size: var(--atbl-type-label-size);
   min-width: 90px;
 }
 .altertable-select-trigger > svg:last-child {
@@ -183,7 +234,7 @@
 .altertable-select-option {
   display: flex;
   align-items: center;
-  gap: var(--atbl-space-sm);
+  gap: var(--atbl-control-gap);
   padding: var(--atbl-dropdown-item-padding-block)
     var(--atbl-dropdown-item-padding-inline);
   border-radius: var(--atbl-radius-control);
@@ -228,16 +279,9 @@
 .altertable-number-filter-actions > [data-variant='ghost'] {
   margin-inline-end: auto;
 }
-
-.altertable-segmented-options .altertable-radio:only-child {
-  border-radius: var(--atbl-radius-control);
-}
 @media (max-width: 560px), (any-pointer: coarse) {
   .altertable-select-trigger {
-    font-size: max(
-      16px,
-      var(--atbl-control-text-size, var(--atbl-type-body-size))
-    );
+    font-size: max(16px, var(--atbl-type-label-size));
   }
 }
 

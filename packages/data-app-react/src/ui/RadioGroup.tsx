@@ -38,9 +38,9 @@ export type RadioProps = Omit<
 export function Radio({ className, children, ...props }: RadioProps) {
   return (
     <AriaRadio
+      data-atbl-focus="ring"
       {...props}
       data-atbl-control="action"
-      data-atbl-focus="ring"
       className={classNames('altertable-radio', className)}
     >
       {state => (
@@ -74,6 +74,7 @@ export function SegmentedControl({
             key={option.id}
             value={option.id}
             data-atbl-internal-surface="option"
+            data-atbl-focus="inset"
           >
             {option.label}
           </Radio>

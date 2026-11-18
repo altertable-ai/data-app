@@ -72,7 +72,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
   line-height: 24px;
 }
 .altertable-present-connector {
@@ -135,7 +135,7 @@
     var(--atbl-input-font-heading, var(--atbl-font))
   );
   font-size: clamp(30px, 3.8vw, 50px);
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
   line-height: 1.1;
   letter-spacing: -0.04em;
   overflow-wrap: anywhere;
