@@ -126,6 +126,9 @@ BarChart.ariaLabel: string
 BarChart.formatValue?: ((value: number) => string)
 BarChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 BarChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly.
+BarChart.showYAxis?: boolean — Show a vertical value scale beside the bars.
+BarChart.scrollToEnd?: boolean — Automatically reveal the last items after updates. Disable for ranked categories.
+BarChart.valueFormat?: MetricFormat — Formats the vertical axis and, unless overridden, inspected values.
 BarChartItem (type, @altertable/data-app-react/ui)
 BarChartItem.id: string
 BarChartItem.label: string

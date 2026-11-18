@@ -18,6 +18,11 @@ const items = [0, 50, 100].map((value, index) => ({
   label: `Sample ${index}`,
   value,
 }));
+const currencyItems = [
+  { id: 'compute', label: 'Compute', value: 7200 },
+  { id: 'storage', label: 'Storage', value: 4800 },
+  { id: 'logging', label: 'Logging', value: 0 },
+];
 const retention = [
   {
     id: 'cohort',
@@ -33,6 +38,7 @@ const retention = [
 ];
 function Example() {
   const [grid, setGrid] = useState(true);
+  const [selectedService, setSelectedService] = useState('');
   const gridProps = grid ? {} : { horizontalGrid: false };
   return (
     <>
@@ -52,6 +58,41 @@ function Example() {
           items={items}
           unit="requests"
           ariaLabel="Grid bar"
+        />
+        <div>
+          <output aria-label="Selected service">{selectedService}</output>
+          <BarChart
+            {...gridProps}
+            items={currencyItems}
+            unit="USD"
+            ariaLabel="Currency bar"
+            scrollToEnd={false}
+            showYAxis
+            valueFormat={{ kind: 'currency', currency: 'USD' }}
+            itemActions={item => [
+              {
+                id: 'inspect',
+                label: 'Inspect',
+                onSelect: () => setSelectedService(item.label),
+              },
+            ]}
+          />
+        </div>
+        <BarChart
+          {...gridProps}
+          items={items}
+          unit="requests"
+          ariaLabel="Count value axis"
+          showYAxis
+          valueFormat={{ kind: 'count' }}
+        />
+        <BarChart
+          {...gridProps}
+          items={items.map(item => ({ ...item, value: item.value / 100 }))}
+          unit="conversion"
+          ariaLabel="Ratio value axis"
+          showYAxis
+          valueFormat={{ kind: 'ratio' }}
         />
         <LineChart
           {...gridProps}

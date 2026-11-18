@@ -26,6 +26,7 @@ import {
   useCartesianChartLayout,
   usePlotArea,
   CartesianGrid,
+  ReferenceLine,
   Tooltip,
   DefaultTooltipContent,
   type TooltipContentProps,
@@ -400,8 +401,25 @@ export function ChartYAxis<Row = unknown, Value = number>(
 }
 
 export function ChartGrid(props: ComponentProps<typeof CartesianGrid>) {
+  const vertical = useCartesianChartLayout() === 'vertical';
+  const showZero = vertical
+    ? props.vertical === true
+    : props.horizontal === undefined || props.horizontal === true;
   return (
-    <CartesianGrid stroke="var(--atbl-border)" vertical={false} {...props} />
+    <>
+      <CartesianGrid stroke="var(--atbl-border)" vertical={false} {...props} />
+      {showZero && (
+        <ReferenceLine
+          {...(vertical ? { x: 0 } : { y: 0 })}
+          xAxisId={props.xAxisId}
+          yAxisId={props.yAxisId}
+          ifOverflow="discard"
+          stroke={props.stroke ?? 'var(--atbl-muted)'}
+          strokeOpacity={props.strokeOpacity ?? 0.55}
+          strokeWidth={props.strokeWidth ?? 1.5}
+        />
+      )}
+    </>
   );
 }
 

@@ -1,4 +1,8 @@
-import { formatNumber } from '@altertable/data-app/format';
+import {
+  formatMetric,
+  formatNumber,
+  type MetricFormat,
+} from '@altertable/data-app/format';
 import {
   Fragment,
   useLayoutEffect,
@@ -11,6 +15,7 @@ import {
   BarChart as RechartsBarChart,
   Cell,
   type BarShapeProps,
+  usePlotArea,
 } from 'recharts';
 
 import {
@@ -24,6 +29,7 @@ import {
   ChartXAxis,
   ChartYAxis,
 } from './chart-primitives.tsx';
+import { ChartValueFormat } from './chart-value-format.ts';
 import { chartBarFill } from './chartColor.ts';
 import { ChartTooltip } from './ChartTooltip.tsx';
 import {
@@ -89,7 +95,44 @@ function timeTickIndices(items: readonly BarChartItem[], width: number) {
 }
 
 export type BarChartProps<Row extends BarChartItem = BarChartItem> =
-  CartesianChartProps<Row>;
+  CartesianChartProps<Row> & {
+    /** Show a vertical value scale beside the bars. */
+    showYAxis?: boolean;
+    /** Automatically reveal the last items after updates. Disable for ranked categories. */
+    scrollToEnd?: boolean;
+    /** Formats the vertical axis and, unless overridden, inspected values. */
+    valueFormat?: MetricFormat;
+  };
+
+function PlotBoundsObserver({
+  overlayRef,
+}: {
+  overlayRef: RefObject<HTMLDivElement | null>;
+}) {
+  const plot = usePlotArea();
+  const left = plot?.x;
+  const width = plot?.width;
+
+  useLayoutEffect(() => {
+    if (
+      left === undefined ||
+      width === undefined ||
+      !Number.isFinite(left) ||
+      !Number.isFinite(width) ||
+      !overlayRef.current
+    )
+      return;
+    const overlay = overlayRef.current;
+    overlay.style.marginLeft = `${left}px`;
+    overlay.style.width = `${width}px`;
+    return () => {
+      overlay.style.marginLeft = '';
+      overlay.style.width = '';
+    };
+  }, [overlayRef, left, width]);
+
+  return null;
+}
 
 /** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
  * Owns hover/touch tooltips; no selection state or keyboard navigation. */
@@ -97,11 +140,21 @@ export function BarChart<Row extends BarChartItem>({
   items,
   unit,
   ariaLabel,
-  formatValue = formatNumber,
+  formatValue: authoredFormatValue,
   itemActions,
   cursorGroup,
   horizontalGrid = true,
+  showYAxis = false,
+  scrollToEnd = true,
+  valueFormat,
 }: BarChartProps<Row>) {
+  const formatValue =
+    authoredFormatValue ??
+    (valueFormat
+      ? (value: number) => formatMetric(value, valueFormat)
+      : formatNumber);
+  // Leave space for the zero tick without moving the plot or its hit targets.
+  const axisLabelSpace = showYAxis ? 10 : 0;
   validateValueChartItems('bar', items);
   const chartActions = useChartActions();
   const cursor = useLinkedChartCursor(cursorGroup);
@@ -110,9 +163,9 @@ export function BarChart<Row extends BarChartItem>({
   );
   const [activeId, setActiveId] = useState<string>();
   const [viewportWidth, setViewportWidth] = useState(0);
-  const scrollport = useChartScrollToEnd(items);
   const plotRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const itemOverlayRef = useRef<HTMLDivElement>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
   const maximum =
@@ -125,8 +178,9 @@ export function BarChart<Row extends BarChartItem>({
         Number.isFinite(item.time) &&
         (index === 0 || item.time > items[index - 1]!.time!)
     );
+  const scrollport = useChartScrollToEnd(items, scrollToEnd);
   const compactTimeAxis = hasTimeAxis && !itemActions;
-  const minimumSlotWidth = compactTimeAxis ? 3.5 : 45;
+  const minimumSlotWidth = compactTimeAxis ? 3.5 : 120;
   const plotWidth = Math.max(viewportWidth, items.length * minimumSlotWidth);
   const ticks = compactTimeAxis ? timeTickIndices(items, plotWidth) : null;
 
@@ -170,59 +224,75 @@ export function BarChart<Row extends BarChartItem>({
             aria-hidden="true"
             ref={canvasRef}
           >
-            <RechartsBarChart
-              data={items.map(item => ({
-                ...item,
-                plotValue: item.value / maximum,
-              }))}
-              responsive
-              width="100%"
-              height={220}
-              margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-              accessibilityLayer={false}
-              tabIndex={-1}
-              barCategoryGap="24%"
-            >
-              <ChartXAxis hide dataKey="id" scale="band" />
-              <ChartYAxis hide domain={[0, 1]} allowDataOverflow />
-              {horizontalGrid && <ChartGrid />}
-              <ChartBar
-                dataKey="plotValue"
-                minPointSize={value => ((value ?? 0) > 0 ? 7 : 0)}
-                background={
-                  linkedItem
-                    ? ({ index, x, y, width, height }: BarShapeProps) => (
-                        <g>
-                          {items[index]?.id === linkedItem.id && (
-                            <rect
-                              x={x}
-                              y={y}
-                              width={width}
-                              height={height}
-                              fill="var(--atbl-muted)"
-                              fillOpacity={0.14}
-                              pointerEvents="none"
-                              aria-hidden="true"
-                              data-atbl-internal-linked-cursor="true"
-                            />
-                          )}
-                        </g>
-                      )
-                    : false
+            <ChartValueFormat.Provider value={valueFormat}>
+              <RechartsBarChart
+                data={
+                  showYAxis
+                    ? items
+                    : items.map(item => ({
+                        ...item,
+                        plotValue: item.value / maximum,
+                      }))
                 }
+                responsive
+                width="100%"
+                height={220 + axisLabelSpace}
+                margin={{ top: 0, right: 0, bottom: axisLabelSpace, left: 0 }}
+                accessibilityLayer={false}
+                tabIndex={-1}
+                barCategoryGap="24%"
               >
-                {items.map(item => (
-                  <Cell
-                    key={item.id}
-                    fill={chartBarFill}
-                    opacity={activeId === item.id ? 0.75 : 1}
-                    data-atbl-internal-bar-id={item.id}
-                  />
-                ))}
-              </ChartBar>
-            </RechartsBarChart>
+                {showYAxis && (
+                  <PlotBoundsObserver overlayRef={itemOverlayRef} />
+                )}
+                <ChartXAxis hide dataKey="id" scale="band" />
+                {showYAxis ? (
+                  <ChartYAxis domain={[0, 'auto']} />
+                ) : (
+                  <ChartYAxis hide domain={[0, 1]} allowDataOverflow />
+                )}
+                {horizontalGrid && <ChartGrid />}
+                <ChartBar
+                  dataKey={showYAxis ? 'value' : 'plotValue'}
+                  minPointSize={value => ((value ?? 0) > 0 ? 7 : 0)}
+                  background={
+                    linkedItem
+                      ? ({ index, x, y, width, height }: BarShapeProps) => (
+                          <g>
+                            {items[index]?.id === linkedItem.id && (
+                              <rect
+                                x={x}
+                                y={y}
+                                width={width}
+                                height={height}
+                                fill="var(--atbl-muted)"
+                                fillOpacity={0.14}
+                                pointerEvents="none"
+                                aria-hidden="true"
+                                data-atbl-internal-linked-cursor="true"
+                              />
+                            )}
+                          </g>
+                        )
+                      : false
+                  }
+                >
+                  {items.map(item => (
+                    <Cell
+                      key={item.id}
+                      fill={chartBarFill}
+                      opacity={activeId === item.id ? 0.75 : 1}
+                      data-atbl-internal-bar-id={item.id}
+                    />
+                  ))}
+                </ChartBar>
+              </RechartsBarChart>
+            </ChartValueFormat.Provider>
           </div>
-          <div className="altertable-selectable-bars-items">
+          <div
+            className="altertable-selectable-bars-items"
+            ref={itemOverlayRef}
+          >
             {items.map((item, index) => {
               const actions = chartActions.actions(
                 itemActions?.(item) ?? [],
