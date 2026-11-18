@@ -98,14 +98,16 @@ export const nonAdditivePeriod = dateTimeRangeFilter({
 });
 export const groupName = operationFilters.sampleCountsByGroup.groupName;
 const policy = { maxQueryRows: 50, maxDurationMs: 15000 };
-function readMeasures(row: {
+type MeasuresRow = {
   visits: number | null;
   conversions: number | null;
   revenue: number | null;
   orders: number | null;
   conversion_rate: number | null;
   average_order_value: number | null;
-}) {
+};
+
+function readMeasures(row: MeasuresRow) {
   if (row.conversion_rate === null || row.average_order_value === null)
     throw new Error('No measured rate or average in this scope.');
   return {
@@ -116,6 +118,16 @@ function readMeasures(row: {
     rate: row.conversion_rate,
     mean: row.average_order_value,
   };
+}
+function readFirstMeasures(rows: readonly MeasuresRow[]) {
+  const row = rows[0];
+  if (!row) return null;
+  const noMeasurements =
+    row.visits === null &&
+    row.conversions === null &&
+    row.revenue === null &&
+    row.orders === null;
+  return noMeasurements ? null : readMeasures(row);
 }
 export const rateFindingOperations = dataApp.defineOperations({
   conversion: dataApp.defineOperation({
@@ -134,9 +146,14 @@ export const rateFindingOperations = dataApp.defineOperations({
         ...bounds.current,
         segment,
       });
+      const currentMeasures = readFirstMeasures(current.rows);
+      const previousMeasures = previous
+        ? readFirstMeasures(previous.rows)
+        : null;
       return {
-        current: readMeasures(current.rows[0]!),
-        previous: previous ? readMeasures(previous.rows[0]!) : null,
+        current: currentMeasures,
+        previous: previousMeasures,
+        comparisonUnavailable: previous !== null && previousMeasures === null,
         rows: breakdown.rows.map(row => ({
           segment: row.segment,
           ...readMeasures(row),

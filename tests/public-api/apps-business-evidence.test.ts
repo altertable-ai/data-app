@@ -96,6 +96,8 @@ test('a rate finding compares the same population and retains its numerator and 
     segment: 'all' as const,
   };
   const { data, queries } = await client.query('conversion', input);
+  if (!data.current || !data.previous)
+    throw new Error('Expected conversion data for the finding period.');
   expect(data.current).toMatchObject({
     visits: 1000,
     conversions: 560,
@@ -106,7 +108,7 @@ test('a rate finding compares the same population and retains its numerator and 
     conversions: 140,
     rate: 0.14,
   });
-  expect(data.current.rate - data.previous!.rate).toBeCloseTo(0.42);
+  expect(data.current.rate - data.previous.rate).toBeCloseTo(0.42);
   expect(data.rows.map(row => row.rate)).toEqual([0.2, 0.6]);
   expect(data.current.rate).not.toBe(0.8); // Sum of segment rates.
   expect(data.current.rate).not.toBe(0.4); // Unweighted segment average.
@@ -140,6 +142,39 @@ test('a rate finding compares the same population and retains its numerator and 
     conversions: 90,
     visits: 900,
     rate: 0.1,
+  });
+  const unavailable = await client.query('conversion', {
+    ...input,
+    period: findingPeriod.request({
+      range: {
+        from: new Date('2026-02-01T00:00:00Z'),
+        to: new Date('2026-02-08T00:00:00Z'),
+      },
+    }),
+  });
+  expect(unavailable.data).toMatchObject({
+    current: null,
+    previous: null,
+    comparisonUnavailable: false,
+    rows: [],
+  });
+  const missingComparison = await client.query('conversion', {
+    ...input,
+    period: {
+      range: {
+        from: new Date('2026-03-02T00:00:00Z'),
+        to: new Date('2026-03-09T00:00:00Z'),
+      },
+      comparison: {
+        from: new Date('2026-02-23T00:00:00Z'),
+        to: new Date('2026-03-02T00:00:00Z'),
+      },
+    },
+  });
+  expect(missingComparison.data).toMatchObject({
+    current: { rate: 0.14 },
+    previous: null,
+    comparisonUnavailable: true,
   });
   await openEvidence(page, 'rate-finding');
   await expect
@@ -208,6 +243,20 @@ test('a rate finding compares the same population and retains its numerator and 
   await expect
     .poll(() => evidence.getByRole('row', { name: /Previous/ }).count())
     .toBe(0);
+  const emptyDates = page.getByRole('combobox', {
+    name: 'Date range',
+    exact: true,
+  });
+  await emptyDates.click();
+  await emptyDates.fill('2026-02-01 to 2026-02-08');
+  await emptyDates.press('Enter');
+  await expect
+    .poll(() =>
+      page
+        .getByText('No conversion data in this period', { exact: true })
+        .isVisible()
+    )
+    .toBe(true);
 });
 
 test('a categorical finding explores a source without inventing a reporting period', async ({

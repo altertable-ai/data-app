@@ -70,20 +70,34 @@ const context = createDataContext({
 });
 const rateView = createDataHooks(
   rateFindingOperations.createDataClient()
-).defineView({ operation: 'conversion', dataContext: context });
+).defineView({
+  operation: 'conversion',
+  dataContext: context,
+  isEmpty: data => data.current === null,
+  emptyFallback: {
+    title: 'No conversion data in this period',
+    description: 'Choose a period with measured visits and conversions.',
+  },
+});
 const conversion = rateView.metric(
   { id: 'conversion', glossaryId: 'conversion', format: ratio },
-  data => ({
-    current: data.current.rate,
-    ...(data.previous && { previous: data.previous.rate }),
-  })
+  data => {
+    if (!data.current) throw new Error('Conversion data is unavailable.');
+    return {
+      current: data.current.rate,
+      ...(data.previous && { previous: data.previous.rate }),
+    };
+  }
 );
 const rateAudit = rateView.dataset({
   name: 'Conversion evidence',
-  select: data => [
-    { period: 'Current', ...data.current },
-    ...(data.previous ? [{ period: 'Previous', ...data.previous }] : []),
-  ],
+  select: data =>
+    data.current
+      ? [
+          { period: 'Current', ...data.current },
+          ...(data.previous ? [{ period: 'Previous', ...data.previous }] : []),
+        ]
+      : [],
   rowKey: row => row.period,
   columns: {
     period: { label: 'Period', value: row => row.period },
@@ -122,6 +136,13 @@ const rateContent = rateView.content(result => (
         </output>
       </p>
     </TextContent>
+    {!result.loading && result.data.comparisonUnavailable && (
+      <TextContent>
+        <p>
+          <output>Comparison unavailable for the selected period.</output>
+        </p>
+      </TextContent>
+    )}
     <Grid columns={2}>
       <MetricWidget
         metric={conversion}
