@@ -3,11 +3,13 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
+  Ranking,
   Grid,
   GridItem,
   DataValue,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
+import { formatCount } from '@altertable/data-app/format';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import { operations } from '#app/operations.ts';
@@ -71,8 +73,7 @@ const groupContent = sampleCountsView.content(result => (
     title="Sample count"
     description={
       <>
-        Showing <DataValue scope={result.scope} />. Select a group to explore
-        its segments.
+        Showing <DataValue scope={result.scope} />.
       </>
     }
     actions={groupActions}
@@ -84,9 +85,10 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: row.groupName,
+          label: `${row.groupName} · ${formatCount(row.sampleCount)}`,
           value: row.sampleCount,
         }))}
+        horizontalGrid={false}
         itemActions={actions}
       />
     )}
@@ -103,17 +105,15 @@ const segmentContent = segmentCountsView.content(result => (
       </>
     }
   >
-    {(rows, actions) => (
-      <BarChart
-        ariaLabel="Sample counts by segment"
-        unit="samples"
+    {rows => (
+      <Ranking
+        aria-label="Sample counts by segment"
         items={rows.map(row => ({
           ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,
         }))}
-        itemActions={actions}
       />
     )}
   </VisualizationWidget>

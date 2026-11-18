@@ -5,15 +5,17 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
+  Ranking,
   Grid,
   GridItem,
   DataValue,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
+import { formatCount } from '@altertable/data-app/format';
 export const dataApp = defineDataApp({
   title: 'Sample metric',
-  description: 'Fixture counts by group; replace with the requested metric.',
+  description: 'Explore sample volume across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
@@ -26,7 +28,7 @@ export const dataApp = defineDataApp({
 SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.segment_name METRICS samples.sample_count
   WHERE $groupName = '' OR samples.group_name = $groupName
-) ORDER BY segment_name LIMIT $limit`,
+) ORDER BY sample_count DESC, segment_name LIMIT $limit`,
       params: {
         groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },
@@ -177,8 +179,7 @@ const groupContent = sampleCountsView.content(result => (
     title="Sample count"
     description={
       <>
-        Showing <DataValue scope={result.scope} />. Select a group to explore
-        its segments.
+        Showing <DataValue scope={result.scope} />.
       </>
     }
     actions={groupActions}
@@ -190,9 +191,10 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: row.groupName,
+          label: `${row.groupName} · ${formatCount(row.sampleCount)}`,
           value: row.sampleCount,
         }))}
+        horizontalGrid={false}
         itemActions={actions}
       />
     )}
@@ -209,17 +211,15 @@ const segmentContent = segmentCountsView.content(result => (
       </>
     }
   >
-    {(rows, actions) => (
-      <BarChart
-        ariaLabel="Sample counts by segment"
-        unit="samples"
+    {rows => (
+      <Ranking
+        aria-label="Sample counts by segment"
         items={rows.map(row => ({
           ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,
         }))}
-        itemActions={actions}
       />
     )}
   </VisualizationWidget>

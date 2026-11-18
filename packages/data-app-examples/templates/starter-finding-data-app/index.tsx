@@ -13,9 +13,15 @@ import {
   Stack,
   TableWidget,
   VisualizationWidget,
+  Ranking,
 } from '@altertable/data-app-react';
 import {
-  BarChart,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  useViewTab,
   ComposedChart,
   useAppFilters,
 } from '@altertable/data-app-react/ui';
@@ -26,12 +32,11 @@ import {
   parseCount,
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
-import { formatDateRange } from '@altertable/data-app/format';
 // One query per widget: each section loads its own result when it nears the viewport.
 export const dataApp = defineDataApp({
   title: 'Sample finding',
   description:
-    'Fixture evidence; replace with the Finding and its supporting queries.',
+    'Explore sample volume over time and across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
@@ -102,11 +107,6 @@ const findingPeriod = {
   from: new Date('2026-03-02T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-// Calendar labels include the final UTC day; query bounds keep an exclusive end.
-const findingPeriodLabel = formatDateRange({
-  start: findingPeriod.from.toISOString().slice(0, 10),
-  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
-});
 const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
@@ -300,7 +300,7 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="By member"
+    title="Breakdown"
     description={
       <>
         Showing <DataValue scope={result.scope} />.
@@ -309,9 +309,8 @@ const memberContent = memberView.content(result => (
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
-      <BarChart
-        ariaLabel="Samples by member"
-        unit="samples"
+      <Ranking
+        aria-label="Samples by member"
         items={rows.map(row => ({
           ...row,
           id: row.member,
@@ -349,44 +348,48 @@ function FindingScope() {
   const displayChanged =
     !grain.same(filters.values.grain, grain.defaultValue) ||
     !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
+  if (!scopeChanged && !displayChanged) return null;
   return (
     <TextContent>
-      <p>
-        Finding scope: {findingPeriodLabel} {periodFilter.policy.timeZone} ·
-        group{' '}
-        {groupName.describe?.(groupName.defaultValue) ?? groupName.defaultValue}
-        . Queries use current source data.
-      </p>
       {scopeChanged && (
         <p>
           <output>Exploration: scope changed</output>
         </p>
       )}
-      {(scopeChanged || displayChanged) && (
-        <Button size="compact" onClick={() => filters.resetAll()}>
-          Back to finding
-        </Button>
-      )}
+      <Button size="compact" onClick={() => filters.resetAll()}>
+        Back to finding
+      </Button>
     </TextContent>
   );
 }
+const views = ['overview', 'data'] as const;
 function App() {
+  const [view, setView] = useViewTab(views, 'overview');
   return (
     <DataApp view={trendView} showToolbar={false}>
       <Stack>
         <FindingScope />
-        <Grid columns={3}>
-          <GridItem span={2}>
-            <DataSection content={trendContent} />
-          </GridItem>
-          <GridItem>
-            <DataSection content={memberContent} />
-          </GridItem>
-        </Grid>
-        <details>
-          <summary>View detailed data</summary>
-          <DataSection content={rowsContent} />
-        </details>
+        <Tabs selectedKey={view} onSelectionChange={setView}>
+          <TabList aria-label="Finding views">
+            <Tab id="overview">Overview</Tab>
+            <Tab id="data">Data</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel id="overview">
+              <Grid columns={3}>
+                <GridItem span={2}>
+                  <DataSection content={trendContent} />
+                </GridItem>
+                <GridItem>
+                  <DataSection content={memberContent} />
+                </GridItem>
+              </Grid>
+            </TabPanel>
+            <TabPanel id="data">
+              <DataSection content={rowsContent} />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Stack>
     </DataApp>
   );

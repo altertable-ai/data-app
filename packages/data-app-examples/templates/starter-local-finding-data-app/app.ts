@@ -3,7 +3,7 @@ import { defineDataApp } from '@altertable/data-app';
 export const dataApp = defineDataApp({
   title: 'Sample finding',
   description:
-    'Fixture evidence; replace with the Finding and its supporting queries.',
+    'Explore sample volume over time and across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {

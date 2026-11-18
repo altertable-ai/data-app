@@ -10,21 +10,21 @@ import {
   Stack,
   TableWidget,
   VisualizationWidget,
+  Ranking,
 } from '@altertable/data-app-react';
 import {
-  BarChart,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  useViewTab,
   ComposedChart,
   useAppFilters,
 } from '@altertable/data-app-react/ui';
 
 import { sampleDataContext } from '#app/data-context.ts';
-import {
-  findingPeriodLabel,
-  periodFilter,
-  groupName,
-  grain,
-  breakdown,
-} from '#app/filters.ts';
+import { periodFilter, groupName, grain, breakdown } from '#app/filters.ts';
 import { operations } from '#app/operations.ts';
 const { defineView } = createDataHooks(operations.createDataClient());
 const count = { kind: 'count' } as const;
@@ -112,7 +112,7 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="By member"
+    title="Breakdown"
     description={
       <>
         Showing <DataValue scope={result.scope} />.
@@ -121,9 +121,8 @@ const memberContent = memberView.content(result => (
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
-      <BarChart
-        ariaLabel="Samples by member"
-        unit="samples"
+      <Ranking
+        aria-label="Samples by member"
         items={rows.map(row => ({
           ...row,
           id: row.member,
@@ -161,44 +160,48 @@ function FindingScope() {
   const displayChanged =
     !grain.same(filters.values.grain, grain.defaultValue) ||
     !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
+  if (!scopeChanged && !displayChanged) return null;
   return (
     <TextContent>
-      <p>
-        Finding scope: {findingPeriodLabel} {periodFilter.policy.timeZone} ·
-        group{' '}
-        {groupName.describe?.(groupName.defaultValue) ?? groupName.defaultValue}
-        . Queries use current source data.
-      </p>
       {scopeChanged && (
         <p>
           <output>Exploration: scope changed</output>
         </p>
       )}
-      {(scopeChanged || displayChanged) && (
-        <Button size="compact" onClick={() => filters.resetAll()}>
-          Back to finding
-        </Button>
-      )}
+      <Button size="compact" onClick={() => filters.resetAll()}>
+        Back to finding
+      </Button>
     </TextContent>
   );
 }
+const views = ['overview', 'data'] as const;
 export function App() {
+  const [view, setView] = useViewTab(views, 'overview');
   return (
     <DataApp view={trendView} showToolbar={false}>
       <Stack>
         <FindingScope />
-        <Grid columns={3}>
-          <GridItem span={2}>
-            <DataSection content={trendContent} />
-          </GridItem>
-          <GridItem>
-            <DataSection content={memberContent} />
-          </GridItem>
-        </Grid>
-        <details>
-          <summary>View detailed data</summary>
-          <DataSection content={rowsContent} />
-        </details>
+        <Tabs selectedKey={view} onSelectionChange={setView}>
+          <TabList aria-label="Finding views">
+            <Tab id="overview">Overview</Tab>
+            <Tab id="data">Data</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel id="overview">
+              <Grid columns={3}>
+                <GridItem span={2}>
+                  <DataSection content={trendContent} />
+                </GridItem>
+                <GridItem>
+                  <DataSection content={memberContent} />
+                </GridItem>
+              </Grid>
+            </TabPanel>
+            <TabPanel id="data">
+              <DataSection content={rowsContent} />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Stack>
     </DataApp>
   );

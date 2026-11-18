@@ -60,6 +60,12 @@ for (const runtime of ['hosted', 'local'] as const) {
         }),
       });
     await expect.poll(() => trend.textContent()).toContain('group Alpha');
+    expect(await app.getByText(/Finding scope:/).count()).toBe(0);
+    expect(
+      await app
+        .getByRole('button', { name: 'Back to finding', exact: true })
+        .count()
+    ).toBe(0);
     expect(
       await app.getByText('Exploration: scope changed', { exact: true }).count()
     ).toBe(0);
@@ -86,9 +92,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     await expect.poll(() => app.getByRole('alert').count()).toBeGreaterThan(0);
     expect(await trend.textContent()).toContain('group Alpha');
     expect(await trend.textContent()).not.toContain('group Beta');
-    expect(await app.getByText(/Finding scope:/).textContent()).toContain(
-      'group Alpha'
-    );
+    expect(await app.getByText(/Finding scope:/).count()).toBe(0);
     await app
       .getByRole('button', { name: 'Back to finding', exact: true })
       .click();
@@ -117,7 +121,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     await trend.getByRole('button', { name: /Day/ }).click();
     await app.getByRole('option', { name: 'Week', exact: true }).click();
     const distribution = app.getByRole('region', {
-      name: 'By member',
+      name: 'Breakdown',
       exact: true,
     });
     await distribution.getByRole('button', { name: /Segment/ }).click();
@@ -142,7 +146,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     ).toBe(0);
     await page.setViewportSize({ width: 360, height: 900 });
     const heading = distribution.getByRole('heading', {
-      name: 'By member',
+      name: 'Breakdown',
       exact: true,
     });
     expect(
@@ -166,7 +170,8 @@ for (const runtime of ['hosted', 'local'] as const) {
         return true;
       })
     ).toBe(true);
-    await app.getByText('View detailed data', { exact: true }).click();
+    await app.getByRole('tab', { name: 'Data', exact: true }).click();
+    expect(await trend.isVisible()).toBe(false);
     await expect
       .poll(() =>
         app
@@ -174,6 +179,19 @@ for (const runtime of ['hosted', 'local'] as const) {
           .textContent()
       )
       .toContain('group Alpha');
+    const overview = app.getByRole('tab', { name: 'Overview', exact: true });
+    await overview.click();
+    await overview.press('ArrowRight');
+    await expect
+      .poll(() =>
+        app
+          .getByRole('tab', { name: 'Data', exact: true })
+          .getAttribute('aria-selected')
+      )
+      .toBe('true');
+    expect(
+      await app.getByText('Exploration: scope changed', { exact: true }).count()
+    ).toBe(0);
   });
 }
 
@@ -222,7 +240,7 @@ for (const runtime of ['hosted', 'local'] as const) {
       exact: true,
     });
     await expect.poll(() => segments.textContent()).toContain('Online');
-    await app.getByRole('button', { name: /Beta:.*Drill into group/ }).click();
+    await app.getByRole('button', { name: /Beta.*Drill into group/ }).click();
     await expect.poll(() => segments.textContent()).toContain('group Beta');
     await expect.poll(() => segments.textContent()).not.toContain('Online');
     expect(await segments.textContent()).toContain('Partner');
