@@ -26,6 +26,26 @@ and a literal `defineDataApp()` declaration. Local apps use the same composition
 with their existing server/client wiring. Replace fixture data and connectivity screens; edit
 app-owned files, not installed packages.
 
+## Choose the evidence to show
+
+For a finding, begin with the evidence that supports the dated observation and a
+useful business decomposition. Keep detailed data available as a secondary path.
+Use absolute initial dates covering the observation and its comparison, and make
+the original business scope identifiable while readers explore. Fixed dates query
+current source data; they do not freeze a data snapshot. Reset dates, business
+filters, and display choices together when returning to the finding.
+
+For a semantic metric, choose a trend when the source has a time dimension;
+otherwise use a chart suited to the available dimensions. Add a useful business
+decomposition without duplicating the metric definition or adding unrelated KPI
+cards. Query the semantic metric at each required grain: preserve its definition,
+including numerator/denominator aggregation for rates and weighting for averages.
+
+Give the main evidence reading priority and let the composition adapt to its
+available width, including a narrow embedded panel; follow the
+[container layout guidance](layout.md#adapt-to-the-available-container). These starters demonstrate
+compositions to edit for the question, rather than a required section sequence.
+
 ## Connect data and components
 
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
