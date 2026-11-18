@@ -244,9 +244,9 @@ const server = Bun.serve({
 
 process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
 const local = serveLocalApp({
-  page: starterPage,
-  queries: { ...localStarterApp.queries, ...localSmokeQueries },
-  title: 'Local starter',
+  page: appearance,
+  queries: localSmokeQueries,
+  title: 'Local production app',
   port: 0,
 });
 console.log(

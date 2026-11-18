@@ -7,6 +7,30 @@ import { test, localURL } from '@/tests/public-api/browser';
 describe('authoring', () => {
   const failure = { error: 'Fixture unavailable' };
 
+  test('built local server renders interactive React in production mode', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(localURL);
+    await expect
+      .poll(() =>
+        page.getByRole('heading', { name: 'Appearance consumer' }).isVisible()
+      )
+      .toBe(true);
+    await page
+      .getByRole('button', { name: 'Apply appearance', exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        page
+          .getByRole('button', { name: 'Custom action', exact: true })
+          .evaluate(element => getComputedStyle(element).color)
+      )
+      .toBe('rgb(51, 102, 153)');
+    expect(errors).toEqual([]);
+  });
+
   test('local server runs only registered query IDs', async () => {
     function run(id: string, body: unknown) {
       return fetch(new URL(`/api/query/${id}`, localURL), {
