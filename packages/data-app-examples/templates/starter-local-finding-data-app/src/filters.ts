@@ -6,16 +6,20 @@ import {
 import { formatDateRange } from '@altertable/data-app/format';
 
 const findingPeriod = {
-  from: new Date('2026-03-02T00:00:00Z'),
+  from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-export const findingPeriodLabel = formatDateRange({
-  start: findingPeriod.from.toISOString().slice(0, 10),
-  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
-});
+export function periodLabel(range: { from: Date; to: Date }) {
+  return formatDateRange({
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  });
+}
+export const findingPeriodLabel = periodLabel(findingPeriod);
 export const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
+  comparison: 'on',
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
@@ -53,6 +57,7 @@ export const breakdown = displayChoice({
 });
 
 export const operationFilters = {
+  sampleTotals: { period: periodFilter, groupName },
   samplesOverTime: { period: periodFilter, groupName, grain },
   samplesByMember: { period: periodFilter, groupName, breakdown },
   sampleRows: { period: periodFilter, groupName, grain, breakdown },

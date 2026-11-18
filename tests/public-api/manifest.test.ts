@@ -342,6 +342,13 @@ test('extracts the Finding exploration declaration', async () => {
     scope: { organization: 'demo', environment: 'sample' },
     // One query per widget.
     queries: {
+      sampleTotals: {
+        params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
+          period_from: { type: 'string' },
+          period_to: { type: 'string' },
+        },
+      },
       samplesOverTime: {
         params: {
           groupName: { type: 'string', defaultValue: 'Alpha' },

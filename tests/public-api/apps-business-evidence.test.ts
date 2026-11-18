@@ -10,6 +10,11 @@ import {
 import { beforeAll, afterAll, expect } from 'vitest';
 
 import {
+  groupName as findingGroupName,
+  periodFilter as findingPeriodFilter,
+} from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/filters';
+import { operations as findingOperations } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/operations';
+import {
   starterMockImage,
   starterSeedStatements,
 } from '@/tests/fixtures/starter-mock';
@@ -314,6 +319,78 @@ test('a categorical finding explores a source without inventing a reporting peri
         .isVisible()
     )
     .toBe(true);
+});
+
+test('the Finding starter compares its dated evidence in the selected scope', async () => {
+  const client = createDataClient({
+    operations: {
+      totals: findingOperations.sampleTotals,
+      members: findingOperations.samplesByMember,
+    },
+    lakehouse,
+  });
+  const period = findingPeriodFilter.request(findingPeriodFilter.defaultValue);
+  const scope = {
+    period,
+    groupName: findingGroupName.defaultValue,
+  };
+  const memberInput = {
+    ...scope,
+    breakdown: 'segment' as const,
+  };
+  expect((await client.query('totals', scope)).data).toEqual([
+    { currentCount: 307000, previousCount: 216000 },
+  ]);
+  expect((await client.query('members', memberInput)).data).toEqual([
+    {
+      member: 'Online',
+      currentCount: 227000,
+      previousCount: 143000,
+      change: 84000,
+      changeRate: 84000 / 143000,
+    },
+    {
+      member: 'Retail',
+      currentCount: 80000,
+      previousCount: 73000,
+      change: 7000,
+      changeRate: 7000 / 73000,
+    },
+  ]);
+  expect(
+    (
+      await client.query('totals', {
+        ...scope,
+        groupName: 'Beta',
+      })
+    ).data
+  ).toEqual([{ currentCount: 59000, previousCount: 59000 }]);
+  expect(
+    (
+      await client.query('members', {
+        ...memberInput,
+        groupName: 'Beta',
+      })
+    ).data
+  ).toEqual([
+    {
+      member: 'Partner',
+      currentCount: 59000,
+      previousCount: 59000,
+      change: 0,
+      changeRate: 0,
+    },
+  ]);
+  expect(
+    (
+      await client.query('totals', {
+        ...scope,
+        period: findingPeriodFilter.request({
+          range: findingPeriodFilter.defaultValue.range,
+        }),
+      })
+    ).data
+  ).toEqual([{ currentCount: 307000, previousCount: null }]);
 });
 
 test('an additive semantic metric preserves the time grain and filters of its source', async ({

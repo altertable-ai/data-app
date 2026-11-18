@@ -28,17 +28,21 @@ for (const runtime of ['hosted', 'local'] as const) {
         return;
       }
       const columns =
-        query === 'samplesOverTime'
-          ? ['period_start', 'sample_count']
-          : query === 'samplesByMember'
-            ? ['member', 'sample_count']
-            : ['period_start', 'member', 'sample_count'];
+        query === 'sampleTotals'
+          ? ['sample_count']
+          : query === 'samplesOverTime'
+            ? ['period_start', 'sample_count']
+            : query === 'samplesByMember'
+              ? ['member', 'sample_count']
+              : ['period_start', 'member', 'sample_count'];
       const rows =
-        query === 'samplesOverTime'
-          ? [['2026-03-09', group === 'Beta' ? 8 : 32]]
-          : query === 'samplesByMember'
-            ? [[group === 'Beta' ? 'Partner' : 'Online', 32]]
-            : [['2026-03-09', 'Online', 32]];
+        query === 'sampleTotals'
+          ? [[group === 'Beta' ? 8 : 32]]
+          : query === 'samplesOverTime'
+            ? [['2026-03-09', group === 'Beta' ? 8 : 32]]
+            : query === 'samplesByMember'
+              ? [[group === 'Beta' ? 'Partner' : 'Online', 32]]
+              : [['2026-03-09', 'Online', 32]];
       await route.fulfill({
         json: {
           columns: columns.map(name => ({ name })),
@@ -94,7 +98,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     expect(await trend.textContent()).toContain('32');
     expect(await trend.getByText(/^Showing /).count()).toBe(0);
     expect(await app.getByRole('complementary').textContent()).toContain(
-      'Original finding · Mar 2–15, 2026 UTC · Alpha'
+      'Original finding · Mar 9–15, 2026 UTC vs previous period · Alpha'
     );
     // The original chart stays visible while the requested population changes.
     mode = 'error';
@@ -140,7 +144,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     await trend.getByRole('button', { name: /Day/ }).click();
     await app.getByRole('option', { name: 'Week', exact: true }).click();
     const distribution = app.getByRole('region', {
-      name: 'Breakdown',
+      name: 'Where volume changed',
       exact: true,
     });
     await distribution.getByRole('button', { name: /Segment/ }).click();
@@ -165,7 +169,7 @@ for (const runtime of ['hosted', 'local'] as const) {
     ).toBe(0);
     await page.setViewportSize({ width: 360, height: 900 });
     const heading = distribution.getByRole('heading', {
-      name: 'Breakdown',
+      name: 'Where volume changed',
       exact: true,
     });
     expect(
@@ -211,6 +215,26 @@ for (const runtime of ['hosted', 'local'] as const) {
     expect(
       await app
         .getByText('Exploring a different scope', { exact: true })
+        .count()
+    ).toBe(0);
+    await dates.click();
+    await app
+      .getByRole('option', { name: /Compare with previous period/ })
+      .click();
+    await page.keyboard.press('Escape');
+    const selectedMembers = app.getByRole('region', {
+      name: 'Samples by member',
+      exact: true,
+    });
+    await expect.poll(() => selectedMembers.textContent()).toContain('Online');
+    expect(
+      await selectedMembers
+        .getByRole('columnheader', { name: 'Previous period', exact: true })
+        .count()
+    ).toBe(0);
+    expect(
+      await selectedMembers
+        .getByRole('columnheader', { name: 'Change', exact: true })
         .count()
     ).toBe(0);
   });

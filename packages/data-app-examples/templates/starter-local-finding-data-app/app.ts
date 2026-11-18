@@ -7,6 +7,20 @@ export const dataApp = defineDataApp({
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
+    sampleTotals: {
+      projections: { sample_count: { type: 'number' } },
+      statement: `
+SELECT SUM(sample_count) AS sample_count
+FROM starter_demo.daily_samples
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
+HAVING COUNT(*) > 0`,
+      params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
+      },
+    },
     samplesOverTime: {
       projections: {
         period_start: { type: 'string' },

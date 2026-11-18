@@ -10,6 +10,7 @@ import {
   TableWidget,
   VisualizationWidget,
   Ranking,
+  Comparison,
 } from '@altertable/data-app-react';
 import {
   Tabs,
@@ -21,10 +22,16 @@ import {
   ComposedChart,
   useAppFilters,
 } from '@altertable/data-app-react/ui';
+import {
+  formatCount,
+  formatNumber,
+  formatPercent,
+} from '@altertable/data-app/format';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import {
   findingPeriodLabel,
+  periodLabel,
   periodFilter,
   groupName,
   grain,
@@ -37,6 +44,30 @@ const emptyFallback = {
   title: 'No samples in this period',
   description: 'No observations are available for this period.',
 };
+const totalsView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleTotals',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
+});
+const totals = totalsView.dataset({
+  name: 'Period totals',
+  select: rows => rows,
+  rowKey: () => 'total',
+  columns: {
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
+  },
+  evidence: { id: 'period-totals', glossaryIds: ['sampleCount'] },
+});
 const trendView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesOverTime',
@@ -60,14 +91,50 @@ const memberView = defineView({
   emptyFallback,
 });
 const byMember = memberView.dataset({
-  name: 'Samples by member',
+  name: 'Member comparison',
   select: rows => rows,
   rowKey: row => row.member,
   columns: {
     member: { label: 'Member', value: row => row.member },
-    sampleCount: { value: row => row.sampleCount, format: count },
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
+    change: {
+      label: 'Change',
+      value: row => row.change,
+      format: row => formatNumber(row.change, { signDisplay: 'exceptZero' }),
+    },
+    changeRate: {
+      label: 'Change %',
+      value: row => row.changeRate,
+      format: row => formatPercent(row.changeRate),
+    },
   },
-  evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
+  evidence: {
+    id: 'samples-by-member',
+    glossaryIds: ['sampleCount', 'sampleChange'],
+  },
+});
+const selectedMembers = memberView.dataset({
+  name: 'Selected-period samples',
+  select: rows => rows,
+  rowKey: row => row.member,
+  columns: {
+    member: { label: 'Member', value: row => row.member },
+    currentCount: {
+      label: 'Samples',
+      value: row => row.currentCount,
+      format: count,
+    },
+  },
+  evidence: { id: 'selected-members', glossaryIds: ['sampleCount'] },
 });
 const rowsView = defineView({
   dataContext: sampleDataContext,
@@ -86,7 +153,48 @@ const sampleRows = rowsView.dataset({
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
-// The Finding's text is shown above the app; keep content to charts and captions.
+// Each visual verifies part of the finding; the host supplies its narrative.
+const totalsContent = totalsView.content(result => (
+  <VisualizationWidget
+    dataset={totals}
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Period comparison'
+        : 'Selected period'
+    }
+  >
+    {rows =>
+      result.loading ? null : result.input.period.comparison ? (
+        <Comparison
+          label="Samples"
+          current={{
+            value: rows[0]!.currentCount,
+            formattedValue: formatCount(rows[0]!.currentCount),
+            periodLabel: periodLabel(result.input.period.range),
+          }}
+          previous={{
+            value: rows[0]!.previousCount,
+            formattedValue: formatCount(rows[0]!.previousCount, {
+              missing: 'Not available',
+            }),
+            periodLabel: periodLabel(result.input.period.comparison),
+          }}
+        />
+      ) : (
+        <Ranking
+          items={[
+            {
+              id: 'selected',
+              label: periodLabel(result.input.period.range),
+              value: rows[0]!.currentCount,
+            },
+          ]}
+        />
+      )
+    }
+  </VisualizationWidget>
+));
 const trendContent = trendView.content(result => (
   <VisualizationWidget
     dataset={trend}
@@ -112,21 +220,50 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="Breakdown"
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Where volume changed'
+        : 'Samples by member'
+    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
-      <Ranking
-        aria-label="Samples by member"
-        items={rows.map(row => ({
-          ...row,
-          id: row.member,
-          label: row.member,
-          value: row.sampleCount,
-        }))}
-      />
+      <ComposedChart
+        ariaLabel="Samples by member"
+        data={rows}
+        valueFormat={count}
+      >
+        <ComposedChart.XAxis dataKey="member" />
+        <ComposedChart.YAxis />
+        {!result.loading && result.input.period.comparison && (
+          <ComposedChart.Bar
+            dataKey="previousCount"
+            name="Previous period"
+            fill="var(--atbl-muted)"
+            fillOpacity={0.45}
+          />
+        )}
+        <ComposedChart.Bar dataKey="currentCount" name="Selected period" />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend />
+      </ComposedChart>
     )}
   </VisualizationWidget>
+));
+const memberTableContent = memberView.content(result => (
+  <TableWidget
+    dataset={
+      result.loading || result.input.period.comparison
+        ? byMember
+        : selectedMembers
+    }
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Change by member'
+        : 'Samples by member'
+    }
+  />
 ));
 const rowsContent = rowsView.content(result => (
   <TableWidget dataset={sampleRows} source={result} title="Sample details" />
@@ -156,7 +293,7 @@ function FindingScope() {
       description={
         <>
           Original finding · {findingPeriodLabel} {periodFilter.policy.timeZone}{' '}
-          ·{' '}
+          vs previous period ·{' '}
           {groupName.describe?.(groupName.defaultValue) ??
             groupName.defaultValue}
         </>
@@ -183,17 +320,23 @@ export function App() {
           </TabList>
           <TabPanels>
             <TabPanel id="overview">
-              <Grid columns={3}>
-                <GridItem span={2}>
-                  <DataSection content={trendContent} />
-                </GridItem>
-                <GridItem>
-                  <DataSection content={memberContent} />
-                </GridItem>
-              </Grid>
+              <Stack>
+                <Grid columns={3}>
+                  <GridItem span={2}>
+                    <DataSection content={trendContent} />
+                  </GridItem>
+                  <GridItem>
+                    <DataSection content={totalsContent} />
+                  </GridItem>
+                </Grid>
+                <DataSection content={memberContent} />
+              </Stack>
             </TabPanel>
             <TabPanel id="data">
-              <DataSection content={rowsContent} />
+              <Stack>
+                <DataSection content={memberTableContent} />
+                <DataSection content={rowsContent} />
+              </Stack>
             </TabPanel>
           </TabPanels>
         </Tabs>

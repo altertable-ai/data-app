@@ -13,6 +13,7 @@ import {
   TableWidget,
   VisualizationWidget,
   Ranking,
+  Comparison,
 } from '@altertable/data-app-react';
 import {
   Tabs,
@@ -31,7 +32,12 @@ import {
   parseCount,
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
-import { formatDateRange } from '@altertable/data-app/format';
+import {
+  formatDateRange,
+  formatCount,
+  formatNumber,
+  formatPercent,
+} from '@altertable/data-app/format';
 // One query per widget: each section loads its own result when it nears the viewport.
 export const dataApp = defineDataApp({
   title: 'Sample finding',
@@ -40,6 +46,20 @@ export const dataApp = defineDataApp({
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
+    sampleTotals: {
+      projections: { sample_count: { type: 'number' } },
+      statement: `
+SELECT SUM(sample_count) AS sample_count
+FROM starter_demo.daily_samples
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
+HAVING COUNT(*) > 0`,
+      params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
+        period_from: { type: 'string' },
+        period_to: { type: 'string' },
+      },
+    },
     samplesOverTime: {
       projections: {
         period_start: { type: 'string' },
@@ -104,16 +124,20 @@ GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
 });
 // Declare each filter once; each operation lists the filters it reads.
 const findingPeriod = {
-  from: new Date('2026-03-02T00:00:00Z'),
+  from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-const findingPeriodLabel = formatDateRange({
-  start: findingPeriod.from.toISOString().slice(0, 10),
-  end: new Date(findingPeriod.to.getTime() - 1).toISOString().slice(0, 10),
-});
+function periodLabel(range: { from: Date; to: Date }) {
+  return formatDateRange({
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  });
+}
+const findingPeriodLabel = periodLabel(findingPeriod);
 const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
+  comparison: 'on',
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
@@ -149,15 +173,44 @@ const breakdown = displayChoice({
   ],
   presentation: { control: 'widget' },
 });
+
+const operationFilters = {
+  sampleTotals: { period: periodFilter, groupName },
+  samplesOverTime: { period: periodFilter, groupName, grain },
+  samplesByMember: { period: periodFilter, groupName, breakdown },
+  sampleRows: { period: periodFilter, groupName, grain, breakdown },
+};
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
 export const operations = dataApp.defineOperations({
+  sampleTotals: dataApp.defineOperation({
+    filters: operationFilters.sampleTotals,
+    policy,
+    async run({ query }, { period, groupName }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
+      const [current, previous] = await Promise.all([
+        query('sampleTotals', { ...bounds.current, groupName }),
+        bounds.comparison
+          ? query('sampleTotals', { ...bounds.comparison, groupName })
+          : null,
+      ]);
+      const row = current.rows[0];
+      if (!row) return [];
+      const baseline = previous?.rows[0];
+      return [
+        {
+          currentCount: parseCount(row.sample_count),
+          previousCount: baseline ? parseCount(baseline.sample_count) : null,
+        },
+      ];
+    },
+  }),
   samplesOverTime: dataApp.defineOperation({
-    filters: { period: periodFilter, groupName, grain },
+    filters: operationFilters.samplesOverTime,
     policy,
     async run({ query }, { period, groupName, grain }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('samplesOverTime', {
-        ...bounds.current,
+        ...bounds.combined,
         groupName,
         grain,
       });
@@ -168,28 +221,59 @@ export const operations = dataApp.defineOperations({
     },
   }),
   samplesByMember: dataApp.defineOperation({
-    filters: { period: periodFilter, groupName, breakdown },
+    filters: operationFilters.samplesByMember,
     policy,
     async run({ query }, { period, groupName, breakdown }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
-      const result = await query('samplesByMember', {
-        ...bounds.current,
-        groupName,
-        breakdown,
-      });
-      return result.rows.map(row => ({
-        member: row.member,
-        sampleCount: parseCount(row.sample_count),
-      }));
+      const [current, previous] = await Promise.all([
+        query('samplesByMember', { ...bounds.current, groupName, breakdown }),
+        bounds.comparison
+          ? query('samplesByMember', {
+              ...bounds.comparison,
+              groupName,
+              breakdown,
+            })
+          : null,
+      ]);
+      const currentCounts = new Map(
+        current.rows.map(row => [row.member, parseCount(row.sample_count)])
+      );
+      const previousCounts = new Map(
+        previous?.rows.map(row => [row.member, parseCount(row.sample_count)])
+      );
+      const members = new Set([
+        ...currentCounts.keys(),
+        ...previousCounts.keys(),
+      ]);
+      return [...members]
+        .map(member => {
+          const currentCount = currentCounts.get(member) ?? null;
+          const previousCount = previousCounts.get(member) ?? null;
+          const change =
+            currentCount !== null && previousCount !== null
+              ? currentCount - previousCount
+              : null;
+          return {
+            member,
+            currentCount,
+            previousCount,
+            change,
+            changeRate:
+              change !== null && previousCount !== null && previousCount > 0
+                ? change / previousCount
+                : null,
+          };
+        })
+        .sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
     },
   }),
   sampleRows: dataApp.defineOperation({
-    filters: { period: periodFilter, groupName, grain, breakdown },
+    filters: operationFilters.sampleRows,
     policy,
     async run({ query }, { period, groupName, grain, breakdown }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('sampleRows', {
-        ...bounds.current,
+        ...bounds.combined,
         groupName,
         grain,
         breakdown,
@@ -203,17 +287,25 @@ export const operations = dataApp.defineOperations({
   }),
 });
 const queryNames = {
+  ...operations.sampleTotals.queryNames,
   ...operations.samplesOverTime.queryNames,
   ...operations.samplesByMember.queryNames,
   ...operations.sampleRows.queryNames,
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional daily samples from starter_demo.daily_samples. Replace this evidence with the actual Finding queries.',
+    'Fictional daily sample counts by group and segment. Comparisons use equal-length periods in UTC.',
   glossary: {
+    sampleChange: {
+      term: 'Sample change',
+      definition:
+        'Selected-period samples minus the previous equal-length period in the same scope. Missing observations remain unavailable; they are not measured zeroes.',
+      queryNames: ['samplesByMember'],
+    },
     sampleCount: {
       term: 'Sample count',
-      definition: 'Fixture samples recorded per day, group, and segment.',
+      definition:
+        'Number of samples recorded for each day, group, and segment.',
       queryNames: Object.values(queryNames),
     },
   },
@@ -224,6 +316,30 @@ const emptyFallback = {
   title: 'No samples in this period',
   description: 'No observations are available for this period.',
 };
+const totalsView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleTotals',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
+});
+const totals = totalsView.dataset({
+  name: 'Period totals',
+  select: rows => rows,
+  rowKey: () => 'total',
+  columns: {
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
+  },
+  evidence: { id: 'period-totals', glossaryIds: ['sampleCount'] },
+});
 const trendView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesOverTime',
@@ -247,14 +363,50 @@ const memberView = defineView({
   emptyFallback,
 });
 const byMember = memberView.dataset({
-  name: 'Samples by member',
+  name: 'Member comparison',
   select: rows => rows,
   rowKey: row => row.member,
   columns: {
     member: { label: 'Member', value: row => row.member },
-    sampleCount: { value: row => row.sampleCount, format: count },
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
+    change: {
+      label: 'Change',
+      value: row => row.change,
+      format: row => formatNumber(row.change, { signDisplay: 'exceptZero' }),
+    },
+    changeRate: {
+      label: 'Change %',
+      value: row => row.changeRate,
+      format: row => formatPercent(row.changeRate),
+    },
   },
-  evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
+  evidence: {
+    id: 'samples-by-member',
+    glossaryIds: ['sampleCount', 'sampleChange'],
+  },
+});
+const selectedMembers = memberView.dataset({
+  name: 'Selected-period samples',
+  select: rows => rows,
+  rowKey: row => row.member,
+  columns: {
+    member: { label: 'Member', value: row => row.member },
+    currentCount: {
+      label: 'Samples',
+      value: row => row.currentCount,
+      format: count,
+    },
+  },
+  evidence: { id: 'selected-members', glossaryIds: ['sampleCount'] },
 });
 const rowsView = defineView({
   dataContext: sampleDataContext,
@@ -273,7 +425,48 @@ const sampleRows = rowsView.dataset({
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
-// The Finding's text is shown above the app; keep content to charts and captions.
+// Each visual verifies part of the finding; the host supplies its narrative.
+const totalsContent = totalsView.content(result => (
+  <VisualizationWidget
+    dataset={totals}
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Period comparison'
+        : 'Selected period'
+    }
+  >
+    {rows =>
+      result.loading ? null : result.input.period.comparison ? (
+        <Comparison
+          label="Samples"
+          current={{
+            value: rows[0]!.currentCount,
+            formattedValue: formatCount(rows[0]!.currentCount),
+            periodLabel: periodLabel(result.input.period.range),
+          }}
+          previous={{
+            value: rows[0]!.previousCount,
+            formattedValue: formatCount(rows[0]!.previousCount, {
+              missing: 'Not available',
+            }),
+            periodLabel: periodLabel(result.input.period.comparison),
+          }}
+        />
+      ) : (
+        <Ranking
+          items={[
+            {
+              id: 'selected',
+              label: periodLabel(result.input.period.range),
+              value: rows[0]!.currentCount,
+            },
+          ]}
+        />
+      )
+    }
+  </VisualizationWidget>
+));
 const trendContent = trendView.content(result => (
   <VisualizationWidget
     dataset={trend}
@@ -299,21 +492,50 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="Breakdown"
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Where volume changed'
+        : 'Samples by member'
+    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
-      <Ranking
-        aria-label="Samples by member"
-        items={rows.map(row => ({
-          ...row,
-          id: row.member,
-          label: row.member,
-          value: row.sampleCount,
-        }))}
-      />
+      <ComposedChart
+        ariaLabel="Samples by member"
+        data={rows}
+        valueFormat={count}
+      >
+        <ComposedChart.XAxis dataKey="member" />
+        <ComposedChart.YAxis />
+        {!result.loading && result.input.period.comparison && (
+          <ComposedChart.Bar
+            dataKey="previousCount"
+            name="Previous period"
+            fill="var(--atbl-muted)"
+            fillOpacity={0.45}
+          />
+        )}
+        <ComposedChart.Bar dataKey="currentCount" name="Selected period" />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend />
+      </ComposedChart>
     )}
   </VisualizationWidget>
+));
+const memberTableContent = memberView.content(result => (
+  <TableWidget
+    dataset={
+      result.loading || result.input.period.comparison
+        ? byMember
+        : selectedMembers
+    }
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Change by member'
+        : 'Samples by member'
+    }
+  />
 ));
 const rowsContent = rowsView.content(result => (
   <TableWidget dataset={sampleRows} source={result} title="Sample details" />
@@ -343,7 +565,7 @@ function FindingScope() {
       description={
         <>
           Original finding · {findingPeriodLabel} {periodFilter.policy.timeZone}{' '}
-          ·{' '}
+          vs previous period ·{' '}
           {groupName.describe?.(groupName.defaultValue) ??
             groupName.defaultValue}
         </>
@@ -370,17 +592,23 @@ function App() {
           </TabList>
           <TabPanels>
             <TabPanel id="overview">
-              <Grid columns={3}>
-                <GridItem span={2}>
-                  <DataSection content={trendContent} />
-                </GridItem>
-                <GridItem>
-                  <DataSection content={memberContent} />
-                </GridItem>
-              </Grid>
+              <Stack>
+                <Grid columns={3}>
+                  <GridItem span={2}>
+                    <DataSection content={trendContent} />
+                  </GridItem>
+                  <GridItem>
+                    <DataSection content={totalsContent} />
+                  </GridItem>
+                </Grid>
+                <DataSection content={memberContent} />
+              </Stack>
             </TabPanel>
             <TabPanel id="data">
-              <DataSection content={rowsContent} />
+              <Stack>
+                <DataSection content={memberTableContent} />
+                <DataSection content={rowsContent} />
+              </Stack>
             </TabPanel>
           </TabPanels>
         </Tabs>
@@ -388,4 +616,5 @@ function App() {
     </DataApp>
   );
 }
+
 mountDataApp({ app: dataApp, component: App });
