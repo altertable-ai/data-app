@@ -21,6 +21,13 @@ Open <http://127.0.0.1:25837>. Alternatively, configure
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN` for an existing
 CLI proxy. Missing credentials stop startup.
 
+## Explore the example
+
+The fictional September 2026 allocation shows costs by service. Select a service
+to inspect its contributing customers, then inspect a widget for the registered
+query, parameters, and cost definition. Customer allocations reconcile to their
+service; services reconcile to the total. Logging demonstrates a recorded zero.
+
 ## Build the app
 
 Use inspected source data to answer the app brief. Replace the sample queries

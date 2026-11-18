@@ -214,7 +214,10 @@ const server = Bun.serve({
         ? registeredQueries[queryId]?.statement
         : undefined;
       if (!statement) return new Response('Unknown query', { status: 404 });
-      if (statement.trim().startsWith('WITH sample_counts(')) {
+      if (
+        statement.trim().startsWith('WITH sample_counts(') ||
+        statement.trim().startsWith('WITH infrastructure_costs(')
+      ) {
         const query = database.query(statement);
         return Response.json({
           columns: query.columnNames.map(name => ({ name })),

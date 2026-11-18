@@ -63,183 +63,151 @@ describe('authoring', () => {
     ).toBe(403);
   });
 
-  test('hosted standalone starter presents measured values, zero, and empty states', async ({
+  test('hosted cost starter charts services and opens customer detail', async ({
     page,
   }) => {
-    let emptyDelta = false;
-    const requests: {
-      queryId: string;
-      limit: number;
-      host: boolean;
-      params: { groupName?: string; limit?: number };
-    }[] = [];
+    const requests: { queryId: string; params?: Record<string, string> }[] = [];
     await page.route('**/api/query', async route => {
-      const payload = route.request().postDataJSON() as {
-        queryId: string;
-        limit: number;
-        params: { groupName?: string; limit?: number };
-      };
-      requests.push({
-        ...payload,
-        host: route.request().frame() === page.mainFrame(),
-      });
-      if (emptyDelta && payload.params.groupName === 'Delta') {
-        const response = await route.fetch();
-        const result = (await response.json()) as { rows: unknown[] };
-        await route.fulfill({ response, json: { ...result, rows: [] } });
-        return;
-      }
+      requests.push(route.request().postDataJSON());
       await route.continue();
     });
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
-
     await expect
-      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
+      .poll(() =>
+        app
+          .getByRole('button', { name: /^Compute.*View customers$/ })
+          .isVisible()
+      )
       .toBe(true);
     await expect
       .poll(() =>
         app
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('3M', { exact: true })
+          .getByRole('region', { name: 'Total cost' })
+          .getByText('$13,200.00', { exact: true })
           .isVisible()
       )
       .toBe(true);
-    const chart = app.getByLabel('Sample counts by group', { exact: true });
+    const chart = app.getByLabel('Costs by service', { exact: true });
     await expect.poll(() => chart.isVisible()).toBe(true);
-    for (const label of [
-      'Alpha · 2.2M',
-      'Gamma · 650K',
-      'Delta · 150K',
-      'Beta · 0',
-    ])
-      await expect
-        .poll(() =>
-          chart.getByRole('button', { name: `${label}: Actions` }).isVisible()
-        )
-        .toBe(true);
-    await expect
-      .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
-      .toBe(0);
-    await expect
-      .poll(() => page.getByRole('button', { name: 'Present story' }).count())
-      .toBe(0);
-
-    await chart
-      .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
-      .click();
-    await app
-      .getByRole('menuitem', { name: 'Filter to group', exact: true })
-      .click();
-    await expect
-      .poll(() => app.getByRole('row', { name: 'Gamma 650,000' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('650K', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await app
-      .getByRole('button', { name: /Gamma.*Group|Group.*Gamma/ })
-      .click();
-    await app.getByRole('option', { name: 'Beta', exact: true }).click();
-    await expect
-      .poll(() => app.getByRole('row', { name: 'Beta 0' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('0', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    await app.getByRole('button', { name: /Beta.*Group|Group.*Beta/ }).click();
-    await app.getByRole('option', { name: 'All groups', exact: true }).click();
-    await expect
-      .poll(() =>
-        app
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('3M', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    emptyDelta = true;
-    await app
-      .getByRole('button', { name: /All groups.*Group|Group.*All groups/ })
-      .click();
-    await app.getByRole('option', { name: 'Delta', exact: true }).click();
-    await expect
-      .poll(() =>
-        app.getByText('No matching groups', { exact: true }).isVisible()
-      )
-      .toBe(true);
-    emptyDelta = false;
-    await page
-      .getByRole('button', { name: 'Refresh data', exact: true })
-      .click();
-    await expect
-      .poll(() => app.getByRole('row', { name: 'Delta 150,000' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() =>
-        app
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('150K', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() => app.getByText('This widget couldn’t render').count())
-      .toBe(0);
-
-    expect(requests.map(request => request.queryId)).toContain(
-      'sampleCountsByGroup'
-    );
-    expect(requests.map(request => request.queryId)).toContain('sampleTotal');
-    expect(requests.every(request => request.host)).toBe(true);
     expect(
-      requests
-        .filter(request => request.queryId === 'sampleCountsByGroup')
-        .every(request => request.limit === 10 && request.params.limit === 10)
-    ).toBe(true);
+      requests.some(request => request.queryId === 'costsByCustomer')
+    ).toBe(false);
+    await chart.getByRole('button', { name: /^Compute.*Actions/ }).click();
+    await app
+      .getByRole('menuitem', { name: 'View customers', exact: true })
+      .click();
+    const detail = app.getByRole('dialog', {
+      name: 'Customer costs',
+      exact: true,
+    });
+    await expect
+      .poll(() =>
+        detail.getByRole('row', { name: 'Atlas $4,200.00' }).isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        detail.getByRole('row', { name: 'Beacon $2,100.00' }).isVisible()
+      )
+      .toBe(true);
     expect(
-      requests
-        .filter(request => request.queryId === 'sampleTotal')
-        .every(request => request.limit === 1)
+      requests.some(
+        request =>
+          request.queryId === 'costsByCustomer' &&
+          request.params?.serviceName === 'Compute'
+      )
     ).toBe(true);
+    await detail
+      .getByRole('button', { name: 'Explore Cost by customer', exact: true })
+      .click();
+    const evidence = app.getByRole('dialog', {
+      name: 'Cost by customer',
+      exact: true,
+    });
+    await expect
+      .poll(() =>
+        evidence
+          .getByRole('heading', { name: 'Allocated cost', exact: true })
+          .isVisible()
+      )
+      .toBe(true);
+    await evidence.getByRole('tab', { name: 'Queries', exact: true }).click();
+    await expect
+      .poll(() =>
+        evidence.getByText('costsByCustomer.sql', { exact: true }).isVisible()
+      )
+      .toBe(true);
+    await expect
+      .poll(() => evidence.getByText('"Compute"', { exact: true }).isVisible())
+      .toBe(true);
+    await evidence
+      .getByRole('button', { name: 'Close panel', exact: true })
+      .click();
+    await detail
+      .getByRole('button', { name: 'Close panel', exact: true })
+      .click();
+    await chart.getByRole('button', { name: /^Logging.*Actions/ }).click();
+    await app
+      .getByRole('menuitem', { name: 'View customers', exact: true })
+      .click();
+    await expect
+      .poll(() => detail.getByRole('row', { name: 'Atlas $0.00' }).isVisible())
+      .toBe(true);
   });
 
-  test('hosted starter recovers from an initial query failure', async ({
-    page,
-  }) => {
+  test('hosted customer detail retries a failed query', async ({ page }) => {
     let fail = true;
     await page.route('**/api/query', async route => {
-      if (fail) await route.fulfill({ status: 503, json: failure });
+      if (route.request().postDataJSON().queryId === 'costsByCustomer' && fail)
+        await route.fulfill({ status: 503, json: { error: 'Unavailable' } });
       else await route.continue();
     });
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
-    const overview = app.getByRole('region', {
-      name: 'Sample overview',
+    const chart = app.getByLabel('Costs by service', { exact: true });
+    await chart.getByRole('button', { name: /^Compute.*Actions/ }).click();
+    await app
+      .getByRole('menuitem', { name: 'View customers', exact: true })
+      .click();
+    const detail = app.getByRole('dialog', {
+      name: 'Customer costs',
       exact: true,
     });
-    await expect.poll(() => overview.getByRole('alert').isVisible()).toBe(true);
-
+    await expect.poll(() => detail.getByRole('alert').isVisible()).toBe(true);
     fail = false;
-    await overview.getByRole('button', { name: 'Retry', exact: true }).click();
+    await detail.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect
-      .poll(() => app.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible())
+      .poll(() =>
+        detail.getByRole('row', { name: 'Cedar $900.00' }).isVisible()
+      )
       .toBe(true);
+  });
+
+  test('local cost starter supports responsive customer drill-down', async ({
+    mobilePage: page,
+  }) => {
+    await page.goto('/local-data-app');
+    const chart = page.getByLabel('Costs by service', { exact: true });
     await expect
-      .poll(() => overview.getByText('3M', { exact: true }).isVisible())
+      .poll(() =>
+        page
+          .getByRole('button', { name: /^Storage.*View customers$/ })
+          .isVisible()
+      )
+      .toBe(true);
+    await chart.getByRole('button', { name: /^Storage.*Actions/ }).click();
+    await page
+      .getByRole('menuitem', { name: 'View customers', exact: true })
+      .click();
+    const detail = page.getByRole('dialog', {
+      name: 'Customer costs',
+      exact: true,
+    });
+    await expect
+      .poll(() =>
+        detail.getByRole('row', { name: 'Beacon $2,800.00' }).isVisible()
+      )
       .toBe(true);
   });
 
@@ -350,104 +318,64 @@ describe('authoring', () => {
       .toBe(true);
   });
 
-  test('local standalone starter matches the hosted exploration states', async ({
+  test('hosted overview recovers from a query failure', async ({ page }) => {
+    let fail = true;
+    await page.route('**/api/query', async route => {
+      if (fail) await route.fulfill({ status: 503, json: failure });
+      else await route.continue();
+    });
+    await page.goto('/starter-data-app');
+    const app = page.frameLocator('iframe');
+    const overview = app.getByRole('region', {
+      name: 'Cost overview',
+      exact: true,
+    });
+    await expect.poll(() => overview.getByRole('alert').isVisible()).toBe(true);
+    fail = false;
+    await overview.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect
+      .poll(() =>
+        app
+          .getByRole('button', { name: /^Compute.*View customers$/ })
+          .isVisible()
+      )
+      .toBe(true);
+  });
+
+  test('empty customer allocations keep the overview available', async ({
     page,
   }) => {
-    let emptyDelta = false;
-    await page.route('**/api/query/*', async route => {
-      const payload = route.request().postDataJSON() as {
-        params: { groupName?: string };
-      };
-      if (emptyDelta && payload.params.groupName === 'Delta') {
-        const response = await route.fetch();
-        const result = (await response.json()) as { rows: unknown[] };
-        await route.fulfill({ response, json: { ...result, rows: [] } });
-        return;
-      }
-      await route.continue();
+    await page.route('**/api/query', async route => {
+      if (route.request().postDataJSON().queryId !== 'costsByCustomer')
+        return route.continue();
+      const response = await route.fetch();
+      const result = await response.json();
+      await route.fulfill({ response, json: { ...result, rows: [] } });
     });
-    await page.goto('/local-data-app');
+    await page.goto('/starter-data-app');
+    const app = page.frameLocator('iframe');
+    await app
+      .getByRole('button', { name: /^Networking.*View customers$/ })
+      .click();
+    const detail = app.getByRole('dialog', {
+      name: 'Customer costs',
+      exact: true,
+    });
     await expect
       .poll(() =>
-        page.getByRole('row', { name: 'Alpha 2,200,000' }).isVisible()
+        detail.getByText('No customer allocations', { exact: true }).isVisible()
       )
       .toBe(true);
-    const chart = page.getByLabel('Sample counts by group', { exact: true });
-    await expect.poll(() => chart.isVisible()).toBe(true);
-    await expect
-      .poll(() => page.getByRole('button', { name: 'Export CSV' }).count())
-      .toBe(0);
-
-    await chart
-      .getByRole('button', { name: 'Gamma · 650K: Actions', exact: true })
+    await detail
+      .getByRole('button', { name: 'Close panel', exact: true })
       .click();
-    await page
-      .getByRole('menuitem', { name: 'Filter to group', exact: true })
-      .click();
-    await expect
-      .poll(() => page.getByRole('row', { name: 'Gamma 650,000' }).isVisible())
-      .toBe(true);
     await expect
       .poll(() =>
-        page
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('650K', { exact: true })
+        app
+          .getByRole('region', { name: 'Total cost', exact: true })
+          .getByText('$13,200.00', { exact: true })
           .isVisible()
       )
       .toBe(true);
-    await page
-      .getByRole('button', { name: /Gamma.*Group|Group.*Gamma/ })
-      .click();
-    await page.getByRole('option', { name: 'Beta', exact: true }).click();
-    await expect
-      .poll(() => page.getByRole('row', { name: 'Beta 0' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('0', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-
-    await page.getByRole('button', { name: /Beta.*Group|Group.*Beta/ }).click();
-    await page.getByRole('option', { name: 'All groups', exact: true }).click();
-    await expect
-      .poll(() =>
-        page
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('3M', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    emptyDelta = true;
-    await page
-      .getByRole('button', { name: /All groups.*Group|Group.*All groups/ })
-      .click();
-    await page.getByRole('option', { name: 'Delta', exact: true }).click();
-    await expect
-      .poll(() =>
-        page.getByText('No matching groups', { exact: true }).isVisible()
-      )
-      .toBe(true);
-    emptyDelta = false;
-    await page
-      .getByRole('button', { name: 'Refresh data', exact: true })
-      .click();
-    await expect
-      .poll(() => page.getByRole('row', { name: 'Delta 150,000' }).isVisible())
-      .toBe(true);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('region', { name: 'Sample total' })
-          .getByText('150K', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() => page.getByText('This widget couldn’t render').count())
-      .toBe(0);
   });
 });

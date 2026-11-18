@@ -1,199 +1,269 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataContext,
+  mountDataApp,
   createDataHooks,
   DataApp,
   DataSection,
+  Grid,
+  GridItem,
+  MetricWidget,
   TableWidget,
   VisualizationWidget,
   Stack,
-  Grid,
-  GridItem,
-  mountDataApp,
-  MetricWidget,
+  TextContent,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { parseCount, choiceFilter } from '@altertable/data-app/contract';
-import { formatCount } from '@altertable/data-app/format';
+import { parseCount } from '@altertable/data-app/contract';
+import { formatMetric } from '@altertable/data-app/format';
 
 export const dataApp = defineDataApp({
-  title: 'Sample counts',
-  description: 'Explore sample counts by group.',
+  title: 'Infrastructure costs',
+  description: 'September 2026 · USD · Fictional data',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
-    sampleCountsByGroup: {
+    costsByService: {
       projections: {
-        group_name: { type: 'string' },
-        sample_count: { type: 'number' },
+        service_name: { type: 'string' },
+        cost_cents: { type: 'number' },
       },
       statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Gamma', 650000), ('Delta', 150000), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
-WHERE $groupName = '' OR group_name = $groupName
-ORDER BY sample_count DESC, group_name LIMIT $limit`,
+WITH infrastructure_costs(service_name, customer_name, cost_cents) AS (
+  VALUES
+    ('Compute', 'Atlas', 420000), ('Compute', 'Beacon', 210000), ('Compute', 'Cedar', 90000),
+    ('Storage', 'Atlas', 80000), ('Storage', 'Beacon', 280000), ('Storage', 'Cedar', 120000),
+    ('Networking', 'Atlas', 30000), ('Networking', 'Beacon', 60000), ('Networking', 'Cedar', 30000),
+    ('Logging', 'Atlas', 0), ('Logging', 'Beacon', 0), ('Logging', 'Cedar', 0)
+)
+SELECT service_name, CAST(SUM(cost_cents) AS BIGINT) AS cost_cents
+FROM infrastructure_costs
+GROUP BY service_name
+ORDER BY cost_cents DESC, service_name LIMIT $limit`,
+      params: { limit: { type: 'number', defaultValue: 10 } },
+    },
+    totalCost: {
+      projections: { cost_cents: { type: 'number' } },
+      statement: `
+WITH infrastructure_costs(service_name, customer_name, cost_cents) AS (
+  VALUES
+    ('Compute', 'Atlas', 420000), ('Compute', 'Beacon', 210000), ('Compute', 'Cedar', 90000),
+    ('Storage', 'Atlas', 80000), ('Storage', 'Beacon', 280000), ('Storage', 'Cedar', 120000),
+    ('Networking', 'Atlas', 30000), ('Networking', 'Beacon', 60000), ('Networking', 'Cedar', 30000),
+    ('Logging', 'Atlas', 0), ('Logging', 'Beacon', 0), ('Logging', 'Cedar', 0)
+)
+SELECT CAST(SUM(cost_cents) AS BIGINT) AS cost_cents
+FROM infrastructure_costs HAVING COUNT(*) > 0`,
+      params: {},
+    },
+    costsByCustomer: {
+      projections: {
+        customer_name: { type: 'string' },
+        cost_cents: { type: 'number' },
+      },
+      statement: `
+WITH infrastructure_costs(service_name, customer_name, cost_cents) AS (
+  VALUES
+    ('Compute', 'Atlas', 420000), ('Compute', 'Beacon', 210000), ('Compute', 'Cedar', 90000),
+    ('Storage', 'Atlas', 80000), ('Storage', 'Beacon', 280000), ('Storage', 'Cedar', 120000),
+    ('Networking', 'Atlas', 30000), ('Networking', 'Beacon', 60000), ('Networking', 'Cedar', 30000),
+    ('Logging', 'Atlas', 0), ('Logging', 'Beacon', 0), ('Logging', 'Cedar', 0)
+)
+SELECT customer_name, CAST(SUM(cost_cents) AS BIGINT) AS cost_cents
+FROM infrastructure_costs
+WHERE service_name = $serviceName
+GROUP BY customer_name
+ORDER BY cost_cents DESC, customer_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        serviceName: { type: 'string' },
         limit: { type: 'number', defaultValue: 10 },
       },
     },
-    sampleTotal: {
-      projections: { sample_count: { type: 'number' } },
-      statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Gamma', 650000), ('Delta', 150000), ('Beta', 0))
-SELECT CAST(SUM(sample_count) AS BIGINT) AS sample_count FROM sample_counts
-WHERE $groupName = '' OR group_name = $groupName
-HAVING COUNT(*) > 0`,
-      params: { groupName: { type: 'string', defaultValue: '' } },
-    },
   },
 });
-// Declare each filter once; operations list the filters they read, and views,
-// controls, and scope derive from them.
-const groupName = choiceFilter({
-  key: 'group',
-  label: 'Group',
-  defaultValue: 'all',
-  options: [
-    { id: 'all', label: 'All groups' },
-    { id: 'Alpha', label: 'Alpha' },
-    { id: 'Gamma', label: 'Gamma' },
-    { id: 'Delta', label: 'Delta' },
-    { id: 'Beta', label: 'Beta' },
-  ],
-});
-type SampleGroup = Exclude<typeof groupName.defaultValue, 'all'>;
 
-/** The fixture queries read an empty group name as every group. */
-function queryGroup(groupName: string) {
-  return groupName === 'all' ? '' : groupName;
+function parseService(value: unknown) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    !('serviceName' in value) ||
+    typeof value.serviceName !== 'string' ||
+    value.serviceName.trim().length === 0 ||
+    value.serviceName.length > 100
+  )
+    throw new Error('Choose a service to inspect its customer costs.');
+  return { serviceName: value.serviceName };
 }
 export const operations = dataApp.defineOperations({
-  sampleCountsByGroup: dataApp.defineOperation({
-    filters: { groupName },
+  costsByService: dataApp.defineOperation({
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
-    async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsByGroup', {
-        groupName: queryGroup(groupName),
-      });
-      return queryResult.rows.map(
-        (row): { groupName: SampleGroup; sampleCount: number } => {
-          const groupName = row.group_name;
-          if (
-            groupName !== 'Alpha' &&
-            groupName !== 'Gamma' &&
-            groupName !== 'Delta' &&
-            groupName !== 'Beta'
-          )
-            throw new Error('Unexpected fixture group.');
-          return { groupName, sampleCount: parseCount(row.sample_count) };
-        }
-      );
+    async run({ query }) {
+      const result = await query('costsByService');
+      return result.rows.map(row => ({
+        serviceName: row.service_name,
+        cost: parseCount(row.cost_cents) / 100,
+      }));
     },
   }),
-  sampleTotal: dataApp.defineOperation({
-    filters: { groupName },
+  totalCost: dataApp.defineOperation({
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
-    async run({ query }, { groupName }) {
-      const queryResult = await query('sampleTotal', {
-        groupName: queryGroup(groupName),
-      });
-      const row = queryResult.rows[0];
-      return row ? { sampleCount: parseCount(row.sample_count) } : null;
+    async run({ query }) {
+      const result = await query('totalCost');
+      const row = result.rows[0];
+      return row ? { cost: parseCount(row.cost_cents) / 100 } : null;
+    },
+  }),
+  costsByCustomer: dataApp.defineOperation({
+    input: parseService,
+    checks: [{ serviceName: 'Compute' }],
+    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    async run({ query }, { serviceName }) {
+      const result = await query('costsByCustomer', { serviceName });
+      return result.rows.map(row => ({
+        customerName: row.customer_name,
+        cost: parseCount(row.cost_cents) / 100,
+      }));
     },
   }),
 });
+
 const queryNames = {
-  ...operations.sampleCountsByGroup.queryNames,
-  ...operations.sampleTotal.queryNames,
+  ...operations.costsByService.queryNames,
+  ...operations.totalCost.queryNames,
+  ...operations.costsByCustomer.queryNames,
 };
-const sampleDataContext = createDataContext(queryNames)({
+const costDataContext = createDataContext(queryNames)({
   description:
-    'Fictional recorded sample counts for four groups, including a measured zero.',
+    'Fictional customer allocations for September 2026, covering all four services and all three customers in this demo.',
   glossary: {
-    sampleCount: {
-      term: 'Sample count',
+    allocatedCost: {
+      term: 'Allocated cost',
       definition:
-        'Number of recorded samples. Totals sum the groups in the selected scope; zero denotes a measured count.',
-      queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
+        'Infrastructure charges allocated to customers for September 2026, in USD. Customer allocations sum to each service; services sum to the total. Zero is a recorded charge of zero.',
+      queryNames: [
+        queryNames.costsByService,
+        queryNames.totalCost,
+        queryNames.costsByCustomer,
+      ],
     },
   },
 });
-const { defineView } = createDataHooks(operations.createDataClient());
-const sampleCountsView = defineView({
-  dataContext: sampleDataContext,
-  operation: 'sampleCountsByGroup',
-  isEmpty: sampleCounts => sampleCounts.length === 0,
+
+const costFormat = { kind: 'currency', currency: 'USD' } as const;
+const { defineView, defineDetailView } = createDataHooks(
+  operations.createDataClient()
+);
+const servicesView = defineView({
+  dataContext: costDataContext,
+  operation: 'costsByService',
+  isEmpty: rows => rows.length === 0,
   emptyFallback: {
-    title: 'No matching groups',
-    description: 'Choose another group or select All groups.',
+    title: 'No service costs',
+    description: 'No allocations are available for this period.',
   },
 });
-const sampleCounts = sampleCountsView.dataset({
-  name: 'Sample counts',
+const serviceCosts = servicesView.dataset({
+  name: 'Service costs',
   select: rows => rows,
-  rowKey: row => row.groupName,
+  rowKey: row => row.serviceName,
   columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    serviceName: { label: 'Service', value: row => row.serviceName },
+    cost: {
+      label: 'Cost',
+      value: row => row.cost,
+      format: costFormat,
+    },
   },
-  evidence: {
-    id: 'counts-by-group',
-    glossaryIds: ['sampleCount'],
-  },
+  evidence: { id: 'costs-by-service', glossaryIds: ['allocatedCost'] },
 });
-const sampleTotalView = defineView({
-  dataContext: sampleDataContext,
-  operation: 'sampleTotal',
+const totalView = defineView({
+  dataContext: costDataContext,
+  operation: 'totalCost',
   isEmpty: total => total === null,
-  emptyFallback: {
-    title: 'No total for this selection',
-    description: 'Choose a matching group to inspect its recorded samples.',
-  },
+  emptyFallback: { title: 'No total available' },
 });
-const totalSamples = sampleTotalView.metric(
+const totalCost = totalView.metric(
   {
-    id: 'total-samples',
-    glossaryId: 'sampleCount',
-    label: 'Total samples',
-    format: { kind: 'count', compact: true },
+    id: 'total-cost',
+    glossaryId: 'allocatedCost',
+    label: 'Total cost',
+    format: costFormat,
   },
   total => {
-    if (total === null) throw new Error('No measured total in this selection.');
-    return { current: total.sampleCount };
+    if (total === null) throw new Error('No allocated total for this period.');
+    return { current: total.cost };
   }
 );
-const totalContent = sampleTotalView.content(result => (
-  <MetricWidget metric={totalSamples} source={result} />
+const totalContent = totalView.content(result => (
+  <MetricWidget metric={totalCost} source={result} />
 ));
-const groupActions = sampleCounts.actions(
+const customersView = defineDetailView({
+  id: 'service-customers',
+  title: 'Customer costs',
+  operation: 'costsByCustomer',
+  dataContext: costDataContext,
+  parseInput: operations.costsByCustomer.input,
+  describeInput: ({ serviceName }) => `${serviceName} · September 2026 · USD`,
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: {
+    title: 'No customer allocations',
+    description:
+      'No allocations are recorded for this service in September 2026.',
+  },
+});
+const customerCosts = customersView.dataset({
+  name: 'Customer allocations',
+  select: rows => rows,
+  rowKey: row => row.customerName,
+  columns: {
+    customerName: { label: 'Customer', value: row => row.customerName },
+    cost: {
+      label: 'Cost',
+      value: row => row.cost,
+      format: costFormat,
+    },
+  },
+  evidence: { id: 'costs-by-customer', glossaryIds: ['allocatedCost'] },
+});
+const customersDetail = customersView.content(result => (
+  <TableWidget
+    dataset={customerCosts}
+    source={result}
+    title="Cost by customer"
+    pagination={false}
+  />
+));
+const serviceActions = serviceCosts.actions(
   action => ({
-    filter: action.filter({
-      label: 'Filter to group',
-      target: sampleCountsView.filter(),
-      values: row => ({ groupName: row.groupName }),
+    customers: action.detail({
+      label: 'View customers',
+      target: customersView,
+      input: row => ({ serviceName: row.serviceName }),
     }),
   }),
-  { primary: 'filter' }
+  { primary: 'customers' }
 );
-const overviewContent = sampleCountsView.content(result => (
+const overviewContent = servicesView.content(result => (
   <Grid columns={3}>
     <GridItem span={2}>
       <VisualizationWidget
-        dataset={sampleCounts}
+        dataset={serviceCosts}
         source={result}
-        title="Samples by group"
-        actions={groupActions}
+        title="Cost by service"
+        actions={serviceActions}
       >
         {(rows, actions) => (
           <BarChart
-            ariaLabel="Sample counts by group"
-            unit="samples"
+            ariaLabel="Costs by service"
+            unit="USD"
+            formatValue={value => formatMetric(value, costFormat)}
+            horizontalGrid={false}
             items={rows.map(row => ({
               ...row,
-              id: row.groupName,
-              label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
-              value: row.sampleCount,
+              id: row.serviceName,
+              label: `${row.serviceName} · ${formatMetric(row.cost, costFormat)}`,
+              value: row.cost,
             }))}
             itemActions={actions}
           />
@@ -202,22 +272,27 @@ const overviewContent = sampleCountsView.content(result => (
     </GridItem>
     <GridItem>
       <Stack>
-        <DataSection content={totalContent} label="Sample total" />
-        <TableWidget
-          dataset={sampleCounts}
-          source={result}
-          title="Counts by group"
-          pagination={false}
-        />
+        <DataSection content={totalContent} label="Total cost" />
+        <TextContent>
+          <p>
+            Select a service to see which customers contribute to its cost.
+            Inspect any widget to check its data and definition.
+          </p>
+        </TextContent>
       </Stack>
     </GridItem>
   </Grid>
 ));
 function App() {
   return (
-    <DataApp view={sampleCountsView} summaryViews={[sampleTotalView]}>
-      <DataSection content={overviewContent} label="Sample overview" />
+    <DataApp
+      view={servicesView}
+      summaryViews={[totalView]}
+      details={[customersDetail]}
+    >
+      <DataSection content={overviewContent} label="Cost overview" />
     </DataApp>
   );
 }
+
 mountDataApp({ app: dataApp, component: App });

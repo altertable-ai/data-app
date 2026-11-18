@@ -3,18 +3,23 @@ import { createDataContext } from '@altertable/data-app-react';
 import { dataApp } from '#config';
 
 const queryNames = {
-  sampleCountsByGroup: 'sampleCountsByGroup',
-  sampleTotal: 'sampleTotal',
+  costsByService: 'costsByService',
+  totalCost: 'totalCost',
+  costsByCustomer: 'costsByCustomer',
 } as const satisfies Record<string, keyof typeof dataApp.queries>;
-export const sampleDataContext = createDataContext(queryNames)({
+export const costDataContext = createDataContext(queryNames)({
   description:
-    'Fictional recorded sample counts for four groups, including a measured zero.',
+    'Fictional customer allocations for September 2026, covering all four services and all three customers in this demo.',
   glossary: {
-    sampleCount: {
-      term: 'Sample count',
+    allocatedCost: {
+      term: 'Allocated cost',
       definition:
-        'Number of recorded samples. Totals sum the groups in the selected scope; zero denotes a measured count.',
-      queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
+        'Infrastructure charges allocated to customers for September 2026, in USD. Customer allocations sum to each service; services sum to the total. Zero is a recorded charge of zero.',
+      queryNames: [
+        queryNames.costsByService,
+        queryNames.totalCost,
+        queryNames.costsByCustomer,
+      ],
     },
   },
 });

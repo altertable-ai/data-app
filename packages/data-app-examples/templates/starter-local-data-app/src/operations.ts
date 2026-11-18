@@ -1,46 +1,49 @@
 import { parseCount } from '@altertable/data-app/contract';
 
-import { groupName } from '#app/filters.ts';
 import { dataApp } from '#config';
 
-type SampleGroup = Exclude<typeof groupName.defaultValue, 'all'>;
-
-/** The fixture queries read an empty group name as every group. */
-function queryGroup(groupName: string) {
-  return groupName === 'all' ? '' : groupName;
+function parseService(value: unknown) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    !('serviceName' in value) ||
+    typeof value.serviceName !== 'string' ||
+    value.serviceName.trim().length === 0 ||
+    value.serviceName.length > 100
+  )
+    throw new Error('Choose a service to inspect its customer costs.');
+  return { serviceName: value.serviceName };
 }
 export const operations = dataApp.defineOperations({
-  sampleCountsByGroup: dataApp.defineOperation({
-    filters: { groupName },
+  costsByService: dataApp.defineOperation({
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
-    async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsByGroup', {
-        groupName: queryGroup(groupName),
-      });
-      return queryResult.rows.map(
-        (row): { groupName: SampleGroup; sampleCount: number } => {
-          const groupName = row.group_name;
-          if (
-            groupName !== 'Alpha' &&
-            groupName !== 'Gamma' &&
-            groupName !== 'Delta' &&
-            groupName !== 'Beta'
-          )
-            throw new Error('Unexpected fixture group.');
-          return { groupName, sampleCount: parseCount(row.sample_count) };
-        }
-      );
+    async run({ query }) {
+      const result = await query('costsByService');
+      return result.rows.map(row => ({
+        serviceName: row.service_name,
+        cost: parseCount(row.cost_cents) / 100,
+      }));
     },
   }),
-  sampleTotal: dataApp.defineOperation({
-    filters: { groupName },
+  totalCost: dataApp.defineOperation({
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
-    async run({ query }, { groupName }) {
-      const queryResult = await query('sampleTotal', {
-        groupName: queryGroup(groupName),
-      });
-      const row = queryResult.rows[0];
-      return row ? { sampleCount: parseCount(row.sample_count) } : null;
+    async run({ query }) {
+      const result = await query('totalCost');
+      const row = result.rows[0];
+      return row ? { cost: parseCount(row.cost_cents) / 100 } : null;
+    },
+  }),
+  costsByCustomer: dataApp.defineOperation({
+    input: parseService,
+    checks: [{ serviceName: 'Compute' }],
+    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    async run({ query }, { serviceName }) {
+      const result = await query('costsByCustomer', { serviceName });
+      return result.rows.map(row => ({
+        customerName: row.customer_name,
+        cost: parseCount(row.cost_cents) / 100,
+      }));
     },
   }),
 });

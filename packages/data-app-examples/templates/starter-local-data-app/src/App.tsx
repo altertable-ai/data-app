@@ -8,88 +8,128 @@ import {
   TableWidget,
   VisualizationWidget,
   Stack,
+  TextContent,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { formatCount } from '@altertable/data-app/format';
+import { formatMetric } from '@altertable/data-app/format';
 
-import { sampleDataContext } from '#app/data-context.ts';
+import { costDataContext } from '#app/data-context.ts';
 import { operations } from '#app/operations.ts';
 
-const { defineView } = createDataHooks(operations.createDataClient());
-const sampleCountsView = defineView({
-  dataContext: sampleDataContext,
-  operation: 'sampleCountsByGroup',
-  isEmpty: sampleCounts => sampleCounts.length === 0,
+const costFormat = { kind: 'currency', currency: 'USD' } as const;
+const { defineView, defineDetailView } = createDataHooks(
+  operations.createDataClient()
+);
+const servicesView = defineView({
+  dataContext: costDataContext,
+  operation: 'costsByService',
+  isEmpty: rows => rows.length === 0,
   emptyFallback: {
-    title: 'No matching groups',
-    description: 'Choose another group or select All groups.',
+    title: 'No service costs',
+    description: 'No allocations are available for this period.',
   },
 });
-const sampleCounts = sampleCountsView.dataset({
-  name: 'Sample counts',
+const serviceCosts = servicesView.dataset({
+  name: 'Service costs',
   select: rows => rows,
-  rowKey: row => row.groupName,
+  rowKey: row => row.serviceName,
   columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    serviceName: { label: 'Service', value: row => row.serviceName },
+    cost: {
+      label: 'Cost',
+      value: row => row.cost,
+      format: costFormat,
+    },
   },
-  evidence: {
-    id: 'counts-by-group',
-    glossaryIds: ['sampleCount'],
-  },
+  evidence: { id: 'costs-by-service', glossaryIds: ['allocatedCost'] },
 });
-const sampleTotalView = defineView({
-  dataContext: sampleDataContext,
-  operation: 'sampleTotal',
+const totalView = defineView({
+  dataContext: costDataContext,
+  operation: 'totalCost',
   isEmpty: total => total === null,
-  emptyFallback: {
-    title: 'No total for this selection',
-    description: 'Choose a matching group to inspect its recorded samples.',
-  },
+  emptyFallback: { title: 'No total available' },
 });
-const totalSamples = sampleTotalView.metric(
+const totalCost = totalView.metric(
   {
-    id: 'total-samples',
-    glossaryId: 'sampleCount',
-    label: 'Total samples',
-    format: { kind: 'count', compact: true },
+    id: 'total-cost',
+    glossaryId: 'allocatedCost',
+    label: 'Total cost',
+    format: costFormat,
   },
   total => {
-    if (total === null) throw new Error('No measured total in this selection.');
-    return { current: total.sampleCount };
+    if (total === null) throw new Error('No allocated total for this period.');
+    return { current: total.cost };
   }
 );
-const totalContent = sampleTotalView.content(result => (
-  <MetricWidget metric={totalSamples} source={result} />
+const totalContent = totalView.content(result => (
+  <MetricWidget metric={totalCost} source={result} />
 ));
-const groupActions = sampleCounts.actions(
+const customersView = defineDetailView({
+  id: 'service-customers',
+  title: 'Customer costs',
+  operation: 'costsByCustomer',
+  dataContext: costDataContext,
+  parseInput: operations.costsByCustomer.input,
+  describeInput: ({ serviceName }) => `${serviceName} · September 2026 · USD`,
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: {
+    title: 'No customer allocations',
+    description:
+      'No allocations are recorded for this service in September 2026.',
+  },
+});
+const customerCosts = customersView.dataset({
+  name: 'Customer allocations',
+  select: rows => rows,
+  rowKey: row => row.customerName,
+  columns: {
+    customerName: { label: 'Customer', value: row => row.customerName },
+    cost: {
+      label: 'Cost',
+      value: row => row.cost,
+      format: costFormat,
+    },
+  },
+  evidence: { id: 'costs-by-customer', glossaryIds: ['allocatedCost'] },
+});
+const customersDetail = customersView.content(result => (
+  <TableWidget
+    dataset={customerCosts}
+    source={result}
+    title="Cost by customer"
+    pagination={false}
+  />
+));
+const serviceActions = serviceCosts.actions(
   action => ({
-    filter: action.filter({
-      label: 'Filter to group',
-      target: sampleCountsView.filter(),
-      values: row => ({ groupName: row.groupName }),
+    customers: action.detail({
+      label: 'View customers',
+      target: customersView,
+      input: row => ({ serviceName: row.serviceName }),
     }),
   }),
-  { primary: 'filter' }
+  { primary: 'customers' }
 );
-const overviewContent = sampleCountsView.content(result => (
+const overviewContent = servicesView.content(result => (
   <Grid columns={3}>
     <GridItem span={2}>
       <VisualizationWidget
-        dataset={sampleCounts}
+        dataset={serviceCosts}
         source={result}
-        title="Samples by group"
-        actions={groupActions}
+        title="Cost by service"
+        actions={serviceActions}
       >
         {(rows, actions) => (
           <BarChart
-            ariaLabel="Sample counts by group"
-            unit="samples"
+            ariaLabel="Costs by service"
+            unit="USD"
+            formatValue={value => formatMetric(value, costFormat)}
+            horizontalGrid={false}
             items={rows.map(row => ({
               ...row,
-              id: row.groupName,
-              label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
-              value: row.sampleCount,
+              id: row.serviceName,
+              label: `${row.serviceName} · ${formatMetric(row.cost, costFormat)}`,
+              value: row.cost,
             }))}
             itemActions={actions}
           />
@@ -98,21 +138,25 @@ const overviewContent = sampleCountsView.content(result => (
     </GridItem>
     <GridItem>
       <Stack>
-        <DataSection content={totalContent} label="Sample total" />
-        <TableWidget
-          dataset={sampleCounts}
-          source={result}
-          title="Counts by group"
-          pagination={false}
-        />
+        <DataSection content={totalContent} label="Total cost" />
+        <TextContent>
+          <p>
+            Select a service to see which customers contribute to its cost.
+            Inspect any widget to check its data and definition.
+          </p>
+        </TextContent>
       </Stack>
     </GridItem>
   </Grid>
 ));
 export function App() {
   return (
-    <DataApp view={sampleCountsView} summaryViews={[sampleTotalView]}>
-      <DataSection content={overviewContent} label="Sample overview" />
+    <DataApp
+      view={servicesView}
+      summaryViews={[totalView]}
+      details={[customersDetail]}
+    >
+      <DataSection content={overviewContent} label="Cost overview" />
     </DataApp>
   );
 }
