@@ -22,7 +22,7 @@
 .altertable-menu-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--atbl-control-gap);
   padding: var(--atbl-dropdown-item-padding-block)
     var(--atbl-dropdown-item-padding-inline);
   border-radius: var(--atbl-radius-control);
@@ -82,7 +82,6 @@
   font-size: var(--atbl-type-meta-size);
 }
 .altertable-exploration-action-menu {
-  --atbl-focus-outline: none;
   min-width: 180px;
   width: max-content;
 }

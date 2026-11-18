@@ -24,6 +24,7 @@ import diagnosticsHost from '@/tests/public-api/fixtures/diagnostics-host.html';
 import exploration from '@/tests/public-api/fixtures/exploration.html';
 import filterPresentation from '@/tests/public-api/fixtures/filter-presentation.html';
 import filters from '@/tests/public-api/fixtures/filters.html';
+import focusRings from '@/tests/public-api/fixtures/focus-rings.html';
 import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
 import lazySections from '@/tests/public-api/fixtures/lazy-sections.html';
@@ -98,6 +99,7 @@ const server = Bun.serve({
     '/inspection-app': inspectionApp,
     '/declared-app': declaredApp,
     '/controls': controls,
+    '/focus-rings': focusRings,
     '/tooltips': tooltips,
     '/filters': filters,
     '/datetime': datetime,

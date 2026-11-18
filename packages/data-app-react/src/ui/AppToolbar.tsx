@@ -115,21 +115,12 @@ export function AppToolbar({
               }
               onClick={activateRefresh}
             >
-              <AppIcon
-                name="refresh"
-                className="altertable-refresh-idle"
-                size={17}
-              />
-              <AppIcon
-                name="loading"
-                className="altertable-refresh-loading"
-                size={17}
-              />
+              <AppIcon name="refresh" className="altertable-refresh-idle" />
+              <AppIcon name="loading" className="altertable-refresh-loading" />
               {refresh.onCancel && (
                 <AppIcon
                   name="stop"
                   className="altertable-refresh-cancel"
-                  size={17}
                   fill="currentColor"
                   strokeWidth={0}
                 />

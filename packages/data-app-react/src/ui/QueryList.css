@@ -69,17 +69,10 @@
   gap: 2px;
 }
 .altertable-query-action {
-  width: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0;
-  border: 0;
-  background: none;
   color: var(--atbl-muted);
 }
 .altertable-query-action:hover:not(:disabled) {
   color: var(--atbl-text);
-  background: var(--atbl-subtle);
 }
 .altertable-query-list pre {
   margin: 0;
@@ -144,7 +137,7 @@
 /* Optional --atbl-code-keyword overrides syntax color; defaults to local accent. */
 .altertable-sql-keyword {
   color: var(--atbl-code-keyword, var(--atbl-accent));
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
 }
 .altertable-query-unavailable {
   margin: 0;
@@ -165,7 +158,7 @@
 .altertable-query-notebook-header > span {
   color: var(--atbl-muted);
   font-size: var(--atbl-type-label-size);
-  font-weight: 450;
+  font-weight: 400;
 }
 .altertable-query-notebook-header small {
   margin-inline-start: 8px;

@@ -26,7 +26,13 @@ import { QueryList } from './QueryList.tsx';
 import { slug } from './search.ts';
 import { Sheet, type SheetDialogProps } from './Sheet.tsx';
 import { ariaKeyShortcuts, shortcuts, useShortcut } from './shortcuts.ts';
-import { Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs.tsx';
+import {
+  SegmentedTab,
+  SegmentedTabList,
+  Tabs,
+  TabPanels,
+  TabPanel,
+} from './Tabs.tsx';
 import { Tooltip } from './Tooltip.tsx';
 
 export type InspectionRecords = { scope: string; content: ReactNode };
@@ -231,15 +237,15 @@ export function InspectionSheet({
           className="altertable-about-tabs"
         >
           <div className="altertable-about-tabbar">
-            <TabList
+            <SegmentedTabList
               aria-label={
                 typeof heading === 'string' ? heading : 'About the data'
               }
             >
-              {records && <Tab id="records">Records</Tab>}
-              <Tab id="glossary">Glossary</Tab>
-              <Tab id="queries">Queries</Tab>
-            </TabList>
+              {records && <SegmentedTab id="records">Records</SegmentedTab>}
+              <SegmentedTab id="glossary">Glossary</SegmentedTab>
+              <SegmentedTab id="queries">Queries</SegmentedTab>
+            </SegmentedTabList>
           </div>
           <TabPanels>
             {records && (

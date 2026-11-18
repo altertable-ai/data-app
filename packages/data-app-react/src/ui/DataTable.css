@@ -25,13 +25,20 @@
   white-space: nowrap;
   cursor: default;
 }
+/* Outer cells drop their outside padding so text lines up with the heading. */
+.altertable-data-table :is(th, td):first-child {
+  padding-inline-start: 0;
+}
+.altertable-data-table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
 .altertable-data-table thead th {
   color: var(--atbl-muted);
-  font-weight: 650;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-data-table tbody th {
   color: var(--atbl-text);
-  font-weight: 550;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-data-table :is(th, td)[data-type='number'] {
   text-align: end;

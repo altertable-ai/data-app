@@ -1,26 +1,3 @@
-.altertable-widget-view-tabs > .react-aria-Tabs > .react-aria-TabList {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0;
-  gap: 4px;
-  padding: 3px;
-  border: 0;
-  border-radius: var(--atbl-radius-control);
-  background: var(--atbl-subtle);
-}
-.altertable-widget-view-tabs .react-aria-Tab {
-  margin: 0;
-  padding: 6px 11px;
-  border: 0;
-  border-radius: calc(var(--atbl-radius-control) - 2px);
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-}
-.altertable-widget-view-tabs .react-aria-Tab[data-selected] {
-  background: var(--atbl-surface);
-  box-shadow: var(--atbl-shadow-control);
-  color: var(--atbl-text);
-}
 .altertable-widget-view-tabs .react-aria-TabPanels {
   padding-block-start: var(--atbl-space-md);
 }

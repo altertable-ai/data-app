@@ -33,7 +33,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-request-hint-spinner {
-    animation: none;
+    animation: altertable-busy-pulse 1.2s ease-in-out infinite alternate;
   }
 }
 

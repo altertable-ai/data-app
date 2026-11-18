@@ -18,12 +18,12 @@
   animation: altertable-refresh-spin 900ms linear infinite;
 }
 .altertable-refresh-control[data-refreshing]
-  .altertable-button:has(.altertable-refresh-cancel):hover
+  .altertable-button:has(.altertable-refresh-cancel):is(:hover, :focus-visible)
   .altertable-refresh-loading {
   display: none;
 }
 .altertable-refresh-control[data-refreshing]
-  .altertable-button:hover
+  .altertable-button:is(:hover, :focus-visible)
   .altertable-refresh-cancel {
   display: block;
 }
@@ -44,11 +44,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-refresh-control[data-refreshing] .altertable-refresh-loading {
-    animation: altertable-refresh-pulse 1.2s ease-in-out infinite alternate;
-  }
-}
-@keyframes altertable-refresh-pulse {
-  to {
-    opacity: 0.35;
+    animation: altertable-busy-pulse 1.2s ease-in-out infinite alternate;
   }
 }

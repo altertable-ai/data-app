@@ -29,20 +29,24 @@
   min-height: var(--atbl-control-height);
   padding: 0;
 }
+/* Primary is the accent; its open and selected states stay on the accent. */
 .altertable-button[data-variant='primary'] {
-  border-color: var(--atbl-text);
-  background: var(--atbl-text);
-  color: var(--atbl-background);
+  border-color: var(--atbl-accent);
+  background: var(--atbl-accent);
+  color: var(--atbl-on-accent);
   --atbl-control-hover-surface: color-mix(
     in srgb,
-    var(--atbl-text) 92%,
-    var(--atbl-background)
+    var(--atbl-accent) 92%,
+    var(--atbl-on-accent)
   );
   --atbl-control-pressed-surface: color-mix(
     in srgb,
-    var(--atbl-text) 84%,
-    var(--atbl-background)
+    var(--atbl-accent) 84%,
+    var(--atbl-on-accent)
   );
+  --atbl-control-open-surface: var(--atbl-control-pressed-surface);
+  --atbl-control-selected-surface: var(--atbl-control-pressed-surface);
+  --atbl-control-selected-text: var(--atbl-on-accent);
 }
 .altertable-button[data-variant='outline'] {
   box-shadow: none;
@@ -51,6 +55,8 @@
   box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-button[data-variant='ghost'] {
+  /* Without a border, an open ghost trigger needs a fill to read as open. */
+  --atbl-control-open-surface: var(--atbl-subtle);
   border-color: transparent;
   background: transparent;
   box-shadow: none;

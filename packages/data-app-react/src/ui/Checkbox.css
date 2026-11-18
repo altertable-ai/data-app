@@ -2,7 +2,7 @@
   position: relative;
   display: inline-flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: var(--atbl-control-gap);
   border-radius: var(--atbl-radius-control);
   font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
     var(--atbl-font);

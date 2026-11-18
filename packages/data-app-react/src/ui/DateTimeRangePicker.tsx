@@ -243,8 +243,15 @@ export function DateTimeRangePicker({
         popup.current?.contains(target)
       )
         return;
-      // Calendar month/year selects render their own nested overlay in a portal.
-      if (mode === 'calendar' && target.closest('.altertable-popover-surface'))
+      // Calendar month/year selects render their own overlay in a portal, with
+      // an underlay over the page: while one is open, an outside press only
+      // dismisses that nested overlay.
+      if (
+        mode === 'calendar' &&
+        [...document.querySelectorAll('.altertable-popover-surface')].some(
+          surface => !surface.contains(popup.current)
+        )
+      )
         return;
       dispatch({ type: 'close' });
       pending.current = null;
@@ -448,6 +455,7 @@ export function DateTimeRangePicker({
         </span>
         <input
           ref={input}
+          data-atbl-control="text"
           onPointerDown={() => {
             pending.current = null;
           }}
@@ -584,6 +592,7 @@ export function DateTimeRangePicker({
           <button
             type="button"
             className="altertable-datetime-reset"
+            data-atbl-internal-surface="control"
             data-atbl-focus="ring"
             data-atbl-control="action"
             aria-label="Reset date range"
@@ -691,6 +700,7 @@ export function DateTimeRangePicker({
                   const isComparison = index === comparisonIndex;
                   return (
                     <button
+                      data-atbl-internal-surface="option"
                       data-atbl-focus="inset"
                       data-atbl-control="action"
                       type="button"
@@ -704,6 +714,11 @@ export function DateTimeRangePicker({
                           : !!preset && preset === selected
                       }
                       disabled={isComparison && !comparison?.range}
+                      data-selected={
+                        (isComparison
+                          ? comparison?.enabled
+                          : !!preset && preset === selected) || undefined
+                      }
                       data-highlighted={highlight === index || undefined}
                       data-divider={
                         index === calendarIndex ||
@@ -760,7 +775,7 @@ export function DateTimeRangePicker({
                       >
                         {(isComparison && comparison?.enabled) ||
                         (preset && preset === selected) ? (
-                          <AppIcon name="check" size={14} />
+                          <AppIcon name="check" />
                         ) : null}
                       </span>
                     </button>
@@ -796,6 +811,7 @@ export function DateTimeRangePicker({
                           })
                           .map(example => (
                             <button
+                              data-atbl-internal-surface="control"
                               data-atbl-focus="inset"
                               data-atbl-control="action"
                               type="button"

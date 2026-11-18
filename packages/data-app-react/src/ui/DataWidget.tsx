@@ -128,7 +128,7 @@ function DataWidgetContent({
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
       footer={emptyFallback ? undefined : footer}
-      loadingLabel={busy ? 'Loading widget' : undefined}
+      loadingLabel={busy ? 'Loading' : undefined}
       status={status}
     >
       <WidgetBoundary

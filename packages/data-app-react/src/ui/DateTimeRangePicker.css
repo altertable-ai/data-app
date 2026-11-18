@@ -8,8 +8,8 @@
   box-sizing: border-box;
   min-height: var(--atbl-control-height);
   padding: var(--atbl-control-padding-block) var(--atbl-control-padding-inline);
-  font: var(--atbl-type-label-weight) var(--atbl-type-label-size) /
-    var(--atbl-type-label-leading) var(--atbl-font);
+  font: var(--atbl-type-label-size) / var(--atbl-type-label-leading)
+    var(--atbl-font);
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
   background: var(--atbl-surface);
@@ -36,18 +36,9 @@
   border-radius: var(--atbl-radius-control);
   background: transparent;
   color: var(--atbl-muted);
-  cursor: pointer;
 }
 .altertable-datetime-reset:hover {
-  background: var(--atbl-subtle);
   color: var(--atbl-text);
-}
-.altertable-datetime-input[data-disabled] {
-  opacity: 0.5;
-}
-.altertable-datetime-input[data-invalid] {
-  border-color: var(--atbl-danger);
-  background: color-mix(in srgb, var(--atbl-danger) 9%, var(--atbl-surface));
 }
 .altertable-datetime-shortcut {
   display: inline-flex;
@@ -100,7 +91,6 @@
   background: transparent;
   text-align: left;
   font: inherit;
-  cursor: pointer;
 }
 .altertable-datetime-presets button[data-divider] {
   position: relative;
@@ -121,7 +111,13 @@
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
 }
+/* Keyboard highlight is virtual focus; it paints like hover, also when selected. */
 .altertable-datetime-presets button[data-highlighted] {
+  --atbl-control-selected-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 4%,
+    var(--atbl-subtle)
+  );
   background: var(--atbl-subtle);
 }
 .altertable-datetime-presets
@@ -154,7 +150,7 @@
 .altertable-datetime-help h4 {
   margin: 0.75rem 0 0.25rem;
   color: var(--atbl-muted);
-  font-weight: 500;
+  font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-datetime-help section div {
   display: flex;
@@ -166,10 +162,14 @@
   font-size: var(--atbl-type-meta-size);
   padding: 0.25rem;
   color: inherit;
+  --atbl-control-hover-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 6%,
+    var(--atbl-subtle)
+  );
   background: var(--atbl-subtle);
   border: 0;
   border-radius: var(--atbl-radius-control);
-  cursor: pointer;
 }
 .altertable-datetime-calendar-panel {
   padding: 0.75rem;
@@ -224,7 +224,7 @@
 .altertable-datetime-calendar th {
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
-  font-weight: 500;
+  font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-datetime-calendar td {
   text-align: center;
@@ -234,23 +234,33 @@
   display: grid;
   place-items: center;
   min-height: 40px;
-  cursor: pointer;
+  cursor: var(--atbl-cursor-action);
   border-radius: var(--atbl-radius-control);
   font-variant-numeric: tabular-nums;
+  transition: background-color var(--atbl-duration-fast)
+    var(--atbl-ease-standard);
+}
+.altertable-datetime-calendar
+  .react-aria-CalendarCell:is([data-hovered], [data-pressed]):not(
+    [data-selected],
+    [data-disabled],
+    [data-unavailable]
+  ) {
+  background: var(--atbl-subtle);
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-selected] {
-  background: var(--atbl-accent-subtle, var(--atbl-subtle));
-  font-weight: 650;
+  background: var(--atbl-subtle);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-selection-start],
 .altertable-datetime-calendar .react-aria-CalendarCell[data-selection-end] {
-  background: var(--atbl-text);
-  color: var(--atbl-surface);
+  background: var(--atbl-accent);
+  color: var(--atbl-on-accent);
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-disabled],
 .altertable-datetime-calendar .react-aria-CalendarCell[data-unavailable] {
   color: var(--atbl-muted);
-  cursor: default;
+  cursor: var(--atbl-cursor-disabled);
   text-decoration: line-through;
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-outside-month] {
@@ -269,4 +279,9 @@
 ) {
   max-height: var(--available-height, calc(100dvh - 2rem));
   overflow-y: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-datetime-calendar .react-aria-CalendarCell {
+    transition: none;
+  }
 }

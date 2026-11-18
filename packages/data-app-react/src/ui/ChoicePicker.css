@@ -84,7 +84,7 @@
 .altertable-choice-picker-popover .react-aria-ListBoxItem {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--atbl-control-gap);
   padding: var(--atbl-dropdown-item-padding-block)
     var(--atbl-dropdown-item-padding-inline);
   border-radius: var(--atbl-radius-control);

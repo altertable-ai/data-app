@@ -15,7 +15,7 @@ export function SelectionMark({
       data-multiple={multiple || undefined}
       aria-hidden="true"
     >
-      {selected && !multiple && <AppIcon name="check" size={16} />}
+      {selected && !multiple && <AppIcon name="check" />}
     </span>
   );
 }

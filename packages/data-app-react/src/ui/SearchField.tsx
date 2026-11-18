@@ -198,6 +198,7 @@ export function SearchField({
                 <Button
                   variant="ghost"
                   size="icon-compact"
+                  data-atbl-focus="inset"
                   aria-label={`Clear ${label.toLowerCase()}`}
                   onClick={() => {
                     onChange(resetValue);

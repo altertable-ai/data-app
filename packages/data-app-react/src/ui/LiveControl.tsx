@@ -4,7 +4,6 @@ import {
   Button as AriaButton,
   ListBox,
   ListBoxItem,
-  Popover,
   Select,
   SelectValue,
 } from 'react-aria-components';
@@ -12,6 +11,7 @@ import {
 import { classNames } from './classNames.ts';
 import { IconButton } from './IconButton.tsx';
 import { AppIcon } from './icons.ts';
+import { PopoverSurface } from './PopoverSurface.tsx';
 
 export type LiveIntervalSeconds = 30 | 60 | 300;
 
@@ -79,7 +79,7 @@ export function LiveControl({
           <SelectValue className="altertable-visually-hidden" />
           <AppIcon name="disclosure" size={14} />
         </AriaButton>
-        <Popover
+        <PopoverSurface
           placement="bottom end"
           className="altertable-live-frequency-popover"
         >
@@ -94,11 +94,11 @@ export function LiveControl({
                 textValue={interval.label}
               >
                 {interval.label}
-                <AppIcon name="check" size={15} />
+                <AppIcon name="check" />
               </ListBoxItem>
             ))}
           </ListBox>
-        </Popover>
+        </PopoverSurface>
       </Select>
     </div>
   );

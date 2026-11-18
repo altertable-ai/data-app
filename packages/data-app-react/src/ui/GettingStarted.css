@@ -1,7 +1,7 @@
 .starter-eyebrow {
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
-  font-weight: 700;
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -113,12 +113,12 @@
   margin-bottom: 22px;
   color: var(--atbl-accent);
   font-size: var(--atbl-type-meta-size);
-  font-weight: 700;
+  font-weight: var(--atbl-type-emphasis-weight);
   content: '0' counter(starter-step);
 }
 .starter-steps strong {
   font-size: var(--atbl-type-body-size);
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
 }
 .starter-steps p {
   margin: 8px 0 0;

@@ -98,7 +98,7 @@ AppFilter.read: (params: URLSearchParams) => Value
 AppFilter.write: (value: Value) => Record<string, string | null>
 AppFilter.valid: (value: Value) => boolean
 AppFilter.same: (left: Value, right: Value) => boolean
-AppIcon (function, @altertable/data-app-react/ui): (options: AppIconProps): FunctionComponentElement<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>
+AppIcon (function, @altertable/data-app-react/ui): (options: AppIconProps): FunctionComponentElement<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>> — Defaults to the shared control icon size so icons follow density tokens.
 AppIcon.options.name: 'annotate' | 'breakdown' | 'calendar' | 'cancel' | 'check' | 'clearFilters' | 'clock' | 'close' | 'copy' | 'darkTheme' | 'disclosure' | 'displayOptions' | 'error' | 'explore' | ... 22 more ... | 'wrap'
 AppIcon.options.size?: string | number
 AppIcon.options.…: plus props inherited from lucide-react, React

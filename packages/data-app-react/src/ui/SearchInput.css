@@ -41,6 +41,37 @@
 .altertable-search-input-wrap > svg {
   flex: none;
 }
+/* An end action nests in the field: the same small inset on its three outer
+   sides, concentric corners, and an inset ring that never meets the border. */
+.altertable-search-input-wrap {
+  --atbl-internal-field-action-inset: 3px;
+  --atbl-internal-field-height: var(--atbl-control-height);
+}
+.altertable-search-input-wrap[data-size='compact'] {
+  --atbl-internal-field-height: var(--atbl-control-compact-height);
+}
+.altertable-search-input-wrap > .altertable-button {
+  --atbl-internal-field-action-size: calc(
+    var(--atbl-internal-field-height) - 2px - 2 *
+      var(--atbl-internal-field-action-inset)
+  );
+  width: var(--atbl-internal-field-action-size);
+  min-width: var(--atbl-internal-field-action-size);
+  height: var(--atbl-internal-field-action-size);
+  min-height: var(--atbl-internal-field-action-size);
+  margin-inline-end: calc(
+    var(--atbl-internal-field-action-inset) - var(--atbl-control-padding-inline)
+  );
+  border-radius: calc(
+    var(--atbl-radius-control) - 1px - var(--atbl-internal-field-action-inset)
+  );
+}
+.altertable-search-input-wrap[data-size='compact'] > .altertable-button {
+  margin-inline-end: calc(
+    var(--atbl-internal-field-action-inset) -
+      var(--atbl-control-padding-inline) * 5 / 6
+  );
+}
 .altertable-search-input-spinner {
   animation: altertable-search-input-spin 900ms linear infinite;
 }
@@ -51,6 +82,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-search-input-spinner {
-    animation: none;
+    animation: altertable-busy-pulse 1.2s ease-in-out infinite alternate;
   }
 }
