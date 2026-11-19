@@ -338,3 +338,53 @@ test('explicit status is immediate and inspection uses the running request clock
   await expect.poll(() => inspectionStatus.isVisible()).toBe(true);
   expect(await withinBusyRegion(inspectionStatus)).toBe(false);
 });
+
+test('primary refresh failures appear while a summary request is still pending', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await page.goto('/loading?widgets&summary');
+  const primary = page.getByRole('status', {
+    name: 'primary count',
+    exact: true,
+  });
+  const secondary = page.getByRole('status', {
+    name: 'secondary count',
+    exact: true,
+  });
+  const failPrimary = page.getByRole('button', {
+    name: 'Fail primary',
+    exact: true,
+  });
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Resolve secondary', exact: true })
+    .click();
+  await page.clock.runFor(50);
+  await expect.poll(() => primary.textContent()).toBe('primary: 7');
+  await expect.poll(() => secondary.textContent()).toBe('secondary: 7');
+
+  await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
+  await page.clock.runFor(50);
+  await failPrimary.click();
+  await page.clock.runFor(50);
+  await expect.poll(() => withinBusyRegion(primary)).toBe(false);
+  expect(await withinBusyRegion(secondary)).toBe(true);
+  await page.clock.runFor(3000);
+  const failure = page.getByRole('alert');
+  await expect.poll(() => failure.isVisible()).toBe(true);
+  expect(await failure.textContent()).toContain('Couldn’t refresh');
+  expect(await primary.textContent()).toBe('primary: 7');
+  expect(await withinBusyRegion(secondary)).toBe(true);
+
+  // Retrying the primary request still hides the previous failure immediately.
+  await failure.getByRole('button', { name: 'Try again', exact: true }).click();
+  await page.clock.runFor(50);
+  await expect.poll(() => withinBusyRegion(primary)).toBe(true);
+  expect(await failure.count()).toBe(0);
+  await page.clock.runFor(3000);
+  expect(await failure.count()).toBe(0);
+});

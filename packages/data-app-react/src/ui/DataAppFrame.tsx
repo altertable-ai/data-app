@@ -47,6 +47,8 @@ export type DataAppBaseProps = {
 };
 
 type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
+  /** Activity of the displayed view; toolbar activity can include summary views. */
+  viewRefreshing: boolean;
   queries?: DisclosedQuery[];
   cancel?: () => unknown;
   searchControls?: ReactNode;
@@ -241,7 +243,7 @@ export function DataAppFrame<Data, Input>(
           {request && (
             <DataViewToast
               view={request.view}
-              refreshing={request.refreshing}
+              refreshing={request.viewRefreshing}
               onRetry={() => void request.refetch()}
             />
           )}
