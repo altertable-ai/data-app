@@ -8,6 +8,7 @@ import { useDelayedLoading } from './useDelayedLoading.ts';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;
+  refreshing?: boolean;
   loadingFallback: ReactNode;
   emptyFallback: ReactNode;
   error: (error: Error) => ReactNode;
@@ -20,6 +21,7 @@ export type DataBoundaryProps<T, Input = unknown> = {
  * Feedback ownership is supplied by the containing section. */
 export function DataBoundary<T, Input>({
   view,
+  refreshing = view.kind === 'updating',
   loadingFallback,
   emptyFallback,
   error,
@@ -29,16 +31,19 @@ export function DataBoundary<T, Input>({
   className,
   ...props
 }: DataBoundaryProps<T, Input>) {
-  const updating = view.kind === 'updating';
+  const updating =
+    refreshing &&
+    (view.kind === 'ready' ||
+      view.kind === 'updating' ||
+      view.kind === 'stale-error');
   const showUpdating = useDelayedLoading(updating);
-  const hasStaleError = view.kind === 'stale-error';
 
   return (
     <div
       {...props}
       className={classNames('altertable-data-boundary', className)}
     >
-      {notice === 'inline' && hasStaleError && (
+      {notice === 'inline' && view.kind === 'stale-error' && !refreshing && (
         <div
           className="altertable-data-boundary-notice"
           data-state={view.kind}
@@ -55,16 +60,10 @@ export function DataBoundary<T, Input>({
           )}
         </div>
       )}
-      <WidgetStatusContext
-        value={
-          notice === 'inline'
-            ? { kind: showUpdating ? 'updating' : 'idle' }
-            : undefined
-        }
-      >
+      <WidgetStatusContext value={{ updating, showUpdating }}>
         <div
           className="altertable-data-boundary-content"
-          aria-busy={view.kind === 'loading' || updating}
+          aria-busy={view.kind === 'loading'}
         >
           {view.kind === 'loading'
             ? loadingFallback

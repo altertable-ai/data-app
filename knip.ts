@@ -41,6 +41,7 @@ export default {
         // Spawned by the shared watcher owner rather than imported.
         'scripts/dev-watch.ts',
         'dev/server.ts',
+        'dev/loading-demo-server.ts',
         'dev/playground.tsx',
         'dev/fixtures/view-result.types.ts',
         'tests/**/*.types.{ts,tsx}',

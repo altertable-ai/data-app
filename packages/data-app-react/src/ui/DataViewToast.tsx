@@ -1,10 +1,12 @@
 import { type DataView } from '@altertable/data-app/internal';
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { Toast } from './Toast.tsx';
+import { useDelayedLoading } from './useDelayedLoading.ts';
 
 export type DataViewToastProps<Data, Input> = {
   view: DataView<Data, Input>;
+  refreshing?: boolean;
   message?: ReactNode;
   notice?: ReactNode;
   onRetry?: () => void;
@@ -13,28 +15,15 @@ export type DataViewToastProps<Data, Input> = {
 /** Page-level failures and notices. Routine activity belongs to the toolbar. */
 export function DataViewToast<Data, Input>({
   view,
+  refreshing,
   message,
   notice,
   onRetry,
 }: DataViewToastProps<Data, Input>) {
-  const [delay, setDelay] = useState({ kind: view.kind, elapsed: false });
-  if (delay.kind !== view.kind) setDelay({ kind: view.kind, elapsed: false });
-
-  useEffect(() => {
-    if (view.kind !== 'stale-error') return;
-    const kind = view.kind;
-    const timer = window.setTimeout(
-      () => setDelay({ kind, elapsed: true }),
-      3_000
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [view.kind]);
-
-  const showStaleError =
-    view.kind === 'stale-error' &&
-    delay.kind === 'stale-error' &&
-    delay.elapsed;
+  const showStaleError = useDelayedLoading(
+    view.kind === 'stale-error' && !refreshing,
+    3000
+  );
 
   if (!showStaleError && !notice) return null;
   const failed = showStaleError;

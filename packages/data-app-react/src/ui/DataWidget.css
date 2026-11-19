@@ -85,6 +85,15 @@
 .altertable-data-widget-body[data-padding='flush'] {
   padding: 0;
 }
+.altertable-data-widget-body[data-updating],
+.altertable-data-widget-body[data-updating]
+  :is(
+    .altertable-metric-value,
+    .altertable-text-content,
+    .altertable-data-table tbody th
+  ) {
+  color: color-mix(in srgb, var(--atbl-text) 20%, var(--atbl-muted));
+}
 .altertable-data-widget-footer {
   padding: var(--atbl-space-md)
     var(

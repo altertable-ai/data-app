@@ -48,8 +48,6 @@ export type DataAppBaseProps = {
 
 type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
-  /** Actual request activity, including retries with retained data. */
-  refreshing?: boolean;
   cancel?: () => unknown;
   searchControls?: ReactNode;
   filterControls?: ReactNode;
@@ -243,6 +241,7 @@ export function DataAppFrame<Data, Input>(
           {request && (
             <DataViewToast
               view={request.view}
+              refreshing={request.refreshing}
               onRetry={() => void request.refetch()}
             />
           )}

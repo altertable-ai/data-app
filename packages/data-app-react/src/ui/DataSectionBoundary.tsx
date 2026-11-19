@@ -60,6 +60,8 @@ function errorPresentation(cause: Error) {
 
 export type SectionResult<Data, Input> = {
   view: DataView<Data, Input>;
+  /** Actual request activity, including retries with retained data. */
+  refreshing?: boolean;
   refetch: () => unknown;
 };
 
@@ -103,6 +105,7 @@ export function DataSectionBoundary<Data, Input>({
     <DataBoundary
       {...props}
       view={result.view}
+      refreshing={result.refreshing}
       role={label ? 'region' : undefined}
       aria-label={label}
       notice={notice}

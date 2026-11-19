@@ -119,17 +119,24 @@ function DataWidgetContent({
 }) {
   const titleId = useId();
   const sectionStatus = useContext(WidgetStatusContext);
-  const status = suppliedStatus ?? sectionStatus;
+  const status =
+    suppliedStatus ??
+    (sectionStatus && {
+      kind: sectionStatus.showUpdating ? 'updating' : 'idle',
+    });
   const inspectionVisual = useContext(InspectionVisual);
   const Heading = `h${headingLevel}` as ElementType;
-  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const loading = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const updating =
+    !loading &&
+    (suppliedStatus?.kind === 'updating' || sectionStatus?.updating === true);
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
       footer={emptyFallback ? undefined : footer}
-      loadingLabel={busy ? 'Loading' : undefined}
-      status={status}
+      loadingLabel={loading ? 'Loading' : undefined}
+      updating={updating}
     >
       <WidgetBoundary
         name={typeof title === 'string' ? title : 'Widget'}
@@ -141,7 +148,7 @@ function DataWidgetContent({
   );
   const explicitAnnotationId = annotationId ?? props.id;
   const help =
-    evidence && !busy ? (
+    evidence && !loading ? (
       <AboutData
         id={evidence.id}
         references={{
@@ -220,13 +227,13 @@ function DataWidgetContent({
 function WidgetContent({
   bodyPadding,
   footer,
-  status,
+  updating,
   loadingLabel,
   children,
 }: {
   bodyPadding: 'inset' | 'flush';
   footer?: ReactNode;
-  status?: WidgetStatus;
+  updating: boolean;
   loadingLabel?: string;
   children: ReactNode;
 }) {
@@ -235,7 +242,8 @@ function WidgetContent({
       <div
         className="altertable-data-widget-body"
         data-padding={bodyPadding}
-        aria-busy={status?.kind === 'updating' || undefined}
+        aria-busy={updating || undefined}
+        data-updating={updating || undefined}
       >
         {children}
         {loadingLabel && <LoadingStatus label={loadingLabel} />}

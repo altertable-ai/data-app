@@ -6,10 +6,12 @@ import {
   DataSection,
   TextWidget,
   TableWidget,
+  MetricWidget,
+  VisualizationWidget,
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
-import { ShimmerText } from '@altertable/data-app-react/ui';
+import { DataWidget, ShimmerText } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -19,8 +21,11 @@ import {
 
 type Pending = {
   resolve: (result: QueryResult) => void;
+  reject: (error: Error) => void;
 };
 const pending = new Map<string, Pending>();
+const params = new URLSearchParams(location.search);
+const fullWidgets = params.has('widgets');
 
 const search = searchFilter({ key: 'search', label: 'Search' });
 
@@ -75,7 +80,7 @@ const client = createDataClient({
     queryAll(statement, { signal }) {
       const key = pendingKey(statement);
       return new Promise((resolve, reject) => {
-        pending.set(key, { resolve });
+        pending.set(key, { resolve, reject });
         signal.addEventListener(
           'abort',
           () => {
@@ -88,13 +93,14 @@ const client = createDataClient({
     },
   },
 });
-const context = createDataContext({ count: 'count' })({
-  description: 'Counts',
-  glossary: {},
-});
-const secondaryContext = createDataContext({ count: 'count', total: 'total' })({
+const context = createDataContext({ count: 'count', total: 'total' })({
   description: 'Counts and totals',
   glossary: {
+    count: {
+      term: 'Count',
+      definition: 'Measured count.',
+      queryNames: ['count'],
+    },
     total: { term: 'Total', definition: 'All rows.', queryNames: ['total'] },
   },
 });
@@ -102,7 +108,7 @@ const { defineView } = createDataHooks(client);
 const primaryView = defineView({ operation: 'primary', dataContext: context });
 const secondaryView = defineView({
   operation: 'secondary',
-  dataContext: secondaryContext,
+  dataContext: context,
 });
 const primaryDataset = primaryView.dataset({
   name: 'Primary counts',
@@ -111,15 +117,37 @@ const primaryDataset = primaryView.dataset({
   columns: { count: { value: row => row } },
   evidence: { id: 'primary', queryNames: ['count'] },
 });
+const primaryMetric = primaryView.metric(
+  {
+    id: 'primary-metric',
+    glossaryId: 'count',
+    label: 'Primary metric',
+    format: { kind: 'count' },
+  },
+  current => ({ current })
+);
 const primaryContent = primaryView.content(source => (
-  <TextWidget title="Primary results" dataset={primaryDataset} source={source}>
-    {rows => <output aria-label="primary count">primary: {rows[0]}</output>}
-  </TextWidget>
+  <>
+    <TextWidget
+      title="Primary results"
+      dataset={primaryDataset}
+      source={source}
+    >
+      {rows => <output aria-label="primary count">primary: {rows[0]}</output>}
+    </TextWidget>
+    {fullWidgets && (
+      <MetricWidget
+        metric={primaryMetric}
+        source={source}
+        description="Measured primary count"
+      />
+    )}
+  </>
 ));
 const secondaryDataset = secondaryView.dataset({
   name: 'Secondary counts',
-  select: data => [data.count],
-  rowKey: () => 'count',
+  select: data => (fullWidgets ? [data.count, data.count + 1] : [data.count]),
+  rowKey: row => String(row),
   columns: { count: { value: row => row } },
   evidence: { id: 'secondary', queryNames: ['count'] },
 });
@@ -136,6 +164,8 @@ const secondaryContent = secondaryView.content(source => (
       title="Secondary results"
       dataset={secondaryDataset}
       source={source}
+      description={fullWidgets ? 'Measured secondary count' : undefined}
+      footer={fullWidgets ? 'Secondary coverage' : undefined}
     >
       {rows => (
         <output aria-label="secondary count">secondary: {rows[0]}</output>
@@ -145,7 +175,7 @@ const secondaryContent = secondaryView.content(source => (
       title="Secondary table"
       dataset={secondaryDataset}
       source={source}
-      limit={1}
+      {...(fullWidgets ? { pagination: { pageSize: 1 } } : { limit: 1 })}
       showCount={false}
     />
     <TextWidget
@@ -155,6 +185,15 @@ const secondaryContent = secondaryView.content(source => (
     >
       {rows => <output aria-label="secondary total">total: {rows[0]}</output>}
     </TextWidget>
+    {fullWidgets && (
+      <VisualizationWidget
+        title="Secondary chart"
+        dataset={secondaryDataset}
+        source={source}
+      >
+        {rows => <output aria-label="secondary chart value">{rows[0]}</output>}
+      </VisualizationWidget>
+    )}
   </>
 ));
 const dataApp = defineDataApp({
@@ -165,25 +204,49 @@ const dataApp = defineDataApp({
 });
 function Controls({ name, queries }: { name: string; queries: string[] }) {
   return (
-    <button
-      onClick={() => {
-        for (const query of queries)
-          pending
-            .get(`${name}:${query}`)
-            ?.resolve(
-              query === 'total'
-                ? { columns: [{ name: 'total' }], rows: [[9]] }
-                : { columns: [{ name: 'count' }], rows: [[7]] }
-            );
-      }}
-    >
-      Resolve {name}
-    </button>
+    <>
+      <button
+        onClick={() => {
+          for (const query of queries)
+            pending
+              .get(`${name}:${query}`)
+              ?.resolve(
+                query === 'total'
+                  ? { columns: [{ name: 'total' }], rows: [[9]] }
+                  : { columns: [{ name: 'count' }], rows: [[7]] }
+              );
+        }}
+      >
+        Resolve {name}
+      </button>
+      {fullWidgets && (
+        <button
+          onClick={() => {
+            for (const query of queries)
+              pending
+                .get(`${name}:${query}`)
+                ?.reject(new Error('Source unavailable'));
+          }}
+        >
+          Fail {name}
+        </button>
+      )}
+    </>
   );
 }
 function App() {
   return (
-    <DataApp view={primaryView} datasets={[primaryDataset]} story={() => []}>
+    <DataApp
+      view={primaryView}
+      summaryViews={params.has('summary') ? [secondaryView] : []}
+      datasets={[primaryDataset]}
+      story={() => []}
+    >
+      {params.has('explicit-status') && (
+        <DataWidget title="Manual refresh" status={{ kind: 'updating' }}>
+          Manual data
+        </DataWidget>
+      )}
       <output aria-label="Shimmer preview">
         <ShimmerText>Preparing results</ShimmerText>
       </output>

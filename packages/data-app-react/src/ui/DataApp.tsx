@@ -285,7 +285,10 @@ function PrimaryDataApp<
           value={{
             primaryView: view,
             clientFilters,
-            results: new Map(results).set(view, result),
+            results: new Map(results).set(view, {
+              ...result,
+              refreshing: primary.refreshing,
+            }),
           }}
         >
           <DetailRoutes details={details}>
