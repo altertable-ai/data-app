@@ -11,10 +11,14 @@ export type WidgetStatus =
   | { kind: 'updating'; message?: string }
   | { kind: 'error'; message?: string; onRetry?: () => void };
 
-/** Independent sections share their activity through the existing widget header slots. */
-export const WidgetStatusContext = createContext<WidgetStatus | undefined>(
-  undefined
-);
+/** All widgets in a section share the request's activity and elapsed delay. */
+export const WidgetStatusContext = createContext<
+  | {
+      updating: boolean;
+      showUpdating: boolean;
+    }
+  | undefined
+>(undefined);
 
 /** Fixed-height feedback keeps data in place; the retry belongs beside its failure message. */
 export function RequestHint({

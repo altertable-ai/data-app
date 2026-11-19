@@ -75,8 +75,7 @@ export type ClientFilters = {
   useControls: () => FilterControls;
 };
 
-/** The views `<DataApp>` runs, so their sections reuse its results instead of requesting again.
- * The primary view's result aggregates the app's requests. */
+/** The views `<DataApp>` runs, so their sections reuse each view's own result. */
 export const AppViewResultsContext = createContext<{
   primaryView: DeclaredView<unknown, unknown>;
   clientFilters: ClientFilters;
