@@ -1,7 +1,6 @@
 import { choiceFilter } from '@altertable/data-app/contract';
 
-// Declare each filter once in this browser-safe module: operations read them on
-// the server, and the browser client renders their controls.
+// Share these browser-safe declarations between operations and their controls.
 const groupName = choiceFilter({
   key: 'group',
   label: 'Group',
