@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 
 export const dataApp = defineDataApp({
-  // Demo identity and scope; replace these for the app being built.
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Infrastructure costs',
   description: 'USD · Fictional weekly allocations',
   scope: { organization: 'demo', environment: 'sample' },
@@ -14,8 +14,8 @@ export const dataApp = defineDataApp({
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -66,8 +66,8 @@ ORDER BY cost_cents DESC, member_name LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -115,8 +115,8 @@ FROM selected_costs HAVING COUNT(*) > 0`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -166,8 +166,8 @@ GROUP BY customer_name ORDER BY cost_cents DESC, customer_name LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -194,7 +194,7 @@ WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, we
     ('2026-08', 'Logging', 'Beacon', 0, 0, 0, 0),
     ('2026-08', 'Logging', 'Cedar', 0, 0, 0, 0)
 ),
--- Demo batch dates correspond to the four week_N fixture columns.
+-- The four fictional batch dates match the week_1 through week_4 columns.
 weeks(day) AS (VALUES ('01'), ('08'), ('15'), ('22'))
 SELECT $month || '-' || day AS period_start,
   CAST(SUM(CASE day WHEN '01' THEN week_1 WHEN '08' THEN week_2
@@ -216,8 +216,8 @@ GROUP BY day ORDER BY day LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),

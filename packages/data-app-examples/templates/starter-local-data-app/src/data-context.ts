@@ -9,7 +9,7 @@ const queryNames = {
   ...operations.costTrend.queryNames,
   ...operations.customerServiceMix.queryNames,
 };
-// Illustrative definitions and coverage; verify them against the real source.
+// Replace these example definitions and coverage with verified source metadata.
 export const costDataContext = createDataContext(queryNames)({
   description:
     'Fictional weekly customer allocations for August and September 2026. Scope filters apply to every chart and its contributing records.',

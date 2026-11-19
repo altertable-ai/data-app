@@ -20,7 +20,7 @@ import {
 import { formatDateRange } from '@altertable/data-app/format';
 
 export const dataApp = defineDataApp({
-  // Demo identity and scope; replace these for the app being built.
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Infrastructure costs',
   description: 'USD · Fictional weekly allocations',
   scope: { organization: 'demo', environment: 'sample' },
@@ -33,8 +33,8 @@ export const dataApp = defineDataApp({
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -85,8 +85,8 @@ ORDER BY cost_cents DESC, member_name LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -134,8 +134,8 @@ FROM selected_costs HAVING COUNT(*) > 0`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -185,8 +185,8 @@ GROUP BY customer_name ORDER BY cost_cents DESC, customer_name LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -213,7 +213,7 @@ WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, we
     ('2026-08', 'Logging', 'Beacon', 0, 0, 0, 0),
     ('2026-08', 'Logging', 'Cedar', 0, 0, 0, 0)
 ),
--- Demo batch dates correspond to the four week_N fixture columns.
+-- The four fictional batch dates match the week_1 through week_4 columns.
 weeks(day) AS (VALUES ('01'), ('08'), ('15'), ('22'))
 SELECT $month || '-' || day AS period_start,
   CAST(SUM(CASE day WHEN '01' THEN week_1 WHEN '08' THEN week_2
@@ -235,8 +235,8 @@ GROUP BY day ORDER BY day LIMIT $limit`,
       },
       statement: `
 WITH infrastructure_costs(month, service_name, customer_name, week_1, week_2, week_3, week_4) AS (
-  -- Placeholder allocations only. Replace this CTE with verified billing data.
-  -- Each week_N value is a recorded demo allocation batch, in integer cents.
+  -- Fictional allocation batches in integer cents.
+  -- Replace this CTE with verified billing data.
   VALUES
     ('2026-09', 'Compute', 'Atlas', 84000, 126000, 84000, 126000),
     ('2026-09', 'Compute', 'Beacon', 42000, 63000, 42000, 63000),
@@ -281,7 +281,8 @@ ORDER BY customer_name, service_name LIMIT $limit`,
   },
 });
 
-// Demo periods: replace with the billing months available in the source.
+// These months match the fictional SQL rows.
+// Replace them with months covered by the billing source.
 const month = choiceFilter({
   key: 'month',
   label: 'Month',
@@ -291,7 +292,8 @@ const month = choiceFilter({
     { id: '2026-08', label: 'August 2026' },
   ],
 });
-// Demo customers: replace with source-backed customer choices.
+// These customers match the fictional SQL rows.
+// Replace them with customers from the billing source.
 const customer = choiceFilter({
   key: 'customer',
   label: 'Customer',
@@ -398,7 +400,8 @@ export const operations = dataApp.defineOperations({
     policy: { maxQueryRows: 20, maxDurationMs: 15000 },
     async run({ query }, input) {
       const result = await query('customerServiceMix', queryScope(input));
-      // Demo service columns: adapt this pivot when replacing the billing source.
+      // These service names match the fictional SQL rows and chart series.
+      // Update the pivot and chart series together when changing the services.
       const customers = new Map<
         string,
         {
@@ -447,7 +450,7 @@ const queryNames = {
   ...operations.costTrend.queryNames,
   ...operations.customerServiceMix.queryNames,
 };
-// Illustrative definitions and coverage; verify them against the real source.
+// Replace these example definitions and coverage with verified source metadata.
 const costDataContext = createDataContext(queryNames)({
   description:
     'Fictional weekly customer allocations for August and September 2026. Scope filters apply to every chart and its contributing records.',
@@ -473,7 +476,7 @@ const costDataContext = createDataContext(queryNames)({
   },
 });
 
-// Demo reporting currency: align this format with the verified billing unit.
+// Fictional charges use USD. Match this format to the real billing currency.
 const costFormat = { kind: 'currency', currency: 'USD' } as const;
 const { defineView, defineDetailView } = createDataHooks(
   operations.createDataClient()
@@ -698,7 +701,7 @@ const mixContent = mixView.content(result => (
         <ComposedChart.YAxis domain={[0, 'auto']} />
         <ComposedChart.Tooltip />
         <ComposedChart.Legend />
-        {/* Demo services: keep these series aligned with the source and pivot. */}
+        {/* These service keys must match the columns returned by customerServiceMix. */}
         <ComposedChart.Bar dataKey="Compute" name="Compute" stackId="cost" />
         <ComposedChart.Bar
           dataKey="Storage"

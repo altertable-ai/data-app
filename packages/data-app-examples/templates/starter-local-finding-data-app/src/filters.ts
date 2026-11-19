@@ -5,6 +5,7 @@ import {
 } from '@altertable/data-app/contract';
 import { formatDateRange } from '@altertable/data-app/format';
 
+// Replace this fictional finding period with the period supported by its evidence.
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
@@ -20,6 +21,7 @@ export const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
   comparison: 'on',
+  // These bounds match the seeded demo history. Use the real source coverage.
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,

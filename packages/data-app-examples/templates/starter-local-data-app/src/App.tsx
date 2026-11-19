@@ -15,7 +15,7 @@ import { costDataContext } from '#app/data-context.ts';
 import { month } from '#app/filters.ts';
 import { operations } from '#app/operations.ts';
 
-// Demo reporting currency: align this format with the verified billing unit.
+// Fictional charges use USD. Match this format to the real billing currency.
 const costFormat = { kind: 'currency', currency: 'USD' } as const;
 const { defineView, defineDetailView } = createDataHooks(
   operations.createDataClient()
@@ -240,7 +240,7 @@ const mixContent = mixView.content(result => (
         <ComposedChart.YAxis domain={[0, 'auto']} />
         <ComposedChart.Tooltip />
         <ComposedChart.Legend />
-        {/* Demo services: keep these series aligned with the source and pivot. */}
+        {/* These service keys must match the columns returned by customerServiceMix. */}
         <ComposedChart.Bar dataKey="Compute" name="Compute" stackId="cost" />
         <ComposedChart.Bar
           dataKey="Storage"

@@ -1,9 +1,12 @@
 import { defineDataApp } from '@altertable/data-app';
 export const dataApp = defineDataApp({
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Sample metric',
   description: 'Explore sample volume across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
+  // starter_sample_counts is the seeded semantic view for fictional sample counts.
+  // Replace these queries with verified sources before publishing.
   queries: {
     sampleCountsBySegment: {
       projections: {

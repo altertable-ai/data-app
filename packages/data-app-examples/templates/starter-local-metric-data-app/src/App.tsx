@@ -54,6 +54,7 @@ const segmentCounts = segmentCountsView.dataset({
   },
   evidence: { id: 'counts-by-segment', glossaryIds: ['sampleCount'] },
 });
+// Selecting a group applies the shared group filter to both charts.
 const groupActions = sampleCounts.actions(
   action => ({
     drill: action.filter({
@@ -64,7 +65,6 @@ const groupActions = sampleCounts.actions(
   }),
   { primary: 'drill' }
 );
-// Keep only the breakdowns and interactions relevant to the requested metric.
 const groupContent = sampleCountsView.content(result => (
   <VisualizationWidget
     dataset={sampleCounts}

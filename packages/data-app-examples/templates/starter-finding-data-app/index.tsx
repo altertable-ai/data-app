@@ -38,13 +38,15 @@ import {
   formatNumber,
   formatPercent,
 } from '@altertable/data-app/format';
-// One query per widget: each section loads its own result when it nears the viewport.
 export const dataApp = defineDataApp({
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Sample finding',
   description:
     'Explore sample volume over time and across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
+  // starter_demo.daily_samples contains seeded fictional observations.
+  // Replace these queries with verified sources before publishing.
   queries: {
     sampleTotals: {
       projections: { sample_count: { type: 'number' } },
@@ -122,7 +124,7 @@ GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
     },
   },
 });
-// Declare each filter once; each operation lists the filters it reads.
+// Replace this fictional finding period with the period supported by its evidence.
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
@@ -138,6 +140,7 @@ const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
   comparison: 'on',
+  // These bounds match the seeded demo history. Use the real source coverage.
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
@@ -425,7 +428,7 @@ const sampleRows = rowsView.dataset({
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
-// Each visual verifies part of the finding; the host supplies its narrative.
+// Compare current and previous periods from the same displayed result.
 const totalsContent = totalsView.content(result => (
   <VisualizationWidget
     dataset={totals}
@@ -540,7 +543,8 @@ const memberTableContent = memberView.content(result => (
 const rowsContent = rowsView.content(result => (
   <TableWidget dataset={sampleRows} source={result} title="Sample details" />
 ));
-// Keep the original finding identifiable during exploration.
+// Show this notice when scope or display choices differ from the original finding.
+// Back to finding restores both scope filters and display choices to their defaults.
 function FindingScope() {
   const filters = useAppFilters({
     period: periodFilter,

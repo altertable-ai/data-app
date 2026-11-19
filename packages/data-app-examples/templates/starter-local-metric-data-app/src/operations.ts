@@ -3,7 +3,7 @@ import { parseCount } from '@altertable/data-app/contract';
 import { operationFilters } from '#app/filters.ts';
 import { dataApp } from '#config';
 
-/** The fixture queries read an empty group name as every group. */
+// The sample SQL uses '' for all groups; the filter control uses 'all'.
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }

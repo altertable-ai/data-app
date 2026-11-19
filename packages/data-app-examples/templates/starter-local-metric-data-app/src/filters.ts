@@ -1,6 +1,6 @@
 import { choiceFilter } from '@altertable/data-app/contract';
 
-// Share these browser-safe declarations between operations and their controls.
+// Reuse this group filter in both operations so one selection updates both charts.
 const groupName = choiceFilter({
   key: 'group',
   label: 'Group',
@@ -12,7 +12,6 @@ const groupName = choiceFilter({
   ],
 });
 
-/** The filters each operation reads. */
 export const operationFilters = {
   sampleCountsByGroup: { groupName },
   sampleCountsBySegment: { groupName },

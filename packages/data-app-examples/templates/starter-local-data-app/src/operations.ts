@@ -88,7 +88,8 @@ export const operations = dataApp.defineOperations({
     policy: { maxQueryRows: 20, maxDurationMs: 15000 },
     async run({ query }, input) {
       const result = await query('customerServiceMix', queryScope(input));
-      // Demo service columns: adapt this pivot when replacing the billing source.
+      // These service names match the fictional SQL rows and chart series.
+      // Update the pivot and chart series together when changing the services.
       const customers = new Map<
         string,
         {

@@ -153,7 +153,7 @@ const sampleRows = rowsView.dataset({
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
-// Each visual verifies part of the finding; the host supplies its narrative.
+// Compare current and previous periods from the same displayed result.
 const totalsContent = totalsView.content(result => (
   <VisualizationWidget
     dataset={totals}
@@ -268,7 +268,8 @@ const memberTableContent = memberView.content(result => (
 const rowsContent = rowsView.content(result => (
   <TableWidget dataset={sampleRows} source={result} title="Sample details" />
 ));
-// Keep the original finding identifiable during exploration.
+// Show this notice when scope or display choices differ from the original finding.
+// Back to finding restores both scope filters and display choices to their defaults.
 function FindingScope() {
   const filters = useAppFilters({
     period: periodFilter,

@@ -1,11 +1,14 @@
 import { defineDataApp } from '@altertable/data-app';
 
 export const dataApp = defineDataApp({
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Sample finding',
   description:
     'Explore sample volume over time and across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
+  // starter_demo.daily_samples contains seeded fictional observations.
+  // Replace these queries with verified sources before publishing.
   queries: {
     sampleTotals: {
       projections: { sample_count: { type: 'number' } },

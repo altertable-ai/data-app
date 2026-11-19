@@ -1,6 +1,7 @@
 import { choiceFilter, displayChoice } from '@altertable/data-app/contract';
 
-// Demo periods: replace with the billing months available in the source.
+// These months match the fictional SQL rows.
+// Replace them with months covered by the billing source.
 export const month = choiceFilter({
   key: 'month',
   label: 'Month',
@@ -10,7 +11,8 @@ export const month = choiceFilter({
     { id: '2026-08', label: 'August 2026' },
   ],
 });
-// Demo customers: replace with source-backed customer choices.
+// These customers match the fictional SQL rows.
+// Replace them with customers from the billing source.
 export const customer = choiceFilter({
   key: 'customer',
   label: 'Customer',
