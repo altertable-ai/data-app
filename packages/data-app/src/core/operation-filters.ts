@@ -98,7 +98,7 @@ export function parseFilterInput<Filters extends FilterCollection>(
     invariant(Object.hasOwn(filters, name), `Unknown filter input: ${name}.`);
   const input: Record<string, unknown> = {};
   for (const [name, filter] of Object.entries(filters)) {
-    const selected = fields[name];
+    const selected = Object.hasOwn(fields, name) ? fields[name] : undefined;
     if (filter.kind === 'dateTimeRange')
       input[name] = filter.parseInput(selected);
     else {
@@ -135,7 +135,7 @@ export function combineOperationFilters(
   for (const [operation, filters] of Object.entries(operations))
     for (const [name, filter] of Object.entries(filters)) {
       invariant(
-        !combined[name] || combined[name] === filter,
+        !Object.hasOwn(combined, name) || combined[name] === filter,
         `Operations read different filters named ${name}; declare it once and share it (${operation}).`
       );
       combined[name] = filter;

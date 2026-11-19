@@ -35,7 +35,7 @@
     --atbl-font-heading,
     var(--atbl-input-font-heading, var(--atbl-font))
   );
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
   font-variant-numeric: tabular-nums;
 }
 .altertable-ranking-track {

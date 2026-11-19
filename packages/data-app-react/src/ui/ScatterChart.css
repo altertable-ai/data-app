@@ -88,7 +88,7 @@
   .altertable-scatter-tooltip:not([data-open])
   .altertable-scatter-point
   > span {
-  opacity: 0.3;
+  opacity: var(--atbl-internal-chart-muted-opacity);
 }
 .altertable-scatter-point:focus {
   outline: none;

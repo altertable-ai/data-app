@@ -60,6 +60,23 @@ export function Tab(props: ComponentPropsWithRef<typeof AriaTab>) {
   );
 }
 
+/** Internal: a compact track of segments for switching views of one subject. */
+export function SegmentedTabList<T>(
+  props: Omit<TabListProps<T>, 'className'> & RefAttributes<HTMLDivElement>
+) {
+  return (
+    <TabList
+      {...props}
+      className="react-aria-TabList altertable-segmented-tabs"
+    />
+  );
+}
+
+/** Internal: a segment sits flush inside its clipped track, so its ring is inset. */
+export function SegmentedTab(props: ComponentPropsWithRef<typeof AriaTab>) {
+  return <Tab data-atbl-focus="inset" {...props} />;
+}
+
 export function TabPanel(props: ComponentPropsWithRef<typeof AriaTabPanel>) {
   return <AriaTabPanel data-atbl-focus="ring" {...props} />;
 }

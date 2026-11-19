@@ -6,7 +6,7 @@
   background: color-mix(in srgb, var(--atbl-subtle) 65%, var(--atbl-surface));
   color: var(--atbl-text);
   font-size: 0.85em;
-  font-weight: 450;
+  font-weight: 400;
   line-height: inherit;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
@@ -17,5 +17,5 @@
   color: var(--atbl-muted);
 }
 .altertable-data-identifier-name {
-  font-weight: 550;
+  font-weight: var(--atbl-type-label-weight);
 }

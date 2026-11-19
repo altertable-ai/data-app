@@ -42,7 +42,7 @@ const identifierName = /^[\p{ID_Start}$_][\p{ID_Continue}$\u200C\u200D]*$/u;
  * changed values are replaced in place, removed properties are deleted with their
  * comments, and new properties are appended in `manifest` order.
  * Throws a TypeError for values that literals cannot express, such as non-finite
- * numbers or `__proto__` keys.
+ * numbers.
  */
 export function overrideDataAppManifest(
   source: string,
@@ -177,7 +177,7 @@ function applyManifestChanges(
       ...keys
         .filter(key => !Object.hasOwn(before, key))
         .map(key => ({
-          body: `${separator}${printKey(key, path)}: ${print(after[key], [...path, key])}`,
+          body: `${separator}${printKey(key)}: ${print(after[key], [...path, key])}`,
           beforeComma: '',
           trailing: '',
           resume: undefined,
@@ -230,8 +230,7 @@ function applyManifestChanges(
       if (!entries.length) return '{}';
       return `{ ${entries
         .map(
-          ([key, item]) =>
-            `${printKey(key, path)}: ${print(item, [...path, key])}`
+          ([key, item]) => `${printKey(key)}: ${print(item, [...path, key])}`
         )
         .join(', ')} }`;
     }
@@ -255,11 +254,7 @@ function applyManifestChanges(
     return printLiteral(literal);
   }
 
-  function printKey(key: string, path: Path): string {
-    if (key === '__proto__')
-      throw new TypeError(
-        `${describe([...path, key])}: a literal __proto__ key sets the prototype instead.`
-      );
+  function printKey(key: string): string {
     return identifierName.test(key)
       ? key
       : printLiteral(ts.factory.createStringLiteral(key, singleQuote));

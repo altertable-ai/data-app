@@ -28,7 +28,6 @@ export function SearchInput({
     >
       <AppIcon
         name={loading ? 'loading' : 'search'}
-        size={17}
         className={loading ? 'altertable-search-input-spinner' : undefined}
       />
       <input

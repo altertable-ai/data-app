@@ -16,7 +16,7 @@
   color: var(--atbl-text);
   font-size: var(--atbl-type-label-size);
   font-variant-numeric: tabular-nums;
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
 }
 .altertable-breakdown-bar {
   display: flex;
@@ -75,7 +75,7 @@
 }
 .altertable-breakdown-value {
   color: var(--atbl-text);
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
 }
 .altertable-breakdown-share {
   min-width: 4ch;

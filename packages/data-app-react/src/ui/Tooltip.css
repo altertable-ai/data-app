@@ -40,7 +40,7 @@
 }
 .altertable-tooltip-content[data-variant='chart'] strong {
   font-size: var(--atbl-type-body-size);
-  font-weight: 650;
+  font-weight: var(--atbl-type-heading-weight);
   line-height: 1.2;
 }
 @keyframes altertable-tooltip-in {

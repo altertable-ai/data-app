@@ -7,8 +7,9 @@
   min-width: 0;
 }
 .altertable-search-label {
+  color: var(--atbl-muted);
   font-size: var(--atbl-type-label-size);
-  font-weight: 650;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-search-row {
   display: flex;

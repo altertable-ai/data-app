@@ -459,6 +459,7 @@ await assert.rejects(copyExample('../escape', process.argv[1]), /Unknown data ap
       archive(''),
       archive('-react'),
       archive('-bun'),
+      archive('-manifest'),
     ],
     local
   );
@@ -563,7 +564,11 @@ if (!html.includes('Authoring only') || !html.includes('>0<')) throw new Error('
     authoring
   );
   const bunOnly = join(temporary, 'bun-only');
-  const bunNames = await install(bunOnly, [archive(''), archive('-bun')]);
+  const bunNames = await install(bunOnly, [
+    archive(''),
+    archive('-bun'),
+    archive('-manifest'),
+  ]);
   excludes(
     bunNames,
     [
@@ -617,6 +622,7 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     archive(''),
     archive('-react'),
     archive('-bun'),
+    archive('-manifest'),
     'react@19.2.0',
     'react-dom@19.2.0',
   ]);
@@ -635,11 +641,15 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
         '@altertable/data-app': archive(''),
         '@altertable/data-app-react': archive('-react'),
         '@altertable/data-app-bun': archive('-bun'),
+        '@altertable/data-app-manifest': archive('-manifest'),
         react: '19.2.0',
         'react-dom': '19.2.0',
       },
       // Resolve internal dependencies from this release before it is published.
-      overrides: { '@altertable/data-app': archive('') },
+      overrides: {
+        '@altertable/data-app': archive(''),
+        '@altertable/data-app-manifest': archive('-manifest'),
+      },
     })
   );
   await rm(join(previewRuntime, 'node_modules'), { recursive: true });

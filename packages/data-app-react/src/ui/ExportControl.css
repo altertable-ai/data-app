@@ -4,11 +4,6 @@
   max-height: min(320px, var(--available-height));
   overflow: auto;
   padding: var(--atbl-dropdown-padding);
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-control);
-  background: var(--atbl-surface);
-  box-shadow: var(--atbl-shadow-overlay);
-  color: var(--atbl-text);
 }
 .altertable-export-popover [role='menu'] {
   display: flex;
@@ -21,10 +16,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 34px;
   padding: var(--atbl-dropdown-item-padding-block)
     var(--atbl-dropdown-item-padding-inline);
-  border-radius: 4px;
+  border-radius: var(--atbl-radius-control);
   font-size: var(--atbl-type-label-size);
   outline: none;
 }

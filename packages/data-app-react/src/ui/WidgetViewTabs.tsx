@@ -3,7 +3,13 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { classNames } from './classNames.ts';
 import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from './Tabs.tsx';
+import {
+  SegmentedTab,
+  SegmentedTabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+} from './Tabs.tsx';
 import { validateWidgetViews } from './widget-views.ts';
 
 export type WidgetView = {
@@ -41,13 +47,13 @@ export function WidgetViewTabs<const Views extends readonly WidgetView[]>({
         selectedKey={selectedKey}
         onSelectionChange={key => onSelectionChange(String(key))}
       >
-        <TabList aria-label={label}>
+        <SegmentedTabList aria-label={label}>
           {views.map(view => (
-            <Tab key={view.id} id={view.id}>
+            <SegmentedTab key={view.id} id={view.id}>
               {view.label}
-            </Tab>
+            </SegmentedTab>
           ))}
-        </TabList>
+        </SegmentedTabList>
         <TabPanels>
           {views.map(view => (
             <TabPanel key={view.id} id={view.id}>

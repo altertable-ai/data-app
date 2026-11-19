@@ -310,15 +310,6 @@ export function nodeToManifest(
         continue;
       }
       const key = property.name.text;
-      if (key === '__proto__') {
-        report(
-          'literal',
-          'Prototype setters are not manifest data properties.',
-          property.name,
-          [...path, key]
-        );
-        continue;
-      }
       const propertyPath = [...path, key];
       if (keys.has(key))
         report(

@@ -189,8 +189,14 @@ export function BarChart<Row extends BarChartItem>({
     if (!element) return;
     function updateWidth() {
       // clientWidth rounds up fractional grid widths, which can create a
-      // scrollbar and feed a different width back into this observer.
-      setViewportWidth(Math.floor(element!.getBoundingClientRect().width));
+      // scrollbar and feed a different width back into this observer. The
+      // plot fills the content box, inside the padding kept for focus rings.
+      const style = getComputedStyle(element!);
+      const padding =
+        parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      setViewportWidth(
+        Math.floor(element!.getBoundingClientRect().width - padding)
+      );
     }
     updateWidth();
     const observer = new ResizeObserver(updateWidth);

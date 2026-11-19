@@ -53,7 +53,7 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
 
 export type DataAppOperationRegistry<Operations extends DataOperations> =
   Operations & {
-    /** Run operations in a hosted iframe using its installed query bridge. */
+    /** Run operations in the browser using its installed query bridge. */
     createDataClient(): DataClient<Operations>;
   };
 

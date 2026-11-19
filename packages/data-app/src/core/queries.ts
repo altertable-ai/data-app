@@ -85,15 +85,13 @@ export type IsUnion<Value, Whole = Value> = Value extends Whole
     ? false
     : true
   : never;
-export type KnownRecord<RecordType> = '__proto__' extends keyof RecordType
+export type KnownRecord<RecordType> = string extends keyof RecordType
   ? never
-  : string extends keyof RecordType
-    ? never
-    : Exclude<keyof RecordType, string> extends never
-      ? true extends IsUnion<RecordType>
-        ? never
-        : RecordType
-      : never;
+  : Exclude<keyof RecordType, string> extends never
+    ? true extends IsUnion<RecordType>
+      ? never
+      : RecordType
+    : never;
 type CheckedField<Field extends { type: string; nullable?: boolean }> =
   true extends IsUnion<Field>
     ? never

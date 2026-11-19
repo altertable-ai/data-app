@@ -1,14 +1,14 @@
 import { createDataContext } from '@altertable/data-app-react';
 
-import { dataApp } from '#config';
+import { operations } from '#app/operations.ts';
 
 const queryNames = {
-  costBreakdown: 'costBreakdown',
-  totalCost: 'totalCost',
-  costsByCustomer: 'costsByCustomer',
-  costTrend: 'costTrend',
-  customerServiceMix: 'customerServiceMix',
-} as const satisfies Record<string, keyof typeof dataApp.queries>;
+  ...operations.costBreakdown.queryNames,
+  ...operations.totalCost.queryNames,
+  ...operations.costsByCustomer.queryNames,
+  ...operations.costTrend.queryNames,
+  ...operations.customerServiceMix.queryNames,
+};
 // Illustrative definitions and coverage; verify them against the real source.
 export const costDataContext = createDataContext(queryNames)({
   description:

@@ -22,12 +22,12 @@
   align-items: center;
   gap: var(--atbl-space-sm);
 }
-.altertable-field[data-label-placement='beside']
+.altertable-field:is(
+    [data-label-placement='inline'],
+    [data-label-placement='beside']
+  )
   > :is(label, .react-aria-Label, .altertable-field-label) {
-  font-size: var(--atbl-type-label-size);
-}
-.altertable-field[data-label-placement='beside'] > button {
-  font-weight: 400;
+  font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-field[data-label-placement='above']
   > :is(button, .altertable-datetime-input),

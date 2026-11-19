@@ -4,9 +4,14 @@
 .altertable-selectable-bars-scroll {
   min-width: 0;
   width: auto;
-  height: 260px;
-  margin: 12px 2px 14px;
+  /* Ring room inside the scrollport, cancelled by the margin. */
+  height: calc(260px + 2 * var(--atbl-internal-focus-ring-space));
+  margin: calc(12px - var(--atbl-internal-focus-ring-space))
+    calc(2px - var(--atbl-internal-focus-ring-space))
+    calc(14px - var(--atbl-internal-focus-ring-space));
+  padding: var(--atbl-internal-focus-ring-space);
   overflow-x: auto;
+  scroll-padding-inline: var(--atbl-internal-focus-ring-space);
   overflow-y: hidden;
 }
 .altertable-selectable-bars-item {

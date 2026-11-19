@@ -1,9 +1,19 @@
+/* The list scrolls, so it pads its scrollport by the ring space and cancels that
+   padding with a negative margin: tab rings stay whole without moving the tabs.
+   The divider is painted under the tabs instead of a border so it keeps the
+   content width. */
 .altertable-tabs .react-aria-TabList {
   display: flex;
   gap: var(--atbl-space-lg);
+  margin: calc(-1 * var(--atbl-internal-focus-ring-space));
+  padding: var(--atbl-internal-focus-ring-space);
   overflow-x: auto;
+  scroll-padding-inline: var(--atbl-internal-focus-ring-space);
   overscroll-behavior-x: none;
-  border-bottom: 1px solid var(--atbl-border);
+  background: linear-gradient(var(--atbl-border), var(--atbl-border)) no-repeat
+    left var(--atbl-internal-focus-ring-space) bottom
+    calc(var(--atbl-internal-focus-ring-space) - 1px) /
+    calc(100% - 2 * var(--atbl-internal-focus-ring-space)) 1px;
   scrollbar-width: none;
 }
 .altertable-tabs .react-aria-Tab {
@@ -13,7 +23,7 @@
   border-bottom: 2px solid transparent;
   color: var(--atbl-muted);
   font-size: var(--atbl-type-label-size);
-  font-weight: 550;
+  font-weight: var(--atbl-type-label-weight);
   outline: none;
   transition:
     color var(--atbl-duration-fast) var(--atbl-ease-standard),
@@ -28,6 +38,33 @@
 }
 .altertable-tabs .react-aria-Tab[data-focus-visible] {
   border-radius: 2px;
+}
+/* Segmented: a compact track for switching views of one subject. Segments are
+   concentric with the track and keep their focus ring inside. */
+.altertable-tabs .altertable-segmented-tabs {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
+}
+.altertable-segmented-tabs > .react-aria-Tab {
+  margin: 0;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: calc(var(--atbl-radius-control) - 3px);
+  font-size: var(--atbl-type-meta-size);
+  transition:
+    color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    box-shadow var(--atbl-duration-fast) var(--atbl-ease-standard);
+}
+.altertable-segmented-tabs > .react-aria-Tab[data-selected] {
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-control);
+  color: var(--atbl-text);
 }
 .altertable-tabs .react-aria-TabPanels {
   min-width: 0;

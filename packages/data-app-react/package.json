@@ -65,7 +65,7 @@
     "fflate": "0.8.3",
     "fuzzysort": "4.0.2",
     "html-to-image": "1.11.13",
-    "lucide-react": "1.70.0",
+    "lucide-react": "1.73.0",
     "react-aria-components": "1.22.1",
     "recharts": "3.10.1"
   },

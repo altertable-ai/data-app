@@ -31,6 +31,11 @@
   /* Keyboard outlines: external offset and inset offset. */
   --atbl-focus-ring-offset: 2px;
   --atbl-focus-ring-inset: -1px;
+  /* Private: room a clipping container reserves so external rings stay whole.
+     Covers the offset plus a ring up to 2px wide. */
+  --atbl-internal-focus-ring-space: calc(var(--atbl-focus-ring-offset) + 2px);
+  /* Private: every dimmed chart series (inactive, muted, or not focused). */
+  --atbl-internal-chart-muted-opacity: 0.35;
 
   /* Body font; headings may use a consumption-site override. */
   --atbl-font: var(

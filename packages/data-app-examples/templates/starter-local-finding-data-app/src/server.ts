@@ -5,6 +5,5 @@ import { dataApp } from '#config';
 
 serveLocalApp({
   page,
-  queries: dataApp.queries,
-  title: dataApp.title,
+  app: dataApp,
 });

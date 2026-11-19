@@ -639,11 +639,16 @@ test('loading labels wait for long requests and preserve widget and action posit
     name: 'Independent section',
     exact: true,
   });
+  await expect
+    .poll(() =>
+      independent.locator('[aria-busy]').first().getAttribute('aria-busy')
+    )
+    .toBe('true');
   const widget = independent.getByRole('region', {
     name: 'Secondary results',
     exact: true,
   });
-  const label = widget.getByText('Loading widget', { exact: true });
+  const label = widget.getByText('Loading', { exact: true });
   const refresh = toolbar.getByRole('button', {
     name: 'Cancel refresh',
     exact: true,
@@ -676,7 +681,7 @@ test('loading labels wait for long requests and preserve widget and action posit
   expect(await widget.boundingBox()).toEqual(initialWidget);
   expect(await refresh.boundingBox()).toEqual(initialRefresh);
   const tableLabel = await table
-    .getByText('Loading widget', { exact: true })
+    .getByText('Loading', { exact: true })
     .boundingBox();
   const placeholderRow = await table
     .getByRole('row', { includeHidden: true })
@@ -705,6 +710,7 @@ test('loading labels wait for long requests and preserve widget and action posit
     exact: true,
   });
   await expect.poll(() => result.isVisible()).toBe(true);
+  expect(await independent.locator('[aria-busy="true"]').count()).toBe(0);
   expect(await label.count()).toBe(0);
   expect(await widget.boundingBox()).toEqual(initialWidget);
   expect(await totals.boundingBox()).toEqual(initialTotals);

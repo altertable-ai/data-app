@@ -68,13 +68,11 @@ export type CheckedFilterDeclarations<Collection extends FilterCollection> =
     ? never
     : string extends keyof Collection
       ? Collection
-      : '__proto__' extends keyof Collection
-        ? never
-        : {
-            [Name in keyof Collection]: true extends IsUnion<Collection[Name]>
-              ? never
-              : Collection[Name];
-          };
+      : {
+          [Name in keyof Collection]: true extends IsUnion<Collection[Name]>
+            ? never
+            : Collection[Name];
+        };
 
 /** Name filters once in the app. URL keys must be unique across its controls. */
 export function defineAppFilters<const Collection extends FilterCollection>(

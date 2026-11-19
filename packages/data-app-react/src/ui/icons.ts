@@ -84,9 +84,10 @@ export type AppIconProps = Omit<LucideProps, 'size'> & {
   size?: number | string;
 };
 
+/** Defaults to the shared control icon size so icons follow density tokens. */
 export function AppIcon({
   name,
-  size = 18,
+  size = 'var(--atbl-control-icon-size)',
   strokeWidth = 1.8,
   style,
   ...props
@@ -107,7 +108,8 @@ export function AppIcon({
     'aria-hidden': true,
     focusable: 'false',
     ...props,
-    size,
+    // SVG size attributes only take lengths; a token size lives in the style.
+    size: typeof size === 'number' ? size : undefined,
     strokeWidth,
     style: fixedSize,
   });
