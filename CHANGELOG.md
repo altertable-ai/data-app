@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.78.0](https://github.com/altertable-ai/data-app/compare/v0.77.0...v0.78.0) (2026-11-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **apps:** unify local setup with shared app declarations ([#159](https://github.com/altertable-ai/data-app/issues/159))
+* run embedded page actions from the host ([#151](https://github.com/altertable-ai/data-app/issues/151))
+
+### Features
+
+* improve data app starters and chart exploration ([#162](https://github.com/altertable-ai/data-app/issues/162)) ([c57a557](https://github.com/altertable-ai/data-app/commit/c57a557227b3655c79178cc807115821839ceedc))
+* run embedded page actions from the host ([#151](https://github.com/altertable-ai/data-app/issues/151)) ([8e496b8](https://github.com/altertable-ai/data-app/commit/8e496b8f5c9e40cc33c273b05a7cb7d4cd7bb656))
+* show horizontal grids by default on Cartesian charts ([#157](https://github.com/altertable-ai/data-app/issues/157)) ([bfd12a7](https://github.com/altertable-ai/data-app/commit/bfd12a7d0481d4a6265f34ad86752b1d1213d719))
+
+
+### Bug Fixes
+
+* correct comparison math, date range edge cases, and stale docs ([#154](https://github.com/altertable-ai/data-app/issues/154)) ([6ec7c6b](https://github.com/altertable-ai/data-app/commit/6ec7c6bcf282fa2c5872868e09e3ed931a3668f4))
+* polish component states, focus rings, and alignment ([#161](https://github.com/altertable-ai/data-app/issues/161)) ([202074e](https://github.com/altertable-ai/data-app/commit/202074e5e3e9f0efef9996b99e63bd14a5b67d75))
+* resolve packed manifest dependency before publication ([#158](https://github.com/altertable-ai/data-app/issues/158)) ([75f57eb](https://github.com/altertable-ai/data-app/commit/75f57eb909f97c78311e075283fc509dd3442cb9))
+* stacked bar tooltip inspection across sparse hourly data ([#156](https://github.com/altertable-ai/data-app/issues/156)) ([e917ff0](https://github.com/altertable-ai/data-app/commit/e917ff066577a8f8a598753d86bd76755a90bdfd))
+
+
+### Code Refactoring
+
+* **apps:** unify local setup with shared app declarations ([#159](https://github.com/altertable-ai/data-app/issues/159)) ([dec99a2](https://github.com/altertable-ai/data-app/commit/dec99a2dabc5119a1f7f694377aba7ece4a347ae))
+
 ## [0.77.0](https://github.com/altertable-ai/data-app/compare/v0.76.0...v0.77.0) (2026-11-12)
 
 
