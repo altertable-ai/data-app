@@ -266,11 +266,7 @@ const mixContent = mixView.content(result => (
 ));
 export function App() {
   return (
-    <DataApp
-      view={servicesView}
-      summaryViews={[totalView]}
-      details={[customersDetail]}
-    >
+    <DataApp view={servicesView} details={[customersDetail]}>
       <Stack>
         <DataSection content={totalContent} label="Cost summary" />
         <Grid columns={2}>

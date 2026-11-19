@@ -1,6 +1,6 @@
 # Data context and evidence
 
-Continue the starter's operations and context. Build one context from every
+Keep the selected starter's operations and context. Build one context from every
 operation's `queryNames` and share it across the app's views. Reference only
 queries the app executes.
 
@@ -26,10 +26,13 @@ const sampleDataContext = createDataContext(queryNames)({
 });
 ```
 
+This sample-count example uses the operations illustrated in [views](views.md).
 Import `createDataContext()` from `@altertable/data-app-react`. Supply
 `dataContext: sampleDataContext` on each view, then use its glossary IDs
 in `view.metric()` and `view.dataset()`. Reuse those bindings in widgets and stories.
-Detail views need their own context when their queries differ.
+Include detail operations' query names and definitions in the shared context.
+A detail view can use a separate context when it needs different definitions or
+coverage; a different query alone does not require one.
 
 ## Register source identifiers
 

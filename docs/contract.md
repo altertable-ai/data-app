@@ -2,12 +2,14 @@
 
 Keep the starter's `defineDataApp()` declaration and operation registry. Declare
 named SQL queries with typed `params` and `projections`; execute them through
-`dataApp.defineOperation()`. Write one query and operation per widget result,
-and use descriptive `lowerCamelCase` query names.
+`dataApp.defineOperation()`. Give independent results separate queries and
+operations; widgets showing the same rows or related metrics from one summary
+may share a result. Use descriptive `lowerCamelCase` query names.
 
 ## Execute named queries
 
-This is the hosted starter's query contract inside `defineDataApp()`:
+This sample-count example illustrates the query contract inside `defineDataApp()`;
+adapt the queries in the selected starter to the app's data:
 
 ```ts
 import { defineDataApp } from '@altertable/data-app';
@@ -40,16 +42,27 @@ List the [filters](filters.md) an operation reads; `run()` receives one flat
 field per filter, and you derive SQL parameters inside it:
 
 ```ts
-import { parseCount, searchFilter } from '@altertable/data-app/contract';
+import { choiceFilter, parseCount } from '@altertable/data-app/contract';
 
 // ... dataApp
-const groupName = searchFilter({ key: 'group', label: 'Group' });
+const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'all',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
 const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleCountsByGroup', { groupName });
+      const result = await query('sampleCountsByGroup', {
+        groupName: groupName === 'all' ? '' : groupName,
+      });
       return result.rows.map(row => ({
         groupName: row.group_name,
         sampleCount: parseCount(row.sample_count),

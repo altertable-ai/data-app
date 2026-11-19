@@ -14,8 +14,8 @@ explanatory prose in the app body.
 
 ## Present data with stories
 
-Continue the starter's `totalSamples` binding. Return one to four findings with a
-headline, visual, and registered dataset or
+This example adds a story to the sample-count bindings in [widgets](widgets.md).
+Return one to four findings with a headline, visual, and registered dataset or
 metric as `evidence`. The story receives `view`'s displayed snapshot, then one
 snapshot per entry in `summaryViews`. Reuse each binding with its own view's
 snapshot and derive scope from it:
@@ -53,7 +53,7 @@ function App() {
 List a view in `summaryViews` only when the story or export reads it: summary
 views load with the page instead of when their sections near the viewport.
 
-Keep the starter's `formatMetric()` import for formatted headlines.
+Import `formatMetric()` from `@altertable/data-app/format` for formatted headlines.
 
 ## Export displayed data as CSV
 

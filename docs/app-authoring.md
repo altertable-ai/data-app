@@ -31,9 +31,11 @@ app-owned files, not installed packages.
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
    coverage, and missing or incomplete observations. Establish the population,
    grain, measures, and comparison. Choose a chart that answers the question.
-2. **Write one query and operation per widget.** Give each metric, chart, and
-   table its own named query and operation; do not combine unrelated results
-   into one query. Write queries against inspected data and preserve supplied
+2. **Separate independent results.** Give each independently queried result its
+   own named query and operation. Widgets may share one result when they show
+   the same rows or derive related metrics from the same summary, such as total
+   cost, customer count, and average cost. Keep unrelated results separate.
+   Write queries against inspected data and preserve supplied
    metric definitions. Write DuckDB SQL with named parameters; declare `params`
    and result aliases in `projections`.
    Execute named queries with `query()` and derive results from its typed rows.
@@ -47,7 +49,7 @@ app-owned files, not installed packages.
    reporting period, and scope derive from the operation. Pass the headline view
    to `<DataApp view>`, which renders every filter's control, and render each
    view in its own `<DataSection>`. Keep protected values such as `orgId`
-   backend-owned. See [views](views.md#give-each-widget-its-own-view) and
+   backend-owned. See [views](views.md#give-each-independent-result-its-own-view) and
    [filters](filters.md).
 5. **Compose the content.** Follow the app brief for section order and narrative.
    Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets

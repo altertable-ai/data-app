@@ -48,8 +48,8 @@ values available in a table when they matter.
 
 ## Declare datasets and metrics
 
-Continue the starter's `sampleCountsView` and `sampleTotalView`. Use `<BarChart>` from
-`@altertable/data-app-react/ui`.
+The sample-count example below uses the views from [views](views.md).
+Use `<BarChart>` from `@altertable/data-app-react/ui`.
 Bind reusable selections to the view whose operation returns them. Declare evidence references directly;
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
