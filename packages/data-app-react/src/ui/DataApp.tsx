@@ -225,6 +225,7 @@ function PrimaryDataApp<
     ...controls,
     queries: allResults.flatMap(({ queries }) => queries ?? []),
     refreshing: allResults.some(({ refreshing }) => refreshing),
+    viewRefreshing: primary.refreshing,
     refetch() {
       for (const { refetch } of allResults) refetch();
     },
