@@ -286,18 +286,39 @@ test('preserves the shared Node and Bun archive consumer contract', async () => 
   verifyManifestConsumer();
 });
 
-test.each([
-  ['starter-data-app', 'Sample counts'],
-  ['starter-metric-data-app', 'Sample metric'],
-] as const)('extracts the %s declaration', async (starter, title) => {
+test('extracts the standalone starter declaration', async () => {
   const text = await readFile(
-    join(getExampleDirectory(starter), 'index.tsx'),
+    join(getExampleDirectory('starter-data-app'), 'index.tsx'),
     'utf8'
   );
   const result = extractDataAppManifest(text);
   expect(result.diagnostics).toEqual([]);
   expect(result.manifest).toMatchObject({
-    title,
+    title: 'Infrastructure costs',
+    scope: { organization: 'demo', environment: 'sample' },
+    queries: {
+      costBreakdown: {
+        projections: {
+          member_name: { type: 'string' },
+          cost_cents: { type: 'number' },
+        },
+        params: {
+          limit: { type: 'number', defaultValue: 10 },
+        },
+      },
+    },
+  });
+});
+
+test('extracts the metric starter declaration', async () => {
+  const text = await readFile(
+    join(getExampleDirectory('starter-metric-data-app'), 'index.tsx'),
+    'utf8'
+  );
+  const result = extractDataAppManifest(text);
+  expect(result.diagnostics).toEqual([]);
+  expect(result.manifest).toMatchObject({
+    title: 'Sample metric',
     scope: { organization: 'demo', environment: 'sample' },
     queries: {
       sampleCountsByGroup: {
@@ -326,14 +347,16 @@ test('extracts the Finding exploration declaration', async () => {
     scope: { organization: 'demo', environment: 'sample' },
     // One query per widget.
     queries: {
-      sampleTotal: {
+      sampleTotals: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
         },
       },
       samplesOverTime: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },
@@ -341,6 +364,7 @@ test('extracts the Finding exploration declaration', async () => {
       },
       samplesByMember: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           breakdown: { type: 'string', defaultValue: 'segment' },
@@ -348,6 +372,7 @@ test('extracts the Finding exploration declaration', async () => {
       },
       sampleRows: {
         params: {
+          groupName: { type: 'string', defaultValue: 'Alpha' },
           period_from: { type: 'string' },
           period_to: { type: 'string' },
           grain: { type: 'string', defaultValue: 'day' },
@@ -392,11 +417,11 @@ describe('manifest override', () => {
       changed(text, manifest => {
         manifest.title = 'Renamed';
         // @ts-expect-error Literal values are not narrowed to the config shape.
-        manifest.queries.sampleCountsByGroup.params.limit.defaultValue = 25;
+        manifest.queries.costBreakdown.params.limit.defaultValue = 25;
       })
     ).toBe(
       text
-        .replace("title: 'Sample counts'", "title: 'Renamed'")
+        .replace("title: 'Infrastructure costs'", "title: 'Renamed'")
         .replace('defaultValue: 10', 'defaultValue: 25')
     );
   });

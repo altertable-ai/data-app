@@ -5,11 +5,15 @@ import { serveLocalApp } from '@altertable/data-app-bun';
 import { dataApp as hostedStarterApp } from '@/packages/data-app-examples/templates/starter-data-app/index';
 import { dataApp as localStarterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
+import localFinding from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
+import localMetric from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
+import { dataApp as authoringFeaturesApp } from '@/tests/public-api/fixtures/authoring-features-app';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
+import businessEvidence from '@/tests/public-api/fixtures/business-evidence.html';
 import chartCursors from '@/tests/public-api/fixtures/chart-cursors.html';
 import chartGrids from '@/tests/public-api/fixtures/chart-grids.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
@@ -36,9 +40,18 @@ import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import tooltips from '@/tests/public-api/fixtures/tooltips.html';
 
+const localSmokeQueries = {
+  connection: {
+    projections: { connection_check: { type: 'number' } },
+    statement: 'SELECT 1 AS connection_check',
+    params: {},
+  },
+} as const;
 const registeredQueries: Readonly<Record<string, { statement: string }>> = {
   ...hostedStarterApp.queries,
   ...localStarterApp.queries,
+  ...authoringFeaturesApp.queries,
+  ...localSmokeQueries,
 };
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
@@ -53,16 +66,26 @@ async function bundle(entry: string, sourcemap = false) {
   return result.outputs[0]!.text();
 }
 const [
+  findingStarter,
+  metricStarter,
   app,
   starter,
+  authoringFeatures,
   frame,
   annotations,
   annotationState,
   contentSizing,
   diagnostics,
 ] = await Promise.all([
+  bundle(
+    'packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
+  ),
+  bundle(
+    'packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
+  ),
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
   bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
+  bundle('tests/public-api/fixtures/authoring-features-app.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
   bundle('tests/public-api/fixtures/annotations-app.tsx'),
   bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
@@ -90,10 +113,17 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   port,
   routes: {
+    '/business-evidence': businessEvidence,
     '/exploration': exploration,
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
+    '/starter-authoring-features': bundleHost,
+    '/starter-finding-data-app': bundleHost,
+    '/starter-metric-data-app': bundleHost,
+    '/local-finding': localFinding,
+    '/local-metric': localMetric,
+    '/local-data-app': starterPage,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
@@ -139,8 +169,14 @@ const server = Bun.serve({
     if (url.pathname === '/__test/bundle') return new Response(app);
     if (url.pathname === '/__test/content-sizing')
       return new Response(contentSizing);
+    if (url.pathname === '/__test/starter-finding-data-app')
+      return new Response(findingStarter);
+    if (url.pathname === '/__test/starter-metric-data-app')
+      return new Response(metricStarter);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
+    if (url.pathname === '/__test/starter-authoring-features')
+      return new Response(authoringFeatures);
     if (url.pathname === '/__test/silent')
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
@@ -163,17 +199,27 @@ const server = Bun.serve({
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
-    if (url.pathname === '/api/query') {
-      const { queryId, limit, params } = (await request.json()) as {
-        queryId: string;
+    if (
+      url.pathname === '/api/query' ||
+      url.pathname.startsWith('/api/query/')
+    ) {
+      const payload = (await request.json()) as {
+        queryId?: string;
         limit: number;
         params?: Record<string, string | number>;
       };
+      const queryId =
+        payload.queryId ??
+        decodeURIComponent(url.pathname.slice('/api/query/'.length));
+      const { limit, params } = payload;
       const statement = Object.hasOwn(registeredQueries, queryId)
         ? registeredQueries[queryId]?.statement
         : undefined;
       if (!statement) return new Response('Unknown query', { status: 404 });
-      if (statement.trim().startsWith('WITH sample_counts(')) {
+      if (
+        statement.trim().startsWith('WITH sample_counts(') ||
+        statement.trim().startsWith('WITH infrastructure_costs(')
+      ) {
         const query = database.query(statement);
         return Response.json({
           columns: query.columnNames.map(name => ({ name })),
@@ -203,8 +249,8 @@ const server = Bun.serve({
 
 process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
 const local = serveLocalApp({
-  page: starterPage,
-  app: localStarterApp,
+  page: appearance,
+  app: { title: 'Local production app', queries: localSmokeQueries },
   port: 0,
 });
 console.log(

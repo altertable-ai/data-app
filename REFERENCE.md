@@ -126,6 +126,9 @@ BarChart.ariaLabel: string
 BarChart.formatValue?: ((value: number) => string)
 BarChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 BarChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly.
+BarChart.showYAxis?: boolean — Show a vertical value scale beside the bars.
+BarChart.scrollToEnd?: boolean — Automatically reveal the last items after updates. Disable for ranked categories.
+BarChart.valueFormat?: MetricFormat — Formats the vertical axis and, unless overridden, inspected values.
 BarChartItem (type, @altertable/data-app-react/ui)
 BarChartItem.id: string
 BarChartItem.label: string
@@ -1130,6 +1133,12 @@ MultiChoiceFilter.valid: (value: readonly string[]) => boolean
 MultiChoiceFilter.same: (left: readonly string[], right: readonly string[]) => boolean
 MultiChoiceFilter.options: readonly ChoiceOption[]
 MultiChoiceFilter.maxSelected: number
+Notice (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: NoticeProps) — Quiet contextual feedback with an optional action. Content wraps before its action on narrow containers.
+Notice.title: ReactNode
+Notice.description?: ReactNode
+Notice.action?: ReactNode
+Notice.…: plus props inherited from React
+NoticeProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as Notice.*
 NumberField (component, @altertable/data-app-react/ui): (props: NumberFieldProps) — Localized numeric entry. Empty input is null rather than zero.
 NumberField.label: string
 NumberField.value: number | null

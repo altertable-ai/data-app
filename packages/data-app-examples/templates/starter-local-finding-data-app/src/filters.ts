@@ -1,24 +1,43 @@
 import {
+  choiceFilter,
   dateTimeRangeFilter,
   displayChoice,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 
-// Declare each filter once in this browser-safe module: operations read them on
-// the server, and the browser client renders their controls.
+// Replace this fictional finding period with the period supported by its evidence.
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
-const period = dateTimeRangeFilter({
+export function periodLabel(range: { from: Date; to: Date }) {
+  return formatDateRange({
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  });
+}
+export const findingPeriodLabel = periodLabel(findingPeriod);
+export const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
+  comparison: 'on',
+  // These bounds match the seeded demo history. Use the real source coverage.
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
-  comparison: 'off',
   presets: [{ label: 'Finding period', range: findingPeriod }],
 });
-const grain = displayChoice({
+export const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'Alpha',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
+export const grain = displayChoice({
   key: 'grain',
   label: 'Grain',
   defaultValue: 'day',
@@ -28,7 +47,7 @@ const grain = displayChoice({
   ],
   presentation: { control: 'widget' },
 });
-const breakdown = displayChoice({
+export const breakdown = displayChoice({
   key: 'breakdown',
   label: 'Breakdown',
   defaultValue: 'segment',
@@ -39,10 +58,9 @@ const breakdown = displayChoice({
   presentation: { control: 'widget' },
 });
 
-/** The filters each operation reads. */
 export const operationFilters = {
-  sampleTotal: { period },
-  samplesOverTime: { period, grain },
-  samplesByMember: { period, breakdown },
-  sampleRows: { period, grain, breakdown },
+  sampleTotals: { period: periodFilter, groupName },
+  samplesOverTime: { period: periodFilter, groupName, grain },
+  samplesByMember: { period: periodFilter, groupName, breakdown },
+  sampleRows: { period: periodFilter, groupName, grain, breakdown },
 };

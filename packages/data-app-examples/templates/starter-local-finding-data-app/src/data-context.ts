@@ -3,18 +3,25 @@ import { createDataContext } from '@altertable/data-app-react';
 import { operations } from '#app/operations.ts';
 
 const queryNames = {
-  ...operations.sampleTotal.queryNames,
+  ...operations.sampleTotals.queryNames,
   ...operations.samplesOverTime.queryNames,
   ...operations.samplesByMember.queryNames,
   ...operations.sampleRows.queryNames,
 };
 export const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional daily samples from starter_demo.daily_samples. Replace this evidence with the actual Finding queries.',
+    'Fictional daily sample counts by group and segment. Comparisons use equal-length periods in UTC.',
   glossary: {
+    sampleChange: {
+      term: 'Sample change',
+      definition:
+        'Selected-period samples minus the previous equal-length period in the same scope. Missing observations remain unavailable; they are not measured zeroes.',
+      queryNames: ['samplesByMember'],
+    },
     sampleCount: {
       term: 'Sample count',
-      definition: 'Fixture samples recorded per day, group, and segment.',
+      definition:
+        'Number of samples recorded for each day, group, and segment.',
       queryNames: Object.values(queryNames),
     },
   },

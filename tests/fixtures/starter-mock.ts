@@ -20,4 +20,19 @@ export const starterSeedStatements = [
    FROM generate_series(DATE '2026-01-05', DATE '2026-03-29', INTERVAL 1 DAY) AS days(day),
      (VALUES ('Alpha', 'Online', 20000, 12000), ('Alpha', 'Retail', 10000, 1000), ('Beta', 'Partner', 8000, 0))
        AS members(group_name, segment_name, base, lift)`,
+  // Unequal populations expose sums of rates and unweighted subgroup averages.
+  'CREATE TABLE starter_demo.business_performance (day DATE, segment VARCHAR, visits BIGINT, conversions BIGINT, revenue BIGINT, orders BIGINT)',
+  `INSERT INTO starter_demo.business_performance VALUES
+    ('2026-03-02', 'New', 900, 90, 900, 90),
+    ('2026-03-02', 'Returning', 100, 50, 1000, 10),
+    ('2026-03-09', 'New', 100, 20, 300, 10),
+    ('2026-03-09', 'Returning', 900, 540, 2700, 90)`,
+  `CREATE SEMANTIC VIEW starter_business_performance
+   TABLES (traffic AS starter_demo.business_performance)
+   DIMENSIONS (traffic.day AS day, traffic.segment AS segment)
+   METRICS (traffic.visits AS SUM(traffic.visits),
+     traffic.conversions AS SUM(traffic.conversions),
+     traffic.revenue AS SUM(traffic.revenue), traffic.orders AS SUM(traffic.orders),
+     conversion_rate AS traffic.conversions / NULLIF(traffic.visits, 0),
+     average_order_value AS traffic.revenue / NULLIF(traffic.orders, 0))`,
 ];

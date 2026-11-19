@@ -59,6 +59,12 @@ export function resolveDataView<Data, Input>({
   const shown = current ?? previous;
   if (!shown) return error ? { kind: 'error', error } : { kind: 'loading' };
   const currentInput = sameInput(shown.input, requestedInput);
+  // Empty results have no displayed content to preserve during a request.
+  if (isEmpty(shown.data)) {
+    if (error) return { kind: 'error', error };
+    if (pending || !currentInput) return { kind: 'loading' };
+    return { kind: 'empty', input: shown.input };
+  }
   if (error)
     return {
       kind: 'stale-error',
@@ -81,7 +87,5 @@ export function resolveDataView<Data, Input>({
         : `Showing ${describe(shown.input)} while loading ${describe(requestedInput)}…`,
     };
 
-  return isEmpty(shown.data)
-    ? { kind: 'empty', input: shown.input }
-    : { kind: 'ready', data: shown.data, input: shown.input };
+  return { kind: 'ready', data: shown.data, input: shown.input };
 }

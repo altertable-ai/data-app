@@ -42,6 +42,23 @@ Embedded hosts supply the page chrome, so `<DataApp>` omits its header, footer,
 `toolbarActions`, and `footerActions` there; the host runs refresh, export,
 story, and inspection. Keep controls readers need in the body.
 
+## Adapt to the available container
+
+Base layout decisions on the app's available width. An embedded panel can be
+narrow inside a wide browser window. Use `<Grid>` and `<GridItem>` first: their
+tracks and spans respond to the containing grid rather than a viewport breakpoint.
+Choose the column count and reading order for the evidence in the app brief.
+
+For custom layout that these primitives cannot express, give an app-owned wrapper
+`container-type: inline-size` and, when needed, a `container-name`. Use CSS
+`@container` queries to adapt its descendants to that wrapper's width. The
+container must be an ancestor of the elements whose layout changes. Keep theme
+and user-preference media queries separate from these width decisions.
+
+Apply the same composition and container rules to hosted and local apps. Verify
+both a narrow browser and a narrow embed inside a wide browser; neither should
+clip controls or require horizontal page scrolling.
+
 ## Verify rendered layouts
 
 Review authored composition with realistic labels and values. For custom layout

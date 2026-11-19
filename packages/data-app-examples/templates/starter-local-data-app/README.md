@@ -21,10 +21,20 @@ Open <http://127.0.0.1:25837>. Alternatively, configure
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN` for an existing
 CLI proxy. Missing credentials stop startup.
 
+## Explore the example
+
+Choose a billing month and customer to explore the fictional cost dashboard.
+Compare weekly allocations, switch the cost breakdown between services and
+customers, and inspect the service mix for each customer. Select a service to see
+its contributing customer allocations. Widget inspection exposes the registered
+query, selected parameters, and cost definitions. All views use the same scope;
+weekly batches, customer allocations, and services reconcile to the total.
+Logging demonstrates a recorded zero.
+
 ## Build the app
 
-Replace the connectivity check with bounded operations, views, and the content
-specified by the app brief. Change identity, appearance, and queries in `app.ts`.
+Use inspected source data to answer the app brief. Replace the sample queries
+and views, and set identity and appearance in `app.ts`.
 
 ```fish
 bun run check

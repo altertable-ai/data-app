@@ -34,10 +34,12 @@ export function serveLocalApp({
   port?: number;
 }) {
   const lakehouse = localLakehouse();
+  // Read the runtime environment without letting the SDK build inline NODE_ENV.
+  const { NODE_ENV: runtimeMode } = process.env;
   const server = Bun.serve({
     hostname: '127.0.0.1',
     port,
-    development: process.env.NODE_ENV !== 'production',
+    development: runtimeMode !== 'production',
     idleTimeout: 60,
     routes: { '/': page },
     fetch(request) {

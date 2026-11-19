@@ -94,7 +94,7 @@ function ComparisonContent({
           <>
             <AppIcon name={icon} size={17} />
             {Math.abs(percent).toFixed(1)}% vs{' '}
-            {previous?.periodLabel?.toLowerCase() ?? 'previous period'}
+            {previous?.periodLabel ?? 'previous period'}
           </>
         )}
       </p>

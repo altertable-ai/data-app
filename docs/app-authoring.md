@@ -19,11 +19,11 @@ for the requested change. For a new app, use the starter supplied by the authori
 | Local Finding           | `starter-local-finding-data-app`                                    |
 
 Choose the runtime and use case supplied by the app brief. Each starter is editable
-source; replace fixture queries and sample content before publishing. The hosted starter demonstrates query → operation
-→ context → view → dataset → widget composition, including a story example.
+source; replace fixture queries and sample content before publishing. The starters demonstrate query → operation
+→ context → view → dataset → widget composition.
 Hosted apps stay in one file with public package imports
 and a literal `defineDataApp()` declaration. Local apps use the same composition
-with their existing server/client wiring. Replace fixture data and connectivity screens; edit
+with their existing server/client wiring. Replace fixture queries and example content; edit
 app-owned files, not installed packages.
 
 ## Connect data and components
@@ -31,9 +31,11 @@ app-owned files, not installed packages.
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
    coverage, and missing or incomplete observations. Establish the population,
    grain, measures, and comparison. Choose a chart that answers the question.
-2. **Write one query and operation per widget.** Give each metric, chart, and
-   table its own named query and operation; do not combine unrelated results
-   into one query. Write queries against inspected data and preserve supplied
+2. **Separate independent results.** Give each independently queried result its
+   own named query and operation. Widgets may share one result when they show
+   the same rows or derive related metrics from the same summary, such as total
+   cost, customer count, and average cost. Keep unrelated results separate.
+   Write queries against inspected data and preserve supplied
    metric definitions. Write DuckDB SQL with named parameters; declare `params`
    and result aliases in `projections`.
    Execute named queries with `query()` and derive results from its typed rows.
@@ -47,13 +49,14 @@ app-owned files, not installed packages.
    reporting period, and scope derive from the operation. Pass the headline view
    to `<DataApp view>`, which renders every filter's control, and render each
    view in its own `<DataSection>`. Keep protected values such as `orgId`
-   backend-owned. See [views](views.md#give-each-widget-its-own-view) and
+   backend-owned. See [views](views.md#give-each-independent-result-its-own-view) and
    [filters](filters.md).
 5. **Compose the content.** Follow the app brief for section order and narrative.
    Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
    from `@altertable/data-app-react`. Keep static explanations outside loading
    boundaries. Use app tabs only for distinct questions and widget `views` only
-   for alternate representations of one dataset. Keep default appearance;
+   for alternate representations of one dataset. See [layout](layout.md#adapt-to-the-available-container)
+   for container-based sizing. Keep default appearance;
    customize when requested. Use custom UI only when bound components cannot
    express the requirement.
 6. **Connect shell features.** See [stories and export](stories-and-export.md)

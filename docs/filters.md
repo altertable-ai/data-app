@@ -7,20 +7,31 @@ renders. Import filters from `@altertable/data-app/contract`.
 
 ## Declare filters on operations
 
-The hosted starter's operations both read one group search:
+This sample-count example shares one fixed group choice across operations:
 
 ```tsx
-import { parseCount, searchFilter } from '@altertable/data-app/contract';
+import { choiceFilter, parseCount } from '@altertable/data-app/contract';
 
 // ... dataApp, sampleDataContext, and section contents
-const groupName = searchFilter({ key: 'group', label: 'Group' });
+const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'all',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
 
-const operations = {
+const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleCountsByGroup', { groupName });
+      const result = await query('sampleCountsByGroup', {
+        groupName: groupName === 'all' ? '' : groupName,
+      });
       return result.rows.map(row => ({
         groupName: row.group_name,
         sampleCount: parseCount(row.sample_count),
@@ -28,8 +39,8 @@ const operations = {
     },
   }),
   // ... sampleTotal reads the same { groupName }
-};
-const { defineView } = createDataHooks(createDataClient({ operations }));
+});
+const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',

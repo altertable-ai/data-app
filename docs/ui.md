@@ -153,6 +153,15 @@ so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
 
+Use `showYAxis` on interactive bar charts when readers need a numeric scale,
+including counts, ratios, and monetary amounts. Keep category names in the labels.
+Match `valueFormat` to the measure: `{ kind: 'count' }`, `{ kind: 'ratio' }`
+(fractions displayed as percentages), or `{ kind: 'currency', currency: 'USD' }`.
+The format applies consistently to the axis and tooltips. For other units, use
+the default number scale and name the unit in the chart title; `formatValue`
+customizes inspected values. For ranked categories, use `scrollToEnd={false}`
+to begin with the leading item; the default keeps the latest samples in view.
+
 Line and area charts space samples equally; include missing periods and use
 composed charts for irregular intervals. Distinguish missing observations from zero.
 Pie slices represent mutually exclusive parts of one total; shares

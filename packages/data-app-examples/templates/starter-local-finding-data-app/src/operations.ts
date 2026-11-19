@@ -3,42 +3,41 @@ import {
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
 
-import { operationFilters } from '#app/filters.ts';
+import { operationFilters, periodFilter } from '#app/filters.ts';
 import { dataApp } from '#config';
-// One query per widget: each section loads its own result when it nears the viewport.
+
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
 export const operations = dataApp.defineOperations({
-  sampleTotal: dataApp.defineOperation({
-    filters: operationFilters.sampleTotal,
+  sampleTotals: dataApp.defineOperation({
+    filters: operationFilters.sampleTotals,
     policy,
-    async run({ query }, { period }) {
-      const bounds = queryDateTimeRangeParams(
-        operationFilters.sampleTotal.period,
-        period,
-        'period'
-      );
-      const current = await query('sampleTotal', bounds.current);
-      const previous = bounds.comparison
-        ? await query('sampleTotal', bounds.comparison)
-        : null;
-      return {
-        current: parseCount(current.rows[0]!.sample_count),
-        previous: previous && parseCount(previous.rows[0]!.sample_count),
-      };
+    async run({ query }, { period, groupName }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
+      const [current, previous] = await Promise.all([
+        query('sampleTotals', { ...bounds.current, groupName }),
+        bounds.comparison
+          ? query('sampleTotals', { ...bounds.comparison, groupName })
+          : null,
+      ]);
+      const row = current.rows[0];
+      if (!row) return [];
+      const baseline = previous?.rows[0];
+      return [
+        {
+          currentCount: parseCount(row.sample_count),
+          previousCount: baseline ? parseCount(baseline.sample_count) : null,
+        },
+      ];
     },
   }),
   samplesOverTime: dataApp.defineOperation({
     filters: operationFilters.samplesOverTime,
     policy,
-    async run({ query }, { period, grain }) {
-      // With the comparison on, the trend starts at the previous period.
-      const bounds = queryDateTimeRangeParams(
-        operationFilters.samplesOverTime.period,
-        period,
-        'period'
-      );
+    async run({ query }, { period, groupName, grain }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('samplesOverTime', {
         ...bounds.combined,
+        groupName,
         grain,
       });
       return result.rows.map(row => ({
@@ -50,33 +49,58 @@ export const operations = dataApp.defineOperations({
   samplesByMember: dataApp.defineOperation({
     filters: operationFilters.samplesByMember,
     policy,
-    async run({ query }, { period, breakdown }) {
-      const bounds = queryDateTimeRangeParams(
-        operationFilters.samplesByMember.period,
-        period,
-        'period'
+    async run({ query }, { period, groupName, breakdown }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
+      const [current, previous] = await Promise.all([
+        query('samplesByMember', { ...bounds.current, groupName, breakdown }),
+        bounds.comparison
+          ? query('samplesByMember', {
+              ...bounds.comparison,
+              groupName,
+              breakdown,
+            })
+          : null,
+      ]);
+      const currentCounts = new Map(
+        current.rows.map(row => [row.member, parseCount(row.sample_count)])
       );
-      const result = await query('samplesByMember', {
-        ...bounds.current,
-        breakdown,
-      });
-      return result.rows.map(row => ({
-        member: row.member,
-        sampleCount: parseCount(row.sample_count),
-      }));
+      const previousCounts = new Map(
+        previous?.rows.map(row => [row.member, parseCount(row.sample_count)])
+      );
+      const members = new Set([
+        ...currentCounts.keys(),
+        ...previousCounts.keys(),
+      ]);
+      return [...members]
+        .map(member => {
+          const currentCount = currentCounts.get(member) ?? null;
+          const previousCount = previousCounts.get(member) ?? null;
+          const change =
+            currentCount !== null && previousCount !== null
+              ? currentCount - previousCount
+              : null;
+          return {
+            member,
+            currentCount,
+            previousCount,
+            change,
+            changeRate:
+              change !== null && previousCount !== null && previousCount > 0
+                ? change / previousCount
+                : null,
+          };
+        })
+        .sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
     },
   }),
   sampleRows: dataApp.defineOperation({
     filters: operationFilters.sampleRows,
     policy,
-    async run({ query }, { period, grain, breakdown }) {
-      const bounds = queryDateTimeRangeParams(
-        operationFilters.sampleRows.period,
-        period,
-        'period'
-      );
+    async run({ query }, { period, groupName, grain, breakdown }) {
+      const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('sampleRows', {
-        ...bounds.current,
+        ...bounds.combined,
+        groupName,
         grain,
         breakdown,
       });

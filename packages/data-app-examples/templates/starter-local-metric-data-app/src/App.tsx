@@ -3,9 +3,12 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
-  Stack,
+  Ranking,
+  Grid,
+  GridItem,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
+import { formatCount } from '@altertable/data-app/format';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import { operations } from '#app/operations.ts';
@@ -51,6 +54,7 @@ const segmentCounts = segmentCountsView.dataset({
   },
   evidence: { id: 'counts-by-segment', glossaryIds: ['sampleCount'] },
 });
+// Selecting a group applies the shared group filter to both charts.
 const groupActions = sampleCounts.actions(
   action => ({
     drill: action.filter({
@@ -61,13 +65,11 @@ const groupActions = sampleCounts.actions(
   }),
   { primary: 'drill' }
 );
-// Keep only the breakdowns and interactions relevant to the requested metric.
 const groupContent = sampleCountsView.content(result => (
   <VisualizationWidget
     dataset={sampleCounts}
     source={result}
-    title="Sample count"
-    description="Select a group to filter both charts; choose All groups to reset."
+    title="Samples by group"
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -77,9 +79,10 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: row.groupName,
+          label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
           value: row.sampleCount,
         }))}
+        horizontalGrid={false}
         itemActions={actions}
       />
     )}
@@ -90,19 +93,15 @@ const segmentContent = segmentCountsView.content(result => (
     dataset={segmentCounts}
     source={result}
     title="Samples by segment"
-    description="Segment breakdown for the selected group scope."
   >
-    {(rows, actions) => (
-      <BarChart
-        ariaLabel="Sample counts by segment"
-        unit="samples"
+    {rows => (
+      <Ranking
+        aria-label="Sample counts by segment"
         items={rows.map(row => ({
-          ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,
         }))}
-        itemActions={actions}
       />
     )}
   </VisualizationWidget>
@@ -110,10 +109,14 @@ const segmentContent = segmentCountsView.content(result => (
 export function App() {
   return (
     <DataApp view={sampleCountsView} showToolbar={false}>
-      <Stack>
-        <DataSection content={groupContent} label="Sample count" />
-        <DataSection content={segmentContent} label="Samples by segment" />
-      </Stack>
+      <Grid columns={3}>
+        <GridItem span={2}>
+          <DataSection content={groupContent} />
+        </GridItem>
+        <GridItem>
+          <DataSection content={segmentContent} />
+        </GridItem>
+      </Grid>
     </DataApp>
   );
 }

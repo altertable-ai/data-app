@@ -1,0 +1,35 @@
+.altertable-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--atbl-space-sm) var(--atbl-space-md);
+  min-width: 0;
+  padding: var(--atbl-space-md);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-subtle);
+}
+.altertable-notice-icon {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 2px;
+  color: var(--atbl-muted);
+}
+.altertable-notice-content {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--atbl-type-meta-size);
+  line-height: 1.5;
+}
+.altertable-notice-content strong {
+  font-weight: var(--atbl-type-label-weight);
+}
+.altertable-notice-content p {
+  margin: 2px 0 0;
+  color: var(--atbl-muted);
+}
+.altertable-notice-action {
+  flex: none;
+  margin-inline-start: auto;
+}

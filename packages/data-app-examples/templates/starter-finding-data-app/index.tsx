@@ -1,36 +1,63 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataContext, mountDataApp } from '@altertable/data-app-react';
 import {
+  createDataContext,
   createDataHooks,
+  mountDataApp,
   DataApp,
   DataSection,
-  MetricWidget,
+  Button,
+  Grid,
+  GridItem,
+  Notice,
   Stack,
   TableWidget,
   VisualizationWidget,
+  Ranking,
+  Comparison,
 } from '@altertable/data-app-react';
-import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import {
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  useViewTab,
+  ComposedChart,
+  useAppFilters,
+} from '@altertable/data-app-react/ui';
+import {
+  choiceFilter,
   dateTimeRangeFilter,
   displayChoice,
   parseCount,
   queryDateTimeRangeParams,
 } from '@altertable/data-app/contract';
-// One query per widget: each section loads its own result when it nears the viewport.
+import {
+  formatDateRange,
+  formatCount,
+  formatNumber,
+  formatPercent,
+} from '@altertable/data-app/format';
 export const dataApp = defineDataApp({
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Sample finding',
   description:
-    'Fixture evidence; replace with the Finding and its supporting queries.',
+    'Explore sample volume over time and across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
+  // starter_demo.daily_samples contains seeded fictional observations.
+  // Replace these queries with verified sources before publishing.
   queries: {
-    sampleTotal: {
+    sampleTotals: {
       projections: { sample_count: { type: 'number' } },
       statement: `
-SELECT COALESCE(SUM(sample_count), 0) AS sample_count
+SELECT SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)`,
+WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
+HAVING COUNT(*) > 0`,
       params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
         period_from: { type: 'string' },
         period_to: { type: 'string' },
       },
@@ -45,8 +72,10 @@ SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
 WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
 GROUP BY ALL ORDER BY period_start LIMIT 200`,
       params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
         period_from: { type: 'string' },
         period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
@@ -62,8 +91,10 @@ SELECT CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS m
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
 WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
 GROUP BY ALL ORDER BY sample_count DESC LIMIT 50`,
       params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
         period_from: { type: 'string' },
         period_to: { type: 'string' },
         breakdown: { type: 'string', defaultValue: 'segment' },
@@ -81,8 +112,10 @@ SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
 WHERE sample_date >= CAST($period_from AS TIMESTAMP) AND sample_date < CAST($period_to AS TIMESTAMP)
+  AND ($groupName = 'all' OR group_name = $groupName)
 GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
       params: {
+        groupName: { type: 'string', defaultValue: 'Alpha' },
         period_from: { type: 'string' },
         period_to: { type: 'string' },
         grain: { type: 'string', defaultValue: 'day' },
@@ -91,19 +124,37 @@ GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
     },
   },
 });
-// Declare each filter once; each operation lists the filters it reads.
+// Replace this fictional finding period with the period supported by its evidence.
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
+function periodLabel(range: { from: Date; to: Date }) {
+  return formatDateRange({
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  });
+}
+const findingPeriodLabel = periodLabel(findingPeriod);
 const periodFilter = dateTimeRangeFilter({
   key: 'period',
   defaultValue: findingPeriod,
+  comparison: 'on',
+  // These bounds match the seeded demo history. Use the real source coverage.
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
   maxRangeDays: 28,
-  comparison: 'off',
   presets: [{ label: 'Finding period', range: findingPeriod }],
+});
+const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'Alpha',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
 });
 const grain = displayChoice({
   key: 'grain',
@@ -125,31 +176,45 @@ const breakdown = displayChoice({
   ],
   presentation: { control: 'widget' },
 });
+
+const operationFilters = {
+  sampleTotals: { period: periodFilter, groupName },
+  samplesOverTime: { period: periodFilter, groupName, grain },
+  samplesByMember: { period: periodFilter, groupName, breakdown },
+  sampleRows: { period: periodFilter, groupName, grain, breakdown },
+};
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
 export const operations = dataApp.defineOperations({
-  sampleTotal: dataApp.defineOperation({
-    filters: { period: periodFilter },
+  sampleTotals: dataApp.defineOperation({
+    filters: operationFilters.sampleTotals,
     policy,
-    async run({ query }, { period }) {
+    async run({ query }, { period, groupName }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
-      const current = await query('sampleTotal', bounds.current);
-      const previous = bounds.comparison
-        ? await query('sampleTotal', bounds.comparison)
-        : null;
-      return {
-        current: parseCount(current.rows[0]!.sample_count),
-        previous: previous && parseCount(previous.rows[0]!.sample_count),
-      };
+      const [current, previous] = await Promise.all([
+        query('sampleTotals', { ...bounds.current, groupName }),
+        bounds.comparison
+          ? query('sampleTotals', { ...bounds.comparison, groupName })
+          : null,
+      ]);
+      const row = current.rows[0];
+      if (!row) return [];
+      const baseline = previous?.rows[0];
+      return [
+        {
+          currentCount: parseCount(row.sample_count),
+          previousCount: baseline ? parseCount(baseline.sample_count) : null,
+        },
+      ];
     },
   }),
   samplesOverTime: dataApp.defineOperation({
-    filters: { period: periodFilter, grain },
+    filters: operationFilters.samplesOverTime,
     policy,
-    async run({ query }, { period, grain }) {
-      // With the comparison on, the trend starts at the previous period.
+    async run({ query }, { period, groupName, grain }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('samplesOverTime', {
         ...bounds.combined,
+        groupName,
         grain,
       });
       return result.rows.map(row => ({
@@ -159,27 +224,60 @@ export const operations = dataApp.defineOperations({
     },
   }),
   samplesByMember: dataApp.defineOperation({
-    filters: { period: periodFilter, breakdown },
+    filters: operationFilters.samplesByMember,
     policy,
-    async run({ query }, { period, breakdown }) {
+    async run({ query }, { period, groupName, breakdown }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
-      const result = await query('samplesByMember', {
-        ...bounds.current,
-        breakdown,
-      });
-      return result.rows.map(row => ({
-        member: row.member,
-        sampleCount: parseCount(row.sample_count),
-      }));
+      const [current, previous] = await Promise.all([
+        query('samplesByMember', { ...bounds.current, groupName, breakdown }),
+        bounds.comparison
+          ? query('samplesByMember', {
+              ...bounds.comparison,
+              groupName,
+              breakdown,
+            })
+          : null,
+      ]);
+      const currentCounts = new Map(
+        current.rows.map(row => [row.member, parseCount(row.sample_count)])
+      );
+      const previousCounts = new Map(
+        previous?.rows.map(row => [row.member, parseCount(row.sample_count)])
+      );
+      const members = new Set([
+        ...currentCounts.keys(),
+        ...previousCounts.keys(),
+      ]);
+      return [...members]
+        .map(member => {
+          const currentCount = currentCounts.get(member) ?? null;
+          const previousCount = previousCounts.get(member) ?? null;
+          const change =
+            currentCount !== null && previousCount !== null
+              ? currentCount - previousCount
+              : null;
+          return {
+            member,
+            currentCount,
+            previousCount,
+            change,
+            changeRate:
+              change !== null && previousCount !== null && previousCount > 0
+                ? change / previousCount
+                : null,
+          };
+        })
+        .sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
     },
   }),
   sampleRows: dataApp.defineOperation({
-    filters: { period: periodFilter, grain, breakdown },
+    filters: operationFilters.sampleRows,
     policy,
-    async run({ query }, { period, grain, breakdown }) {
+    async run({ query }, { period, groupName, grain, breakdown }) {
       const bounds = queryDateTimeRangeParams(periodFilter, period, 'period');
       const result = await query('sampleRows', {
-        ...bounds.current,
+        ...bounds.combined,
+        groupName,
         grain,
         breakdown,
       });
@@ -192,18 +290,25 @@ export const operations = dataApp.defineOperations({
   }),
 });
 const queryNames = {
-  ...operations.sampleTotal.queryNames,
+  ...operations.sampleTotals.queryNames,
   ...operations.samplesOverTime.queryNames,
   ...operations.samplesByMember.queryNames,
   ...operations.sampleRows.queryNames,
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional daily samples from starter_demo.daily_samples. Replace this evidence with the actual Finding queries.',
+    'Fictional daily sample counts by group and segment. Comparisons use equal-length periods in UTC.',
   glossary: {
+    sampleChange: {
+      term: 'Sample change',
+      definition:
+        'Selected-period samples minus the previous equal-length period in the same scope. Missing observations remain unavailable; they are not measured zeroes.',
+      queryNames: ['samplesByMember'],
+    },
     sampleCount: {
       term: 'Sample count',
-      definition: 'Fixture samples recorded per day, group, and segment.',
+      definition:
+        'Number of samples recorded for each day, group, and segment.',
       queryNames: Object.values(queryNames),
     },
   },
@@ -214,22 +319,30 @@ const emptyFallback = {
   title: 'No samples in this period',
   description: 'No observations are available for this period.',
 };
-const totalView = defineView({
+const totalsView = defineView({
   dataContext: sampleDataContext,
-  operation: 'sampleTotal',
+  operation: 'sampleTotals',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
 });
-const totalSamples = totalView.metric(
-  {
-    id: 'total-samples',
-    label: 'Samples',
-    glossaryId: 'sampleCount',
-    format: count,
+const totals = totalsView.dataset({
+  name: 'Period totals',
+  select: rows => rows,
+  rowKey: () => 'total',
+  columns: {
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
   },
-  total => ({
-    current: total.current,
-    ...(total.previous !== null && { previous: total.previous }),
-  })
-);
+  evidence: { id: 'period-totals', glossaryIds: ['sampleCount'] },
+});
 const trendView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesOverTime',
@@ -253,14 +366,50 @@ const memberView = defineView({
   emptyFallback,
 });
 const byMember = memberView.dataset({
-  name: 'Samples by member',
+  name: 'Member comparison',
   select: rows => rows,
   rowKey: row => row.member,
   columns: {
     member: { label: 'Member', value: row => row.member },
-    sampleCount: { value: row => row.sampleCount, format: count },
+    currentCount: {
+      label: 'Selected period',
+      value: row => row.currentCount,
+      format: count,
+    },
+    previousCount: {
+      label: 'Previous period',
+      value: row => row.previousCount,
+      format: count,
+    },
+    change: {
+      label: 'Change',
+      value: row => row.change,
+      format: row => formatNumber(row.change, { signDisplay: 'exceptZero' }),
+    },
+    changeRate: {
+      label: 'Change %',
+      value: row => row.changeRate,
+      format: row => formatPercent(row.changeRate),
+    },
   },
-  evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
+  evidence: {
+    id: 'samples-by-member',
+    glossaryIds: ['sampleCount', 'sampleChange'],
+  },
+});
+const selectedMembers = memberView.dataset({
+  name: 'Selected-period samples',
+  select: rows => rows,
+  rowKey: row => row.member,
+  columns: {
+    member: { label: 'Member', value: row => row.member },
+    currentCount: {
+      label: 'Samples',
+      value: row => row.currentCount,
+      format: count,
+    },
+  },
+  evidence: { id: 'selected-members', glossaryIds: ['sampleCount'] },
 });
 const rowsView = defineView({
   dataContext: sampleDataContext,
@@ -279,16 +428,53 @@ const sampleRows = rowsView.dataset({
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
-// The Finding's text is shown above the app; keep content to charts and captions.
-const totalContent = totalView.content(result => (
-  <MetricWidget metric={totalSamples} source={result} />
+// Compare current and previous periods from the same displayed result.
+const totalsContent = totalsView.content(result => (
+  <VisualizationWidget
+    dataset={totals}
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Period comparison'
+        : 'Selected period'
+    }
+  >
+    {rows =>
+      result.loading ? null : result.input.period.comparison ? (
+        <Comparison
+          label="Samples"
+          current={{
+            value: rows[0]!.currentCount,
+            formattedValue: formatCount(rows[0]!.currentCount),
+            periodLabel: periodLabel(result.input.period.range),
+          }}
+          previous={{
+            value: rows[0]!.previousCount,
+            formattedValue: formatCount(rows[0]!.previousCount, {
+              missing: 'Not available',
+            }),
+            periodLabel: periodLabel(result.input.period.comparison),
+          }}
+        />
+      ) : (
+        <Ranking
+          items={[
+            {
+              id: 'selected',
+              label: periodLabel(result.input.period.range),
+              value: rows[0]!.currentCount,
+            },
+          ]}
+        />
+      )
+    }
+  </VisualizationWidget>
 ));
 const trendContent = trendView.content(result => (
   <VisualizationWidget
     dataset={trend}
     source={result}
     title="Samples over time"
-    description="Includes the previous period when comparison is on."
     breakdown={trendView.breakdown('grain')}
   >
     {rows => (
@@ -309,36 +495,130 @@ const memberContent = memberView.content(result => (
   <VisualizationWidget
     dataset={byMember}
     source={result}
-    title="Samples by member"
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Where volume changed'
+        : 'Samples by member'
+    }
     breakdown={memberView.breakdown('breakdown')}
   >
     {rows => (
-      <BarChart
+      <ComposedChart
         ariaLabel="Samples by member"
-        unit="samples"
-        items={rows.map(row => ({
-          ...row,
-          id: row.member,
-          label: row.member,
-          value: row.sampleCount,
-        }))}
-      />
+        data={rows}
+        valueFormat={count}
+      >
+        <ComposedChart.XAxis dataKey="member" />
+        <ComposedChart.YAxis />
+        {!result.loading && result.input.period.comparison && (
+          <ComposedChart.Bar
+            dataKey="previousCount"
+            name="Previous period"
+            fill="var(--atbl-muted)"
+            fillOpacity={0.45}
+          />
+        )}
+        <ComposedChart.Bar dataKey="currentCount" name="Selected period" />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend />
+      </ComposedChart>
     )}
   </VisualizationWidget>
 ));
-const rowsContent = rowsView.content(result => (
-  <TableWidget dataset={sampleRows} source={result} title="Samples" />
+const memberTableContent = memberView.content(result => (
+  <TableWidget
+    dataset={
+      result.loading || result.input.period.comparison
+        ? byMember
+        : selectedMembers
+    }
+    source={result}
+    title={
+      result.loading || result.input.period.comparison
+        ? 'Change by member'
+        : 'Samples by member'
+    }
+  />
 ));
-function App() {
+const rowsContent = rowsView.content(result => (
+  <TableWidget dataset={sampleRows} source={result} title="Sample details" />
+));
+// Show this notice when scope or display choices differ from the original finding.
+// Back to finding restores both scope filters and display choices to their defaults.
+function FindingScope() {
+  const filters = useAppFilters({
+    period: periodFilter,
+    groupName,
+    grain,
+    breakdown,
+  });
+  const scopeChanged =
+    !periodFilter.same(filters.values.period, periodFilter.defaultValue) ||
+    !groupName.same(filters.values.groupName, groupName.defaultValue);
+  const displayChanged =
+    !grain.same(filters.values.grain, grain.defaultValue) ||
+    !breakdown.same(filters.values.breakdown, breakdown.defaultValue);
+  if (!scopeChanged && !displayChanged) return null;
   return (
-    <DataApp view={totalView} showToolbar={false}>
+    <Notice
+      title={
+        scopeChanged
+          ? 'Exploring a different scope'
+          : 'Viewing a different breakdown'
+      }
+      description={
+        <>
+          Original finding · {findingPeriodLabel} {periodFilter.policy.timeZone}{' '}
+          vs previous period ·{' '}
+          {groupName.describe?.(groupName.defaultValue) ??
+            groupName.defaultValue}
+        </>
+      }
+      action={
+        <Button size="compact" onClick={() => filters.resetAll()}>
+          Back to finding
+        </Button>
+      }
+    />
+  );
+}
+const views = ['overview', 'data'] as const;
+function App() {
+  const [view, setView] = useViewTab(views, 'overview');
+  return (
+    <DataApp view={trendView} showToolbar={false}>
       <Stack>
-        <DataSection content={totalContent} />
-        <DataSection content={trendContent} />
-        <DataSection content={memberContent} />
-        <DataSection content={rowsContent} />
+        <FindingScope />
+        <Tabs selectedKey={view} onSelectionChange={setView}>
+          <TabList aria-label="Finding views">
+            <Tab id="overview">Overview</Tab>
+            <Tab id="data">Data</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel id="overview">
+              <Stack>
+                <Grid columns={3}>
+                  <GridItem span={2}>
+                    <DataSection content={trendContent} />
+                  </GridItem>
+                  <GridItem>
+                    <DataSection content={totalsContent} />
+                  </GridItem>
+                </Grid>
+                <DataSection content={memberContent} />
+              </Stack>
+            </TabPanel>
+            <TabPanel id="data">
+              <Stack>
+                <DataSection content={memberTableContent} />
+                <DataSection content={rowsContent} />
+              </Stack>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Stack>
     </DataApp>
   );
 }
+
 mountDataApp({ app: dataApp, component: App });

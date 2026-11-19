@@ -1,8 +1,9 @@
 # Views and displayed results
 
-Keep the starter's client and hooks. Define one view per operation, and one
-operation per widget. The examples continue the hosted starter's
-`sampleCountsByGroup` operation and `sampleDataContext`.
+Keep the starter's client and hooks. Define one view per operation. Widgets may
+share a view when they show the same rows or related metrics from one summary.
+The examples below use sample-count operations and bindings to illustrate the
+contracts; keep the selected starter's domain names when adapting its source.
 
 ## Bind a view
 
@@ -41,12 +42,12 @@ The view's filters, reporting period, metric comparisons, and scope come from
 the [filters](filters.md) its operation declares. Set `describeInput` only when
 the derived scope needs specific copy.
 
-## Give each widget its own view
+## Give each independent result its own view
 
-The hosted starter gives its total and its group counts separate operations and
-views. `<DataApp view>` loads with the page; every other `<DataSection>` loads
-when it nears the viewport. Both operations read the same `groupName` filter,
-and `<DataApp>` renders its control once:
+In this example, the total and group counts are independent results with separate
+operations and views. `<DataApp view>` loads with the page; other views load when
+their sections near the viewport unless listed in `summaryViews`. Both operations
+read the same `groupName` filter, and `<DataApp>` renders its control once:
 
 ```tsx
 // ... client, operations, sampleDataContext, and section contents
@@ -79,9 +80,9 @@ Define every view rendered inside one `<DataApp>` from the same
 `createDataHooks()` result; its client owns their filter controls.
 
 Share one [data context](data-context.md) across the app's views. Group widgets
-in one view only when they show the same result, such as a chart and the table
-of its rows. A story or export that reads other views lists them in
-[`summaryViews`](stories-and-export.md).
+in one view when they show the same result, such as a chart and the table
+of its rows, or related metrics derived from one summary. A story or export that
+reads other views lists them in [`summaryViews`](stories-and-export.md).
 
 ## Preserve displayed results
 

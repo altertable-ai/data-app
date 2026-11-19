@@ -892,7 +892,7 @@ test('rapid streamed content remains reachable by scrolling', async ({
 test('content-sized inspection fits a narrow viewport after resizing', async ({
   mobilePage: page,
 }) => {
-  await page.goto('/starter-data-app?content-sizing=1');
+  await page.goto('/starter-authoring-features?content-sizing=1');
   const app = page.frameLocator('iframe');
   await app
     .getByRole('searchbox', { name: 'Group', exact: true })

@@ -5,15 +5,21 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
-  Stack,
+  Ranking,
+  Grid,
+  GridItem,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
+import { formatCount } from '@altertable/data-app/format';
 export const dataApp = defineDataApp({
+  // Replace the demo title, description, and scope labels with the app's identity.
   title: 'Sample metric',
-  description: 'Fixture counts by group; replace with the requested metric.',
+  description: 'Explore sample volume across groups and segments.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
+  // starter_sample_counts is the seeded semantic view for fictional sample counts.
+  // Replace these queries with verified sources before publishing.
   queries: {
     sampleCountsBySegment: {
       projections: {
@@ -24,7 +30,7 @@ export const dataApp = defineDataApp({
 SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.segment_name METRICS samples.sample_count
   WHERE $groupName = '' OR samples.group_name = $groupName
-) ORDER BY segment_name LIMIT $limit`,
+) ORDER BY sample_count DESC, segment_name LIMIT $limit`,
       params: {
         groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },
@@ -47,8 +53,7 @@ SELECT group_name, sample_count FROM SEMANTIC_VIEW(
     },
   },
 });
-// Declare each filter once; operations list the filters they read, and views,
-// controls, and scope derive from them.
+// Reuse this group filter in both operations so one selection updates both charts.
 const groupName = choiceFilter({
   key: 'group',
   label: 'Group',
@@ -59,7 +64,7 @@ const groupName = choiceFilter({
     { id: 'Beta', label: 'Beta' },
   ],
 });
-/** The fixture queries read an empty group name as every group. */
+// The sample SQL uses '' for all groups; the filter control uses 'all'.
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }
@@ -103,11 +108,12 @@ const queryNames = {
 };
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'The starter_sample_counts semantic view measures fictional samples by group and segment. Replace it with the requested semantic metric before publishing.',
+    'The starter_sample_counts semantic view measures fictional sample volume by group and segment. The source has no time dimension.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
-      definition: 'A fixture value: Alpha is 2,200,000 and Beta is 600,000.',
+      definition:
+        'Sum of recorded sample counts in the selected group scope. Additive across groups and segments.',
       queryNames: [
         queryNames.sampleCountsByGroup,
         queryNames.sampleCountsBySegment,
@@ -157,6 +163,7 @@ const segmentCounts = segmentCountsView.dataset({
   },
   evidence: { id: 'counts-by-segment', glossaryIds: ['sampleCount'] },
 });
+// Selecting a group applies the shared group filter to both charts.
 const groupActions = sampleCounts.actions(
   action => ({
     drill: action.filter({
@@ -167,13 +174,11 @@ const groupActions = sampleCounts.actions(
   }),
   { primary: 'drill' }
 );
-// Keep only the breakdowns and interactions relevant to the requested metric.
 const groupContent = sampleCountsView.content(result => (
   <VisualizationWidget
     dataset={sampleCounts}
     source={result}
-    title="Sample count"
-    description="Select a group to filter both charts; choose All groups to reset."
+    title="Samples by group"
     actions={groupActions}
   >
     {(rows, actions) => (
@@ -183,9 +188,10 @@ const groupContent = sampleCountsView.content(result => (
         items={rows.map(row => ({
           ...row,
           id: row.groupName,
-          label: row.groupName,
+          label: `${row.groupName} · ${formatCount(row.sampleCount, { compact: true })}`,
           value: row.sampleCount,
         }))}
+        horizontalGrid={false}
         itemActions={actions}
       />
     )}
@@ -196,19 +202,15 @@ const segmentContent = segmentCountsView.content(result => (
     dataset={segmentCounts}
     source={result}
     title="Samples by segment"
-    description="Segment breakdown for the selected group scope."
   >
-    {(rows, actions) => (
-      <BarChart
-        ariaLabel="Sample counts by segment"
-        unit="samples"
+    {rows => (
+      <Ranking
+        aria-label="Sample counts by segment"
         items={rows.map(row => ({
-          ...row,
           id: row.segmentName,
           label: row.segmentName,
           value: row.sampleCount,
         }))}
-        itemActions={actions}
       />
     )}
   </VisualizationWidget>
@@ -216,10 +218,14 @@ const segmentContent = segmentCountsView.content(result => (
 function App() {
   return (
     <DataApp view={sampleCountsView} showToolbar={false}>
-      <Stack>
-        <DataSection content={groupContent} label="Sample count" />
-        <DataSection content={segmentContent} label="Samples by segment" />
-      </Stack>
+      <Grid columns={3}>
+        <GridItem span={2}>
+          <DataSection content={groupContent} />
+        </GridItem>
+        <GridItem>
+          <DataSection content={segmentContent} />
+        </GridItem>
+      </Grid>
     </DataApp>
   );
 }
