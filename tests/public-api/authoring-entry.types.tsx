@@ -400,9 +400,14 @@ const rowsOperations = rowsApp.defineOperations({
   groups: rowsApp.defineOperation({
     policy: { maxQueryRows: 10 },
     async run() {
-      return [
-        { name: 'Alpha', total: 1, day: '2026-09-24', nested: { id: 1 } },
-      ];
+      const rows: {
+        name: string;
+        total: number;
+        day: string;
+        nested: { id: number };
+        optional?: number;
+      }[] = [{ name: 'Alpha', total: 1, day: '2026-09-24', nested: { id: 1 } }];
+      return rows;
     },
   }),
   summary: rowsApp.defineOperation({
@@ -432,6 +437,8 @@ const groupRows = rowsView.dataset({
     name: { label: 'Group' },
     total: { format: { kind: 'count' } },
     day: { format: { kind: 'date' } },
+    // A row may omit an optional field; its cell shows a missing value.
+    optional: { format: { kind: 'count' } },
     share: { value: row => row.total / 2, format: { kind: 'ratio' } },
     link: { value: row => row.name, format: row => <b>{row.name}</b> },
   },

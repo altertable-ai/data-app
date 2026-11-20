@@ -63,7 +63,12 @@ const formatting = [
   ['Single day', formatDateRange({ start: '2026-09-28', end: '2026-09-28' })],
   ['Singular label', `1 ${pluralize(1, 'event')}`],
   ['Plural label', `0 ${pluralize(0, 'event')}`],
-].map(([sample, display]) => ({ sample: sample!, display: display! }));
+].map(([sample, display]): { sample: string; display?: string } => ({
+  sample: sample!,
+  display: display!,
+}));
+// A column named after an optional field shows a missing value when a row omits it.
+formatting.push({ sample: 'Omitted optional field' });
 const params = new URLSearchParams(location.search);
 // Every result is literal: each operation returns it without querying.
 const { defineView } = createDataHooks(
@@ -92,13 +97,16 @@ const { defineView } = createDataHooks(
       }),
       counts: dataApp.defineOperation({
         policy: { maxQueryRows: 10 },
-        async run() {
+        async run(): Promise<
+          { name: string; count?: number | boolean | null }[]
+        > {
           return [
             { name: 'München, "East"', count: 0 },
             { name: 'Two\nlines', count: null },
             { name: '=1+1', count: -10 },
             { name: ' +SUM(A1)', count: false },
             { name: '@SUM(A1)', count: true },
+            { name: 'Omitted' },
           ];
         },
       }),

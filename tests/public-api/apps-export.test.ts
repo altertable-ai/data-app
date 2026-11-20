@@ -25,7 +25,7 @@ describe('export', () => {
     const download = await downloaded;
     expect(download.suggestedFilename()).toBe('counts-all-data.csv');
     expect(await contents(download)).toBe(
-      '\uFEFFName,Count\r\n"München, ""East""",0\r\n"Two\nlines",\r\n\'=1+1,-10\r\n\' +SUM(A1),false\r\n\'@SUM(A1),true\r\n'
+      '\uFEFFName,Count\r\n"München, ""East""",0\r\n"Two\nlines",\r\n\'=1+1,-10\r\n\' +SUM(A1),false\r\n\'@SUM(A1),true\r\nOmitted,\r\n'
     );
   });
 

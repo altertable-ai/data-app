@@ -82,8 +82,8 @@ type FormattedField<Format> = Format extends { kind: 'date' }
       : CsvCell;
 
 /** Checks columns without `value`: the key must name a row field its format can display.
- * A failed check asks for the explicit accessor. Inline accessors elsewhere in the same
- * dataset defer this check to the first displayed row. */
+ * A failed check asks for the explicit accessor. TypeScript cannot run this check when
+ * the same dataset declares inline accessors; a misnamed column then shows missing values. */
 export type DatasetColumns<Row, Columns> = string extends keyof Columns
   ? unknown
   : {
@@ -242,15 +242,9 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     const fields = Object.entries(definition.columns).map(([id, column]) => ({
       ...column,
       id,
+      // An absent optional field is a missing value, as with an explicit accessor.
       value:
-        column.value ??
-        ((row: Row) => {
-          invariant(
-            typeof row === 'object' && row !== null && id in row,
-            `Dataset ${definition.name} column ${id} needs \`value\`: its rows have no ${id} field.`
-          );
-          return (row as Record<string, CsvCell>)[id];
-        }),
+        column.value ?? ((row: Row) => (row as Record<string, CsvCell>)[id]),
       label:
         column.label?.trim() ||
         id
