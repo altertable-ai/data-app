@@ -8,8 +8,10 @@ declare const DATA_APP_MIGRATION_HISTORY: {
 
 const STABLE_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
-const codemods: Readonly<Record<string, (source: string) => string>> = {
-  '0.77.0': moveFilterImports,
+type Codemod = (source: string) => string;
+
+const codemodsByVersion: Readonly<Record<string, readonly Codemod[]>> = {
+  '0.77.0': [moveFilterImports],
 };
 
 export interface DataAppUpgradeOptions {
@@ -68,9 +70,12 @@ export function upgradeDataApp({
       continue;
     migrationGuides.push(version);
 
-    const codemod = codemods[version];
-    if (!codemod) continue;
-    const updated = codemod(upgradedSource);
+    const releaseCodemods = codemodsByVersion[version];
+    if (!releaseCodemods) continue;
+    const updated = releaseCodemods.reduce(
+      (currentSource, codemod) => codemod(currentSource),
+      upgradedSource
+    );
     if (updated !== upgradedSource) appliedCodemods.push(version);
     upgradedSource = updated;
   }
