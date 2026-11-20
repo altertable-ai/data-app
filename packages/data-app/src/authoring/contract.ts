@@ -151,7 +151,12 @@ type OperationRun<Input, Output, Queries extends QueryDefinitions> = (
   },
   input: Input
 ) => Promise<Output>;
-type OperationPolicy = DataOperation<unknown, unknown>['policy'];
+const DEFAULT_MAX_DURATION_MS = 15_000;
+type ResolvedOperationPolicy = DataOperation<unknown, unknown>['policy'];
+/** Limits for one operation. `maxQueryRows` caps each query; the duration defaults to 15 seconds. */
+type OperationPolicy = Omit<ResolvedOperationPolicy, 'maxDurationMs'> & {
+  maxDurationMs?: number;
+};
 
 /** An operation that reads app filters. Its input has one field per filter, validated by
  * the filters themselves; views derive their filters, scope, and period from it. */
@@ -233,7 +238,10 @@ export function defineOperation(
     | InputOperationDefinition<unknown, unknown, QueryDefinitions>
   ) & { queries: QueryDefinitions }
 ): any {
-  const { policy } = operation;
+  const policy: ResolvedOperationPolicy = {
+    ...operation.policy,
+    maxDurationMs: operation.policy.maxDurationMs ?? DEFAULT_MAX_DURATION_MS,
+  };
   invariant(
     Number.isInteger(policy.maxQueryRows) &&
       policy.maxQueryRows > 0 &&
@@ -361,7 +369,7 @@ export function connectionCheck<
     queries: { connection } as CheckedQueries<{
       connection: QueryDefinitions[string];
     }>,
-    policy: { maxQueryRows: 1, maxDurationMs: 15_000 },
+    policy: { maxQueryRows: 1 },
     async run({ query }): Promise<true> {
       await query('connection');
       return true;

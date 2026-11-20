@@ -32,6 +32,7 @@ import findingStarterPage from '@/packages/data-app-examples/templates/starter-l
 import { dataApp as metricStarterApp } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/app';
 import metricStarterPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
 import { dataApp as hostedMetricStarterApp } from '@/packages/data-app-examples/templates/starter-metric-data-app/index';
+import { dataApp as costDashboardApp } from '@/tests/public-api/fixtures/cost-dashboard';
 
 const defaultRegisteredQueries: QueryDefinitions = {
   connection: {
@@ -39,11 +40,13 @@ const defaultRegisteredQueries: QueryDefinitions = {
     statement: 'SELECT 1 AS connection_check',
     params: {},
   },
+  ...costDashboardApp.queries,
   ...hostedStarterApp.queries,
   ...starterApp.queries,
 };
 const previewQueries: Readonly<Record<string, QueryDefinitions>> = {
   '/starter-data-app': hostedStarterApp.queries,
+  '/cost-dashboard': costDashboardApp.queries,
   '/starter-metric-data-app': hostedMetricStarterApp.queries,
   '/starter-finding-data-app': hostedFindingStarterApp.queries,
   '/playground': playgroundApp.queries,
@@ -106,16 +109,19 @@ const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
 const loadAnnotationStateBundle = await createBundleLoader(
   './fixtures/annotation-state-app.tsx'
 );
-// Tests exercise the hosted starter; `bun run dev:gallery` serves the playground, which
-// queries the demo tables it seeds into the mocked API.
+// Without the mocked API the cost dashboard runs on fixture rows; `bun run dev:gallery`
+// serves the playground, which queries the demo tables it seeds into the mocked API.
 const hostedApps = {
   development: { path: '/playground', entry: '../dev/playground.tsx' },
   test: {
-    path: '/starter-data-app',
-    entry: '../packages/data-app-examples/templates/starter-data-app/index.tsx',
+    path: '/cost-dashboard',
+    entry: '../tests/public-api/fixtures/cost-dashboard.tsx',
   },
 };
 const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
+const loadStarterBundle = await createBundleLoader(
+  '../packages/data-app-examples/templates/starter-data-app/index.tsx'
+);
 const loadMetricStarterBundle = await createBundleLoader(
   '../packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
 );
@@ -123,6 +129,9 @@ const loadFindingStarterBundle = await createBundleLoader(
   '../packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
 );
 const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
+const loadCostDashboardBundle = isDevelopment
+  ? await createBundleLoader(hostedApps.test.entry)
+  : loadHostedAppBundle;
 const loadPlaygroundBundle = isDevelopment
   ? loadHostedAppBundle
   : await createBundleLoader('../dev/playground.tsx');
@@ -222,6 +231,8 @@ Bun.serve({
     '/playground': bundleHost,
     '/content-sizing': bundleHost,
     [hostedApp.path]: bundleHost,
+    [hostedApps.test.path]: bundleHost,
+    '/starter-data-app': bundleHost,
     '/starter-finding-data-app': bundleHost,
     '/starter-metric-data-app': bundleHost,
   },
@@ -275,6 +286,8 @@ Bun.serve({
     }
     if (path === '/__test/content-sizing')
       return new Response(await loadHostedAppBundle());
+    if (path === '/__test/starter-data-app')
+      return new Response(await loadStarterBundle());
     if (path === '/__test/starter-metric-data-app')
       return new Response(await loadMetricStarterBundle());
     if (path === '/__test/starter-finding-data-app')
@@ -283,6 +296,8 @@ Bun.serve({
       return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)
       return new Response(await loadHostedAppBundle());
+    if (path === `/__test${hostedApps.test.path}`)
+      return new Response(await loadCostDashboardBundle());
     if (path === '/__test/annotation-state')
       return new Response(await loadAnnotationStateBundle());
     if (path === '/__test/bundle')

@@ -16,10 +16,10 @@ export const dataApp = defineDataApp({
       statement: `
 SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.segment_name METRICS samples.sample_count
-  WHERE $groupName = '' OR samples.group_name = $groupName
+  WHERE $groupName = 'all' OR samples.group_name = $groupName
 ) ORDER BY sample_count DESC, segment_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        groupName: { type: 'string', defaultValue: 'all' },
         limit: { type: 'number', defaultValue: 10 },
       },
     },
@@ -31,10 +31,10 @@ SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
       statement: `
 SELECT group_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.group_name METRICS samples.sample_count
-  WHERE $groupName = '' OR samples.group_name = $groupName
+  WHERE $groupName = 'all' OR samples.group_name = $groupName
 ) ORDER BY group_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        groupName: { type: 'string', defaultValue: 'all' },
         limit: { type: 'number', defaultValue: 10 },
       },
     },

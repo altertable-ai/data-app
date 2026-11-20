@@ -50,7 +50,8 @@ function readSource<Data, Input, Value, Source extends ViewSource<Data, Input>>(
   ) as SourceReading<Source, Value>;
 }
 
-/** Keys supply IDs; accessors supply raw CSV values. Formats affect display only. */
+/** Keys supply IDs; accessors supply raw CSV values. Formats affect display only.
+ * A column named after a row field reads that field; set `value` for computed columns. */
 export type DatasetColumn<Row> = { label?: string } & (
   | { value: (row: Row) => CsvCell; format?: (row: Row) => ReactNode }
   | { value: (row: Row) => number | null | undefined; format: MetricFormat }
@@ -64,10 +65,59 @@ export type DatasetColumn<Row> = { label?: string } & (
     }
 );
 
+/** A column that reads the row field named by its key. */
+type DatasetFieldColumn<Row> = {
+  label?: string;
+  value?: never;
+  format?: ((row: Row) => ReactNode) | MetricFormat | DateFormat;
+};
+
+/** The field values a format can display. */
+type FormattedField<Format> = Format extends { kind: 'date' }
+  ? string | null | undefined
+  : Format extends { kind: 'dateTime' }
+    ? string | number | null | undefined
+    : Format extends MetricFormat
+      ? number | null | undefined
+      : CsvCell;
+
+/** Checks columns without `value`: the key must name a row field its format can display.
+ * A failed check asks for the explicit accessor. Inline accessors elsewhere in the same
+ * dataset defer this check to the first displayed row. */
+export type DatasetColumns<Row, Columns> = string extends keyof Columns
+  ? unknown
+  : {
+      [Key in keyof Columns]: Columns[Key] extends { value: object }
+        ? unknown
+        : FormattedField<
+              Columns[Key] extends { format: infer Format } ? Format : undefined
+            > extends infer Field
+          ? Key extends keyof Row
+            ? [Row[Key]] extends [Field]
+              ? unknown
+              : { value: (row: Row) => Field }
+            : { value: (row: Row) => Field }
+          : never;
+    };
+
+/** The rows of an operation that returns them directly. */
+export type DatasetRows<Data> = Data extends readonly (infer Row)[]
+  ? Row
+  : never;
+
+/** `select` is required unless the operation returns the rows themselves. */
+export type DatasetSelect<Data, Input, Row> = Data extends readonly unknown[]
+  ? unknown
+  : { select: (data: Data, input: Input) => readonly Row[] };
+
 export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   name: string;
-  select: (data: Data, input: Input) => readonly Row[];
-  columns: Record<string, DatasetColumn<NoInfer<Row>>>;
+  /** Rows to bind. Omit when the operation returns the rows themselves. */
+  select?: (data: Data, input: Input) => readonly Row[];
+  columns: Record<
+    string,
+    DatasetColumn<NoInfer<Row>> | DatasetFieldColumn<NoInfer<Row>>
+  >;
   rowKey: (row: NoInfer<Row>) => string | number;
   evidence: Evidence;
   emptyFallback?: EmptyContent;
@@ -179,10 +229,28 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       ids.length > 0 && ids.every(id => !!id.trim()),
       'A dataset needs nonempty column IDs.'
     );
-    const { select, rowKey } = definition;
+    const { rowKey } = definition;
+    const select =
+      definition.select ??
+      ((data: Data) => {
+        invariant(
+          Array.isArray(data),
+          `Dataset ${definition.name} needs \`select\` because its operation does not return rows.`
+        );
+        return data as readonly Row[];
+      });
     const fields = Object.entries(definition.columns).map(([id, column]) => ({
       ...column,
       id,
+      value:
+        column.value ??
+        ((row: Row) => {
+          invariant(
+            typeof row === 'object' && row !== null && id in row,
+            `Dataset ${definition.name} column ${id} needs \`value\`: its rows have no ${id} field.`
+          );
+          return (row as Record<string, CsvCell>)[id];
+        }),
       label:
         column.label?.trim() ||
         id

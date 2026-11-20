@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataContext, mountDataApp } from '@altertable/data-app-react';
 import {
+  createDataContext,
   createDataHooks,
   DataApp,
   DataSection,
@@ -8,6 +8,7 @@ import {
   Ranking,
   Grid,
   GridItem,
+  mountDataApp,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
@@ -29,10 +30,10 @@ export const dataApp = defineDataApp({
       statement: `
 SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.segment_name METRICS samples.sample_count
-  WHERE $groupName = '' OR samples.group_name = $groupName
+  WHERE $groupName = 'all' OR samples.group_name = $groupName
 ) ORDER BY sample_count DESC, segment_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        groupName: { type: 'string', defaultValue: 'all' },
         limit: { type: 'number', defaultValue: 10 },
       },
     },
@@ -44,16 +45,17 @@ SELECT segment_name, sample_count FROM SEMANTIC_VIEW(
       statement: `
 SELECT group_name, sample_count FROM SEMANTIC_VIEW(
   starter_sample_counts DIMENSIONS samples.group_name METRICS samples.sample_count
-  WHERE $groupName = '' OR samples.group_name = $groupName
+  WHERE $groupName = 'all' OR samples.group_name = $groupName
 ) ORDER BY group_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        groupName: { type: 'string', defaultValue: 'all' },
         limit: { type: 'number', defaultValue: 10 },
       },
     },
   },
 });
 // Reuse this group filter in both operations so one selection updates both charts.
+// The queries treat 'all' as every group.
 const groupName = choiceFilter({
   key: 'group',
   label: 'Group',
@@ -64,18 +66,12 @@ const groupName = choiceFilter({
     { id: 'Beta', label: 'Beta' },
   ],
 });
-// The sample SQL uses '' for all groups; the filter control uses 'all'.
-function queryGroup(groupName: string) {
-  return groupName === 'all' ? '' : groupName;
-}
 export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsByGroup', {
-        groupName: queryGroup(groupName),
-      });
+      const queryResult = await query('sampleCountsByGroup', { groupName });
       return queryResult.rows.map(
         (row): { groupName: 'Alpha' | 'Beta'; sampleCount: number } => {
           if (row.group_name !== 'Alpha' && row.group_name !== 'Beta')
@@ -90,11 +86,9 @@ export const operations = dataApp.defineOperations({
   }),
   sampleCountsBySegment: dataApp.defineOperation({
     filters: { groupName },
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsBySegment', {
-        groupName: queryGroup(groupName),
-      });
+      const queryResult = await query('sampleCountsBySegment', { groupName });
       return queryResult.rows.map(row => ({
         segmentName: row.segment_name,
         sampleCount: parseCount(row.sample_count),
@@ -102,11 +96,7 @@ export const operations = dataApp.defineOperations({
     },
   }),
 });
-const queryNames = {
-  ...operations.sampleCountsByGroup.queryNames,
-  ...operations.sampleCountsBySegment.queryNames,
-};
-const sampleDataContext = createDataContext(queryNames)({
+const sampleDataContext = createDataContext(dataApp.queryNames)({
   description:
     'The starter_sample_counts semantic view measures fictional sample volume by group and segment. The source has no time dimension.',
   glossary: {
@@ -115,8 +105,8 @@ const sampleDataContext = createDataContext(queryNames)({
       definition:
         'Sum of recorded sample counts in the selected group scope. Additive across groups and segments.',
       queryNames: [
-        queryNames.sampleCountsByGroup,
-        queryNames.sampleCountsBySegment,
+        dataApp.queryNames.sampleCountsByGroup,
+        dataApp.queryNames.sampleCountsBySegment,
       ],
     },
   },
@@ -125,7 +115,6 @@ const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching groups',
     description: 'No observations are available for this query.',
@@ -133,11 +122,10 @@ const sampleCountsView = defineView({
 });
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
-  select: rows => rows,
   rowKey: row => row.groupName,
   columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    groupName: { label: 'Group' },
+    sampleCount: { format: { kind: 'count' } },
   },
   evidence: {
     id: 'counts-by-group',
@@ -147,7 +135,6 @@ const sampleCounts = sampleCountsView.dataset({
 const segmentCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsBySegment',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching segments',
     description: 'No observations are available for this query.',
@@ -155,11 +142,10 @@ const segmentCountsView = defineView({
 });
 const segmentCounts = segmentCountsView.dataset({
   name: 'Counts by segment',
-  select: rows => rows,
   rowKey: row => row.segmentName,
   columns: {
-    segmentName: { label: 'Segment', value: row => row.segmentName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    segmentName: { label: 'Segment' },
+    sampleCount: { format: { kind: 'count' } },
   },
   evidence: { id: 'counts-by-segment', glossaryIds: ['sampleCount'] },
 });

@@ -1,36 +1,17 @@
 import { createDataContext } from '@altertable/data-app-react';
 
-import { operations } from '#app/operations.ts';
+import { dataApp } from '#config';
 
-const queryNames = {
-  ...operations.costBreakdown.queryNames,
-  ...operations.totalCost.queryNames,
-  ...operations.costsByCustomer.queryNames,
-  ...operations.costTrend.queryNames,
-  ...operations.customerServiceMix.queryNames,
-};
-// Replace these example definitions and coverage with verified source metadata.
-export const costDataContext = createDataContext(queryNames)({
+// Replace the description and definitions with verified source metadata.
+export const dataContext = createDataContext(dataApp.queryNames)({
   description:
-    'Fictional weekly customer allocations for August and September 2026. Scope filters apply to every chart and its contributing records.',
+    'Fictional sample counts by group. Gamma has a recorded count of zero.',
   glossary: {
-    allocatedCost: {
-      term: 'Allocated cost',
+    sampleCount: {
+      term: 'Sample count',
       definition:
-        'USD charges in the selected billing month and customer scope. Four recorded allocation batches, dated the 1st, 8th, 15th and 22nd, sum to each monthly allocation. Customers sum to services; services sum to the total. Zero is a recorded charge of zero.',
-      queryNames: Object.values(queryNames),
-    },
-    customerCount: {
-      term: 'Customers',
-      definition:
-        'Distinct customers with recorded allocations in the selected scope, including recorded zero charges.',
-      queryNames: [queryNames.totalCost],
-    },
-    averageCustomerCost: {
-      term: 'Average per customer',
-      definition:
-        'Total allocated cost divided by the number of distinct customers in the same selected scope, including customers with zero charges.',
-      queryNames: [queryNames.totalCost],
+        'Sum of recorded samples in the selected group scope. Additive across groups.',
+      queryNames: [dataApp.queryNames.sampleCountsByGroup],
     },
   },
 });

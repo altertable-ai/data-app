@@ -13,15 +13,19 @@ does not require a particular content structure or presentation story.
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).
 
-## Preview the use-case starters
+## Preview the starters
 
 From the SDK repository, run `bun run dev:gallery` with Docker available. It starts
 and seeds the Altertable mock with fictional sample data.
 
 | Starter | Hosted preview                                    | Local preview            |
 | ------- | ------------------------------------------------- | ------------------------ |
+| General | <http://127.0.0.1:27418/starter-data-app>         | <http://127.0.0.1:27420> |
 | Metric  | <http://127.0.0.1:27418/starter-metric-data-app>  | <http://127.0.0.1:27421> |
 | Finding | <http://127.0.0.1:27418/starter-finding-data-app> | <http://127.0.0.1:27422> |
+
+<http://127.0.0.1:27418/cost-dashboard> previews a larger example with summary
+metrics, a breakdown, a stacked chart, and a detail destination.
 
 Copied starters use the normal query connection. Replace their example queries
 with verified sources in the target lakehouse; the mock and seed belong only to

@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createDataHooks, createDataContext } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -407,4 +408,41 @@ test('operations sharing a client share one declaration per filter name', () => 
   ).toThrow(
     'Operations read different filters named group; declare it once and share it (second).'
   );
+});
+
+test('an app names its queries and defaults operation duration limits', () => {
+  const dataApp = defineDataApp({
+    title: 'Rows',
+    description: 'Rows by group.',
+    scope: { organization: 'demo', environment: 'test' },
+    queries: {
+      rows: {
+        statement: 'SELECT 1 AS value',
+        params: {},
+        projections: { value: { type: 'number' } },
+      },
+      totals: {
+        statement: 'SELECT 2 AS value',
+        params: {},
+        projections: { value: { type: 'number' } },
+      },
+    },
+  });
+  expect(dataApp.queryNames).toEqual({ rows: 'rows', totals: 'totals' });
+
+  const rows = dataApp.defineOperation({
+    policy: { maxQueryRows: 5 },
+    async run() {
+      return [];
+    },
+  });
+  expect(rows.policy).toEqual({ maxQueryRows: 5, maxDurationMs: 15_000 });
+  expect(
+    dataApp.defineOperation({
+      policy: { maxQueryRows: 5, maxDurationMs: 2_000 },
+      async run() {
+        return [];
+      },
+    }).policy.maxDurationMs
+  ).toBe(2_000);
 });

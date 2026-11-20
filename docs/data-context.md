@@ -1,19 +1,16 @@
 # Data context and evidence
 
-Keep the selected starter's operations and context. Build one context from every
-operation's `queryNames` and share it across the app's views. Reference only
-queries the app executes.
+Keep the selected starter's operations and context. Build one context from
+`dataApp.queryNames` and share it across the app's views. Each glossary entry
+and dataset cites the queries that support it.
 
 ## Bind evidence
 
 ```tsx
 import { createDataContext } from '@altertable/data-app-react';
 
-// ... operations
-const queryNames = {
-  ...operations.sampleCountsByGroup.queryNames,
-  ...operations.sampleTotal.queryNames,
-};
+// ... dataApp
+const { queryNames } = dataApp;
 const sampleDataContext = createDataContext(queryNames)({
   description: 'Sample counts for the selected groups.',
   glossary: {
@@ -58,8 +55,8 @@ const identifiers = defineDataIdentifiers({
 });
 const { DataIdentifier } = identifiers;
 
-// ... queryNames for the inspected source
-const eventDataContext = createDataContext(queryNames)({
+// ... dataApp for the inspected source
+const eventDataContext = createDataContext(dataApp.queryNames)({
   identifiers: identifiers.definitions,
   description: (
     <>

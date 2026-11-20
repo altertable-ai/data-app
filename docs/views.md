@@ -21,7 +21,6 @@ const { defineView } = createDataHooks(client);
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
 // ... sampleCounts dataset and story callback
@@ -56,7 +55,6 @@ const { defineView } = createDataHooks(client);
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
 const sampleTotalView = defineView({
@@ -92,8 +90,10 @@ refresh or failure. Use `result.scope` in content and `view.scope(snapshot)` in
 stories. Let views and bound widgets own request state and loading feedback.
 Keep static introductions outside loading boundaries.
 
-A measured zero is valid data. Set `isEmpty` and useful `emptyFallback` copy when
-a result can be empty; omit both when it never is, such as a total.
+A measured zero is valid data. A view whose operation returns no rows is empty;
+give it useful `emptyFallback` copy. Set `isEmpty` for any other result that can
+be empty, such as a nullable summary, and omit both for one that never is, such
+as a total.
 
 ## Detail destinations
 
@@ -111,16 +111,14 @@ const groupView = defineDetailView({
   dataContext: sampleDataContext,
   parseInput: operations.sampleCountsByGroup.input,
   describeInput: ({ groupName }) => `group ${groupName}`,
-  isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching group' },
 });
 const groupCounts = groupView.dataset({
   name: 'Group counts',
-  select: rows => rows,
   rowKey: row => row.groupName,
   columns: {
-    groupName: { value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    groupName: {},
+    sampleCount: { format: { kind: 'count' } },
   },
   evidence: { id: 'group-counts', glossaryIds: ['sampleCount'] },
 });

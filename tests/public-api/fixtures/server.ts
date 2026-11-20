@@ -19,6 +19,9 @@ import chartGrids from '@/tests/public-api/fixtures/chart-grids.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
 import clients from '@/tests/public-api/fixtures/clients.html';
 import controls from '@/tests/public-api/fixtures/controls.html';
+import { dataApp as costDashboardApp } from '@/tests/public-api/fixtures/cost-dashboard';
+import { dataApp as localCostDashboardApp } from '@/tests/public-api/fixtures/cost-dashboard-local/app';
+import localCostDashboard from '@/tests/public-api/fixtures/cost-dashboard-local/src/index.html';
 import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
 import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
 import datetimeComparison from '@/tests/public-api/fixtures/datetime-comparison.html';
@@ -48,6 +51,8 @@ const localSmokeQueries = {
   },
 } as const;
 const registeredQueries: Readonly<Record<string, { statement: string }>> = {
+  ...costDashboardApp.queries,
+  ...localCostDashboardApp.queries,
   ...hostedStarterApp.queries,
   ...localStarterApp.queries,
   ...authoringFeaturesApp.queries,
@@ -70,6 +75,7 @@ const [
   metricStarter,
   app,
   starter,
+  costDashboard,
   authoringFeatures,
   frame,
   annotations,
@@ -85,6 +91,7 @@ const [
   ),
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
   bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
+  bundle('tests/public-api/fixtures/cost-dashboard.tsx'),
   bundle('tests/public-api/fixtures/authoring-features-app.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
   bundle('tests/public-api/fixtures/annotations-app.tsx'),
@@ -118,12 +125,14 @@ const server = Bun.serve({
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
+    '/cost-dashboard': bundleHost,
     '/starter-authoring-features': bundleHost,
     '/starter-finding-data-app': bundleHost,
     '/starter-metric-data-app': bundleHost,
     '/local-finding': localFinding,
     '/local-metric': localMetric,
     '/local-data-app': starterPage,
+    '/local-cost-dashboard': localCostDashboard,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
@@ -175,6 +184,8 @@ const server = Bun.serve({
       return new Response(metricStarter);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
+    if (url.pathname === '/__test/cost-dashboard')
+      return new Response(costDashboard);
     if (url.pathname === '/__test/starter-authoring-features')
       return new Response(authoringFeatures);
     if (url.pathname === '/__test/silent')

@@ -83,6 +83,7 @@ if (isPlayground)
   document.title = `${isContentSizing ? 'Content sizing' : 'Playground'} · Altertable`;
 const appPreview = [
   '/starter-data-app',
+  '/cost-dashboard',
   '/starter-metric-data-app',
   '/starter-finding-data-app',
   '/playground',

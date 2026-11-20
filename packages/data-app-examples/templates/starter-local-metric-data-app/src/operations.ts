@@ -3,18 +3,12 @@ import { parseCount } from '@altertable/data-app/contract';
 import { operationFilters } from '#app/filters.ts';
 import { dataApp } from '#config';
 
-// The sample SQL uses '' for all groups; the filter control uses 'all'.
-function queryGroup(groupName: string) {
-  return groupName === 'all' ? '' : groupName;
-}
 export const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: operationFilters.sampleCountsByGroup,
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsByGroup', {
-        groupName: queryGroup(groupName),
-      });
+      const queryResult = await query('sampleCountsByGroup', { groupName });
       return queryResult.rows.map(
         (row): { groupName: 'Alpha' | 'Beta'; sampleCount: number } => {
           if (row.group_name !== 'Alpha' && row.group_name !== 'Beta')
@@ -29,11 +23,9 @@ export const operations = dataApp.defineOperations({
   }),
   sampleCountsBySegment: dataApp.defineOperation({
     filters: operationFilters.sampleCountsBySegment,
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const queryResult = await query('sampleCountsBySegment', {
-        groupName: queryGroup(groupName),
-      });
+      const queryResult = await query('sampleCountsBySegment', { groupName });
       return queryResult.rows.map(row => ({
         segmentName: row.segment_name,
         sampleCount: parseCount(row.sample_count),

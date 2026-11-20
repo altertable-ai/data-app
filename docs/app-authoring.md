@@ -14,82 +14,162 @@ for the requested change. For a new app, use the starter supplied by the authori
 | Hosted / remote / cloud | `starter-data-app/index.tsx`                                        |
 | Local                   | `starter-local-data-app`                                            |
 | Hosted metric           | `starter-metric-data-app/index.tsx`                                 |
-| Hosted Finding          | `starter-finding-data-app/index.tsx`                                |
 | Local metric            | `starter-local-metric-data-app`                                     |
+| Hosted Finding          | `starter-finding-data-app/index.tsx`                                |
 | Local Finding           | `starter-local-finding-data-app`                                    |
 
-Choose the runtime and use case supplied by the app brief. Each starter is editable
-source; replace fixture queries and sample content before publishing. The starters demonstrate query → operation
-→ context → view → dataset → widget composition.
-Hosted apps stay in one file with public package imports
-and a literal `defineDataApp()` declaration. Local apps use the same composition
-with their existing server/client wiring. Replace fixture queries and example content; edit
-app-owned files, not installed packages.
+Choose the runtime and use case supplied by the app brief. The general starter
+is one complete result: one query, operation, view, dataset, and chart. The
+metric and Finding starters add a second result, drill-down, and comparison.
+Hosted apps stay in one file with public package imports and a literal
+`defineDataApp()` declaration. Local apps split the same code across app-owned
+files. Edit app-owned files, not installed packages.
 
-## Connect data and components
+## Write the app in order
 
-1. **Define the question and scope.** Inspect relevant fields, definitions, time
-   coverage, and missing or incomplete observations. Establish the population,
-   grain, measures, and comparison. Choose a chart that answers the question.
-2. **Separate independent results.** Give each independently queried result its
-   own named query and operation. Widgets may share one result when they show
-   the same rows or derive related metrics from the same summary, such as total
-   cost, customer count, and average cost. Keep unrelated results separate.
-   Write queries against inspected data and preserve supplied
-   metric definitions. Write DuckDB SQL with named parameters; declare `params`
-   and result aliases in `projections`.
-   Execute named queries with `query()` and derive results from its typed rows.
-3. **Update context and bindings.** Describe definitions and coverage in the data
-   context, using the operation's `queryNames` for evidence. Declare each dataset
-   and metric once, with stable row keys, raw column values, and shared formats.
-4. **Declare filters once, then one view per operation.** Declare each filter
-   and display choice as a constant and list the ones each operation reads in
-   its `filters`; the operation receives one flat input field per filter. Define
-   each view with `defineView({ operation, dataContext })`: its filters,
-   reporting period, and scope derive from the operation. Pass the headline view
-   to `<DataApp view>`, which renders every filter's control, and render each
-   view in its own `<DataSection>`. Keep protected values such as `orgId`
-   backend-owned. See [views](views.md#give-each-independent-result-its-own-view) and
-   [filters](filters.md).
-5. **Compose the content.** Follow the app brief for section order and narrative.
-   Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
-   from `@altertable/data-app-react`. Keep static explanations outside loading
-   boundaries. Use app tabs only for distinct questions and widget `views` only
-   for alternate representations of one dataset. See [layout](layout.md#adapt-to-the-available-container)
-   for container-based sizing. Keep default appearance;
-   customize when requested. Use custom UI only when bound components cannot
-   express the requirement.
-6. **Connect shell features.** See [stories and export](stories-and-export.md)
-   for the current `<DataApp>` requirements and how to bind these features to the
-   displayed result. The app brief determines presentation content and export
-   coverage.
+Each step uses what the previous one declared. The snippets are the general
+starter; repeat steps 2–7 for each independent result. Widgets share a result
+when they show the same rows or metrics from one summary, such as a total, a
+count, and their average.
 
-Keep credentials, authorization, and enforced query limits in the host/backend.
-The starter supplies transport and mounting; change them only for an explicit
-integration task.
+1. **Inspect the data.** Establish the population, grain, measures, and
+   comparison from real fields, definitions, time coverage, and missing
+   observations. Preserve supplied metric definitions.
+2. **Declare the query.** Write DuckDB SQL with named parameters, and declare
+   every parameter and result alias. See [queries](contract.md).
 
-## Link to external pages
+   ```ts
+   export const dataApp = defineDataApp({
+     // ... title, description, and scope
+     queries: {
+       sampleCountsByGroup: {
+         statement: `
+   SELECT group_name, CAST(SUM(sample_count) AS BIGINT) AS sample_count
+   FROM sample_counts
+   WHERE $groupName = 'all' OR group_name = $groupName
+   GROUP BY group_name ORDER BY sample_count DESC, group_name LIMIT $limit`,
+         params: {
+           groupName: { type: 'string', defaultValue: 'all' },
+           limit: { type: 'number', defaultValue: 10 },
+         },
+         projections: {
+           group_name: { type: 'string' },
+           sample_count: { type: 'number' },
+         },
+       },
+     },
+   });
+   ```
 
-Use `<ExternalLink>` for HTTPS destinations in widget content:
+3. **Declare filters, then the operation that reads them.** Declare each filter
+   once as a constant. `run()` receives one field per filter and returns the
+   rows the app displays. See [filters](filters.md).
 
-```tsx
-import { ExternalLink } from '@altertable/data-app-react';
+   ```ts
+   const groupName = choiceFilter({
+     key: 'group',
+     label: 'Group',
+     defaultValue: 'all',
+     options: [
+       { id: 'all', label: 'All groups' },
+       { id: 'Alpha', label: 'Alpha' },
+     ],
+   });
 
-function ReportLink() {
-  return (
-    <ExternalLink href="https://example.com/report">
-      View full report
-    </ExternalLink>
-  );
-}
-```
+   export const operations = dataApp.defineOperations({
+     sampleCountsByGroup: dataApp.defineOperation({
+       filters: { groupName },
+       policy: { maxQueryRows: 10 },
+       async run({ query }, { groupName }) {
+         const { rows } = await query('sampleCountsByGroup', { groupName });
+         return rows.map(row => ({
+           groupName: row.group_name,
+           sampleCount: row.sample_count,
+         }));
+       },
+     }),
+   });
+   ```
 
-For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
-`navigateNewWindowOrTab` from `@altertable/data-app/client`. For example,
-`navigateNewWindowOrTab(url, event)` accepts a DOM or React event: Shift requests
-a window, Ctrl/Cmd requests a tab, and an unmodified event does nothing.
+4. **Describe the data.** Define the terms readers need and cite the queries
+   behind each one. See [data context](data-context.md).
 
-Embedded hosts must enable the [external link route](embed.md#external-links).
+   ```ts
+   const dataContext = createDataContext(dataApp.queryNames)({
+     description: 'Sample counts by group.',
+     glossary: {
+       sampleCount: {
+         term: 'Sample count',
+         definition: 'Sum of recorded samples in the selected group scope.',
+         queryNames: [dataApp.queryNames.sampleCountsByGroup],
+       },
+     },
+   });
+   ```
+
+5. **Define one view per operation.** Its filters, reporting period, and scope
+   derive from the operation. See [views](views.md).
+
+   ```ts
+   const { defineView } = createDataHooks(operations.createDataClient());
+   const sampleCountsView = defineView({
+     dataContext,
+     operation: 'sampleCountsByGroup',
+     emptyFallback: { title: 'No matching groups' },
+   });
+   ```
+
+6. **Bind a dataset or metric to the view.** A column named after a row field
+   reads it; a stable `rowKey` identifies each row. See
+   [widgets](widgets.md#declare-datasets-and-metrics).
+
+   ```ts
+   const sampleCounts = sampleCountsView.dataset({
+     name: 'Sample counts',
+     rowKey: row => row.groupName,
+     columns: {
+       groupName: { label: 'Group' },
+       sampleCount: { format: { kind: 'count' } },
+     },
+     evidence: { id: 'counts-by-group', glossaryIds: ['sampleCount'] },
+   });
+   ```
+
+7. **Render the result.** Pass the headline view to `<DataApp view>`, which
+   renders every filter's control, and give each view's content its own
+   `<DataSection>`. Follow the app brief for section order and narrative.
+
+   ```tsx
+   const countsContent = sampleCountsView.content(result => (
+     <VisualizationWidget dataset={sampleCounts} source={result}>
+       {rows => (
+         <BarChart
+           ariaLabel="Sample counts by group"
+           unit="samples"
+           items={rows.map(row => ({
+             id: row.groupName,
+             label: row.groupName,
+             value: row.sampleCount,
+           }))}
+         />
+       )}
+     </VisualizationWidget>
+   ));
+
+   function App() {
+     return (
+       <DataApp view={sampleCountsView} datasets={[sampleCounts]}>
+         <DataSection content={countsContent} />
+       </DataApp>
+     );
+   }
+   ```
+
+Use bound widgets from `@altertable/data-app-react` for data-backed content.
+Use [`/ui` components](ui.md) or custom UI only when a bound widget cannot
+express the requirement. Keep credentials, authorization, protected values such
+as `orgId`, and enforced query limits in the host/backend. The starter supplies
+transport and mounting; change them only for an explicit integration task.
 
 ## Verify the app
 
@@ -110,12 +190,36 @@ together. Repair requests preserve the existing authorization boundary and cover
 only exercised checks and interactions. See [diagnostics and repair](diagnostics.md)
 for host integration.
 
+## Fix common failures
+
+| Symptom                                                          | Fix                                                                                         |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| The hosted app declaration is rejected                           | Keep the `defineDataApp()` argument literal; see [hosted apps](hosted-apps.md)              |
+| `Unknown query name` or a parameter type error in `query()`      | Use a name and the exact parameters declared in `queries`                                   |
+| A result column is missing or has the wrong type                 | Declare every returned SQL alias in `projections` with its exact casing                     |
+| A column asks for `value`, or reports that its rows lack a field | Name the column after a field of the returned rows, or set `value` for a computed column    |
+| A dataset asks for `select`                                      | The operation returns an object; select its row array                                       |
+| A filter reports a duplicate name or URL key                     | Reuse one filter constant across operations instead of declaring it twice                   |
+| A filter reports a reserved URL key                              | Choose a `key` other than `view`, `about`, `tab`, `present`, `step`, and `details`          |
+| An operation reports its row or duration limit                   | Set `policy.maxQueryRows` between 1 and 10,000; paginate larger results in the query        |
+| A binding requires the source from its own view                  | Pass the `result` of the same view's `content()` to its datasets and metrics                |
+| Evidence reports an unknown query or glossary ID                 | Cite names from `dataApp.queryNames` and glossary keys from the view's data context         |
+| A metric comparison is rejected                                  | Return `previous` only when the operation reads a `dateTimeRangeFilter()` with `comparison` |
+
 ## Look up only what is missing
 
-Search [REFERENCE.md](../REFERENCE.md) for the exact symbol first:
+Search [REFERENCE.md](../REFERENCE.md) for the exact export or method first:
 
 ```sh
-rg '^LineChart\b' REFERENCE.md
+rg '(^|\.)defineView\b' REFERENCE.md
+```
+
+`DataApp` and the widgets exist twice: `@altertable/data-app-react` exports the
+bound component and `/ui` a primitive with different props. Each field in the
+reference names its import path, so read the fields of the one you import:
+
+```sh
+rg '^TableWidget\..*\(@altertable/data-app-react\)' REFERENCE.md
 ```
 
 Open only the section needed for a requirement the starter does not cover:
@@ -124,8 +228,12 @@ Open only the section needed for a requirement the starter does not cover:
 | -------------------------------------------- | ----------------------------------------------------------------- |
 | Adding categorical, numeric, or time filters | [Filters](filters.md)                                             |
 | Adding a chart or narrative binding          | [Widgets](widgets.md)                                             |
-| Adding supplemental control hints            | [Tooltips](ui.md#tooltips-and-explanations)                       |
+| Adding a second result or a summary          | [Views](views.md#give-each-independent-result-its-own-view)       |
 | Adding a detail destination                  | [Detail views](views.md#detail-destinations)                      |
+| Adding a presentation story or CSV export    | [Stories and export](stories-and-export.md)                       |
+| Arranging sections or adapting to width      | [Layout](layout.md)                                               |
+| Linking to external pages                    | [External links](ui.md#external-links)                            |
+| Adding supplemental control hints            | [Tooltips](ui.md#tooltips-and-explanations)                       |
 | Registering physical sources                 | [Source identifiers](data-context.md#register-source-identifiers) |
 | Customizing appearance or CSS                | [Formatting](formatting-and-appearance.md), [styling](styling.md) |
 

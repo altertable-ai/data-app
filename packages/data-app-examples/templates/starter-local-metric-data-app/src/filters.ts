@@ -1,6 +1,7 @@
 import { choiceFilter } from '@altertable/data-app/contract';
 
 // Reuse this group filter in both operations so one selection updates both charts.
+// The queries treat 'all' as every group.
 const groupName = choiceFilter({
   key: 'group',
   label: 'Group',

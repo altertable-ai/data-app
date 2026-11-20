@@ -23,13 +23,10 @@ CLI proxy. Missing credentials stop startup.
 
 ## Explore the example
 
-Choose a billing month and customer to explore the fictional cost dashboard.
-Compare weekly allocations, switch the cost breakdown between services and
-customers, and inspect the service mix for each customer. Select a service to see
-its contributing customer allocations. Widget inspection exposes the registered
-query, selected parameters, and cost definitions. All views use the same scope;
-weekly batches, customer allocations, and services reconcile to the total.
-Logging demonstrates a recorded zero.
+Choose a group to narrow the fictional sample counts. The chart, its inspected
+rows, and the CSV export share one query, operation, view, and dataset. Widget
+inspection exposes the registered query, selected parameters, and the sample
+count definition. Gamma demonstrates a recorded zero.
 
 ## Build the app
 

@@ -23,6 +23,29 @@ For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity,
 `mountDataApp()` installs styles. For a custom root using `DataAppProvider`, call
 `injectDataAppStyles()` before mounting; imports do not install styles.
 
+## External links
+
+Use `<ExternalLink>` for HTTPS destinations in widget content:
+
+```tsx
+import { ExternalLink } from '@altertable/data-app-react';
+
+function ReportLink() {
+  return (
+    <ExternalLink href="https://example.com/report">
+      View full report
+    </ExternalLink>
+  );
+}
+```
+
+For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
+`navigateNewWindowOrTab` from `@altertable/data-app/client`. For example,
+`navigateNewWindowOrTab(url, event)` accepts a DOM or React event: Shift requests
+a window, Ctrl/Cmd requests a tab, and an unmodified event does nothing.
+
+Embedded hosts must enable the [external link route](embed.md#external-links).
+
 ## Tooltips and explanations
 
 Use `<Tooltip>` for a short, supplemental description of an already labeled
@@ -185,9 +208,56 @@ conversion windows, and cohort definitions; these components visualize results.
 - `<JourneyChart>`: full ordered paths with counts and outcomes; preserve repeated
   events and mark cut-off paths as `truncated`.
 
-See the [complete component examples](https://github.com/altertable-ai/data-app/blob/main/dev/fixtures/gallery-basics.tsx)
-for input shapes and composition. Read the exported types and JSDoc for exact
-constraints before adapting displayed rows.
+Each chart takes an `ariaLabel` and a population `unit`:
+
+```tsx
+<FunnelChart
+  ariaLabel="Activation funnel"
+  unit="users"
+  steps={[
+    { id: 'visit', label: 'Visited' },
+    { id: 'signup', label: 'Signed up' },
+  ]}
+  series={[{ id: 'free', label: 'Free plan', values: [1000, 600] }]}
+/>
+
+<RetentionChart
+  ariaLabel="Weekly signup retention"
+  unit="users"
+  series={[
+    {
+      id: 'sep7',
+      label: 'Sep 7 signups',
+      cohortSize: 1000,
+      points: [
+        { offset: 0, label: 'Week 0', rate: 1, retainedCount: 1000 },
+        { offset: 1, label: 'Week 1', rate: 0.47, retainedCount: 470 },
+        { offset: 2, label: 'Week 2', rate: null, retainedCount: null },
+      ],
+    },
+  ]}
+/>
+
+<JourneyChart
+  ariaLabel="Onboarding journey"
+  unit="users"
+  paths={[
+    {
+      id: 'subscribed',
+      steps: [
+        { event: 'Signed up', property: null },
+        { event: 'Subscribed', property: null },
+      ],
+      count: 460,
+      converted: true,
+      truncated: false,
+    },
+  ]}
+/>
+```
+
+Search [REFERENCE.md](../REFERENCE.md) for `FunnelChartSeries`,
+`RetentionChartPoint`, and `JourneyChartPath` before adapting displayed rows.
 
 ### Composed charts
 

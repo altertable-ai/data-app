@@ -16,7 +16,6 @@ const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching groups',
     description: 'No observations are available for this query.',
@@ -24,11 +23,10 @@ const sampleCountsView = defineView({
 });
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
-  select: rows => rows,
   rowKey: row => row.groupName,
   columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    groupName: { label: 'Group' },
+    sampleCount: { format: { kind: 'count' } },
   },
   evidence: {
     id: 'counts-by-group',
@@ -38,7 +36,6 @@ const sampleCounts = sampleCountsView.dataset({
 const segmentCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsBySegment',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching segments',
     description: 'No observations are available for this query.',
@@ -46,11 +43,10 @@ const segmentCountsView = defineView({
 });
 const segmentCounts = segmentCountsView.dataset({
   name: 'Counts by segment',
-  select: rows => rows,
   rowKey: row => row.segmentName,
   columns: {
-    segmentName: { label: 'Segment', value: row => row.segmentName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    segmentName: { label: 'Segment' },
+    sampleCount: { format: { kind: 'count' } },
   },
   evidence: { id: 'counts-by-segment', glossaryIds: ['sampleCount'] },
 });
