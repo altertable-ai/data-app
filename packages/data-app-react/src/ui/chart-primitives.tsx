@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentProps,
@@ -38,6 +39,7 @@ import {
 
 import { chartField } from './chart-data.ts';
 import {
+  ChartActiveSampleContext,
   ChartInteractionContext,
   ChartRegistrationContext,
   type ChartDataKey,
@@ -115,27 +117,27 @@ function renderBarShape(
   return <Rectangle {...props} />;
 }
 
-function InspectedBarVisual({
-  seriesId,
-  shape,
-  activeShape,
-  dimmed,
-  ...props
-}: InspectedBarProps) {
+function InspectedBarVisual(inspected: InspectedBarProps) {
   const interaction = useContext(ChartInteractionContext);
-  const selected =
+  const activeBar = useContext(ChartActiveSampleContext)?.activeBar;
+  const selected = Boolean(
     interaction?.isPointerInspection &&
-    interaction.activeBar?.seriesId === seriesId &&
-    interaction.activeBar.index === props.originalDataIndex;
-  const renderedProps = {
-    ...props,
-    isActive: Boolean(selected || props.isActive),
-    opacity: dimmed ? undefined : selected ? 0.75 : props.opacity,
-  };
-  const option =
-    selected && activeShape && activeShape !== true ? activeShape : shape;
-  const rendered = renderBarShape(option, renderedProps);
-  return dimmed ? <g opacity={0.2}>{rendered}</g> : rendered;
+    activeBar?.seriesId === inspected.seriesId &&
+    activeBar.index === inspected.originalDataIndex
+  );
+  // Every bar reads the active sample; only the two whose selection changes redraw.
+  return useMemo(() => {
+    const { seriesId: _, shape, activeShape, dimmed, ...props } = inspected;
+    const renderedProps = {
+      ...props,
+      isActive: selected || Boolean(props.isActive),
+      opacity: dimmed ? undefined : selected ? 0.75 : props.opacity,
+    };
+    const option =
+      selected && activeShape && activeShape !== true ? activeShape : shape;
+    const rendered = renderBarShape(option, renderedProps);
+    return dimmed ? <g opacity={0.2}>{rendered}</g> : rendered;
+  }, [inspected, selected]);
 }
 
 /** Shared series defaults; native props override every authored choice. */
@@ -568,6 +570,7 @@ function barTooltipPosition(
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
+  const sample = useContext(ChartActiveSampleContext);
   const legendInteraction = useContext(ChartLegendInteractionContext);
   const plot = usePlotArea();
   const [tooltipSize, setTooltipSize] = useState({ width: 0, height: 0 });
@@ -580,13 +583,13 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   }, []);
   const { content: authoredContent, ...tooltipProps } = props;
   const activeBar = interaction?.isPointerInspection
-    ? interaction.activeBar
+    ? (sample?.activeBar ?? null)
     : null;
   const position =
     activeBar && plot && tooltipSize.width && tooltipSize.height
       ? barTooltipPosition(activeBar, plot, tooltipSize)
-      : interaction?.isPointerInspection && interaction.activePoint
-        ? { y: interaction.activePoint.y }
+      : interaction?.isPointerInspection && sample?.activePoint
+        ? { y: sample.activePoint.y }
         : undefined;
   return (
     <Tooltip

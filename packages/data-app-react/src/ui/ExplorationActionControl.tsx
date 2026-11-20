@@ -1,5 +1,6 @@
 import { useMergeRefs } from '@floating-ui/react';
 import {
+  useCallback,
   useRef,
   useContext,
   useLayoutEffect,
@@ -207,21 +208,22 @@ export function ExplorationActionMenu({
 /** Adds clipboard utilities derived only from the displayed chart item. */
 export function useChartActions() {
   const [error, setError] = useState('');
-  async function copy(text: string) {
-    setError('');
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      setError('Couldn’t copy. Try again.');
-    }
-  }
-  return {
-    actions(
+  // Stable so memoized chart marks keep their actions across hover renders.
+  const actions = useCallback(
+    (
       declared: readonly ExplorationAction[],
       label: string,
       summary: string
-    ): readonly ExplorationAction[] {
+    ): readonly ExplorationAction[] => {
       if (!declared.length) return declared;
+      async function copy(text: string) {
+        setError('');
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          setError('Couldn’t copy. Try again.');
+        }
+      }
       const primary = getPrimaryExplorationAction(declared);
       return [
         ...declared.map(action => ({ ...action, primary: action === primary })),
@@ -239,6 +241,10 @@ export function useChartActions() {
         },
       ];
     },
+    []
+  );
+  return {
+    actions,
     feedback: error ? (
       <output className="altertable-chart-copy-status">{error}</output>
     ) : null,
