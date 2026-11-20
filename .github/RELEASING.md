@@ -49,3 +49,17 @@ packages.
 Validate local configuration with `bun run check:workflows` and `bun run check`.
 Release scripts live in `scripts/release/`; runtime versions come from
 `.node-version`, `.bun-version`, and `scripts/release/setup-npm.sh`.
+
+## SDK migrations
+
+When a change breaks existing apps or hosts, add or update the target version's
+guide under `packages/data-app-upgrade/migrations/`. Cover what users must change
+and what to verify. Add a codemod and a historical source fixture when the
+source change can be applied reliably. A guide can explain changes that need
+review without a codemod.
+
+The upgrade package ships with the SDK. Its build checks Release Please's
+changelog for missing guides and supplies a no-migration guide for releases
+without breaking changes. If Release Please chooses a different version than
+expected, rename the guide and update the codemod registry before merging
+the release PR.

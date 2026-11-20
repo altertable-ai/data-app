@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { build } from 'tsdown';
 
+import { buildMigrationGuides } from '@/scripts/build-migration-guides';
 import { staging, declarationConfig, cleanStaging } from '@/scripts/dev-paths';
 import { packages } from '@/scripts/packages';
 
@@ -44,6 +45,7 @@ const buildTargets = new Map<string, 'bun' | 'node'>([
   ['@altertable/data-app-bun', 'bun'],
   ['@altertable/data-app-examples', 'node'],
   ['@altertable/data-app-manifest', 'node'],
+  ['@altertable/data-app-upgrade', 'node'],
 ]);
 
 const aliases: Record<string, string> = {};
@@ -121,6 +123,12 @@ for (const { directory, manifest } of packages) {
     }
   }
   const define: Record<string, string> = {};
+  if (manifest.name === '@altertable/data-app-upgrade') {
+    define.DATA_APP_SDK_VERSION = JSON.stringify(manifest.version);
+    define.DATA_APP_MIGRATION_VERSIONS = JSON.stringify(
+      await buildMigrationGuides(directory, outdir, manifest.version)
+    );
+  }
   const external = [
     ...Object.keys('dependencies' in manifest ? manifest.dependencies : {}),
     ...Object.keys(

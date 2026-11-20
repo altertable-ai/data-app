@@ -11,6 +11,7 @@
         "@altertable/data-app-examples": "0.78.0",
         "@altertable/data-app-manifest": "0.78.0",
         "@altertable/data-app-react": "0.78.0",
+        "@altertable/data-app-upgrade": "0.78.0",
         "@altertable/data-app-worker": "0.78.0",
         "@types/bun": "1.4.3",
         "@types/react": "19.3.0",
@@ -164,6 +165,13 @@
         "react-dom": ">=19.2.0",
       },
     },
+    "packages/data-app-upgrade": {
+      "name": "@altertable/data-app-upgrade",
+      "version": "0.78.0",
+      "dependencies": {
+        "typescript": "5.9.3",
+      },
+    },
     "packages/data-app-worker": {
       "name": "@altertable/data-app-worker",
       "version": "0.78.0",
@@ -184,6 +192,8 @@
     "@altertable/data-app-manifest": ["@altertable/data-app-manifest@workspace:packages/data-app-manifest"],
 
     "@altertable/data-app-react": ["@altertable/data-app-react@workspace:packages/data-app-react"],
+
+    "@altertable/data-app-upgrade": ["@altertable/data-app-upgrade@workspace:packages/data-app-upgrade"],
 
     "@altertable/data-app-worker": ["@altertable/data-app-worker@workspace:packages/data-app-worker"],
 
@@ -1590,6 +1600,8 @@
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
     "@altertable/data-app-manifest/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@altertable/data-app-upgrade/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@grpc/grpc-js/@grpc/proto-loader": ["@grpc/proto-loader@0.8.1", "", { "dependencies": { "lodash.camelcase": "^4.3.0", "long": "^5.0.0", "protobufjs": "^7.5.5", "yargs": "^17.7.2" }, "bin": { "proto-loader-gen-types": "build/bin/proto-loader-gen-types.js" } }, "sha512-wtF6h+DY6M3YaDBPAmvuuA6jV8Sif9MjtOI5euKFWRgCDl5PeDpPsHR9u2l6St5ceY8AZgoNDww5+HvEsXFsGg=="],
 

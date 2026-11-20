@@ -265,6 +265,30 @@ try {
     assert(result, `Missing archive: ${name}`);
     return result;
   }
+  const upgradeOnly = join(temporary, 'upgrade-only');
+  const upgradeNames = await install(upgradeOnly, [archive('-upgrade')]);
+  assert.deepEqual([...upgradeNames].sort(), [
+    '@altertable/data-app-upgrade',
+    'typescript',
+  ]);
+  await writeFile(
+    join(upgradeOnly, 'verify.mjs'),
+    `
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { upgradeDataApp } from '@altertable/data-app-upgrade';
+
+const source = "import { searchVariable } from '@altertable/data-app-react';";
+const result = upgradeDataApp({ source, fromVersion: '0.75.0' });
+assert.deepEqual(result.appliedCodemods, ['0.77.0']);
+assert.equal(result.migrationGuides.at(-1), ${JSON.stringify(workspace.version)});
+for (const version of result.migrationGuides) {
+  const guide = new URL(\`./migrations/\${version}.md\`, import.meta.resolve('@altertable/data-app-upgrade'));
+  assert((await readFile(guide, 'utf8')).trim());
+}
+`
+  );
+  await run(['node', join(upgradeOnly, 'verify.mjs')], upgradeOnly);
   const uiDependencies = [
     '@altertable/lakehouse',
     '@floating-ui/react',
