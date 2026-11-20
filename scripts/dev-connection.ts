@@ -2,7 +2,7 @@ import { connect, type Socket } from 'node:net';
 
 export const protocol = 'data-app-dev/1';
 
-type Owner = {
+type WatcherPeer = {
   role: string;
   protocol: string;
   root: string;
@@ -10,10 +10,12 @@ type Owner = {
   stopping: boolean;
 };
 
-export async function open(port: number) {
-  return new Promise<
-    { socket: Socket; owner?: Owner; ambiguous?: boolean } | undefined
-  >(done => {
+type PortProbe =
+  | { kind: 'free' | 'unresponsive' | 'other-service' }
+  | { kind: 'watcher'; socket: Socket; peer: WatcherPeer };
+
+export function probeWatcherPort(port: number): Promise<PortProbe> {
+  return new Promise(done => {
     const socket = connect({ host: '127.0.0.1', port }).setEncoding('utf8');
     let buffer = '';
     let occupied = false;
@@ -22,41 +24,42 @@ export async function open(port: number) {
       occupied = true;
     });
     const timeout = setTimeout(() => finish(), 500);
-    function finish(owner?: Owner, responsive = false) {
+    function finish(
+      result: PortProbe = { kind: occupied ? 'unresponsive' : 'free' }
+    ) {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
       socket.removeListener('data', read);
-      if (owner) done({ socket, owner });
-      else {
-        socket.destroy();
-        done(occupied ? { socket, ambiguous: !responsive } : undefined);
-      }
+      if (result.kind !== 'watcher') socket.destroy();
+      done(result);
     }
     function read(chunk: string) {
       buffer += chunk;
       if (buffer.length > 4096) {
-        finish(undefined, true);
+        finish({ kind: 'other-service' });
         return;
       }
       const end = buffer.indexOf('\n');
       if (end < 0) return;
       try {
-        const owner = JSON.parse(buffer.slice(0, end));
+        const peer = JSON.parse(buffer.slice(0, end));
         if (
-          owner.protocol === protocol &&
-          typeof owner.role === 'string' &&
-          typeof owner.root === 'string' &&
-          Number.isSafeInteger(owner.pid)
+          peer.protocol === protocol &&
+          typeof peer.role === 'string' &&
+          typeof peer.root === 'string' &&
+          Number.isSafeInteger(peer.pid)
         )
-          finish(owner);
-        else finish(undefined, true);
+          finish({ kind: 'watcher', socket, peer });
+        else finish({ kind: 'other-service' });
       } catch {
-        finish(undefined, true);
+        finish({ kind: 'other-service' });
       }
     }
     socket.on('data', read);
     socket.once('error', () => finish());
-    socket.once('end', () => finish(undefined, true));
+    socket.once('end', () =>
+      finish({ kind: occupied ? 'other-service' : 'free' })
+    );
   });
 }
