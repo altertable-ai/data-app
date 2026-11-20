@@ -22,13 +22,18 @@ export function chartAxisKey(axis: ChartAxis, id: string | number) {
   return `${axis}:${typeof id}:${id}`;
 }
 
+/** Changes only when inspection moves to another series, so every series reads it. */
 type ChartInteractionApi = {
   isPointerInspection: boolean;
-  activePoint: ChartPoint | undefined;
   seriesCount: number;
-  activeBar: ChartBarPoint | null;
   getCategoryDataKey: (axisId: string | number) => ChartDataKey | undefined;
   activeSeriesId: string | null;
+};
+
+/** Changes on every inspected sample; read only by tooltips and inspected marks. */
+type ChartActiveSampleApi = {
+  activePoint: ChartPoint | undefined;
+  activeBar: ChartBarPoint | null;
 };
 
 type ChartRegistrationApi = {
@@ -46,6 +51,8 @@ type ChartRegistrationApi = {
 
 export const ChartInteractionContext =
   createContext<ChartInteractionApi | null>(null);
+export const ChartActiveSampleContext =
+  createContext<ChartActiveSampleApi | null>(null);
 export const ChartRegistrationContext =
   createContext<ChartRegistrationApi | null>(null);
 

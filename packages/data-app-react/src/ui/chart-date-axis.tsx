@@ -25,7 +25,11 @@ import {
   type ChartDataKey,
 } from './chart-interaction.tsx';
 import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
-import { ChartCursorChartContext } from './use-chart-cursor-group.tsx';
+import {
+  ChartCursorChartContext,
+  noLinkedChartCursor,
+  useLinkedCursorValue,
+} from './use-chart-cursor-group.tsx';
 
 type LabelFormatter = (value: unknown) => string;
 type ChartDateAxesApi = {
@@ -74,11 +78,11 @@ export function ChartDateAxes({
       });
   }, []);
   return (
-    <ChartDateAxesContext.Provider
+    <ChartDateAxesContext
       value={{ data, formatters, register, barAxes, registerBar }}
     >
       {children}
-    </ChartDateAxesContext.Provider>
+    </ChartDateAxesContext>
   );
 }
 export function useDateAxisBar(id: string | number = 0) {
@@ -111,18 +115,22 @@ function LinkedTimeCursor({
   const scale = useXAxisScale(axisId);
   const plot = usePlotArea();
   const mouseHover = context?.mouseHover;
-  const setTime = context?.cursor.setTime;
-  const reset = context?.cursor.reset;
+  const cursor = context?.cursor ?? noLinkedChartCursor;
+  const { setTime, reset } = cursor;
+  const timeSet = useMemo(() => new Set(times), [times]);
   useEffect(() => {
     if (!mouseHover || !active) {
-      reset?.();
+      reset();
     } else {
       const time = chartTimestamp(label, true);
-      if (time != null && times.includes(time)) setTime?.(time);
+      if (time != null && timeSet.has(time)) setTime(time);
     }
-  }, [mouseHover, active, label, times, setTime, reset]);
-  const time = context?.cursor.time;
-  if (time == null || !times.includes(time)) return null;
+  }, [mouseHover, active, label, timeSet, setTime, reset]);
+  // Subscribe here rather than in the chart root, so peers redraw one line.
+  const time = useLinkedCursorValue(cursor, peerTime =>
+    peerTime != null && timeSet.has(peerTime) ? peerTime : undefined
+  );
+  if (time == null) return null;
   const x = scale?.(time);
   if (
     !plot ||

@@ -1,8 +1,8 @@
 import {
   createContext,
-  useCallback,
   useEffect,
   useId,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -70,38 +70,68 @@ export function useChartCursorGroup(): ChartCursorGroup {
   return group;
 }
 
-function emptySnapshot() {
-  return null;
-}
 function emptySubscribe() {
   return () => {};
 }
 
-export function useLinkedChartCursor(group?: ChartCursorGroup) {
+/** A chart's handle on its cursor group. Stable for the chart's lifetime, so
+ * publishing never re-renders the chart; peers subscribe with useLinkedCursorValue. */
+export type LinkedChartCursor = {
+  setTime: (time: number | undefined) => void;
+  reset: () => void;
+  subscribe: (listener: () => void) => () => void;
+  /** The timestamp another chart in the group is hovering. */
+  peerTime: () => number | undefined;
+};
+
+export const noLinkedChartCursor: LinkedChartCursor = {
+  setTime: () => {},
+  reset: () => {},
+  subscribe: emptySubscribe,
+  peerTime: () => undefined,
+};
+
+export function useLinkedChartCursor(
+  group?: ChartCursorGroup
+): LinkedChartCursor {
   const store = group == null ? undefined : stores.get(group);
-  const cursor = useSyncExternalStore(
-    store?.subscribe ?? emptySubscribe,
-    store?.snapshot ?? emptySnapshot,
-    emptySnapshot
-  );
   const id = useId();
-  const setTime = useCallback(
-    (time: number | undefined) => {
-      if (time != null) store?.publish(id, time);
-      else store?.clear(id);
-    },
+  const cursor = useMemo<LinkedChartCursor>(
+    () =>
+      store
+        ? {
+            setTime: time => {
+              if (time != null) store.publish(id, time);
+              else store.clear(id);
+            },
+            reset: () => store.clear(id),
+            subscribe: store.subscribe,
+            peerTime: () => {
+              const current = store.snapshot();
+              return current?.source !== id ? current?.time : undefined;
+            },
+          }
+        : noLinkedChartCursor,
     [store, id]
   );
-  const reset = useCallback(() => store?.clear(id), [store, id]);
-  useEffect(() => reset, [reset]);
-  return {
-    time: cursor?.source !== id ? cursor?.time : undefined,
-    setTime,
-    reset,
-  };
+  useEffect(() => cursor.reset, [cursor]);
+  return cursor;
+}
+
+/** Subscribes to a derived peer cursor value. Return a primitive so only the
+ * marks whose value changes re-render while the pointer moves. */
+export function useLinkedCursorValue<T>(
+  cursor: LinkedChartCursor,
+  select: (time: number | undefined) => T
+): T {
+  return useSyncExternalStore(
+    cursor.subscribe,
+    () => select(cursor.peerTime()),
+    () => select(undefined)
+  );
 }
 
 export const ChartCursorChartContext = createContext<{
   mouseHover: boolean;
-  cursor: ReturnType<typeof useLinkedChartCursor>;
+  cursor: LinkedChartCursor;
 } | null>(null);
