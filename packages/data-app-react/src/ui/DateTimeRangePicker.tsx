@@ -431,14 +431,11 @@ export function DateTimeRangePicker({
     }
   }
   function back() {
-    dispatch({
-      type: 'update',
-      value: { status: 'presets', highlight: calendarIndex },
-    });
+    dispatch({ type: 'highlight-preset', index: calendarIndex });
     selectInput();
   }
   function highlightOption(index: number) {
-    dispatch({ type: 'update', value: { highlight: index } });
+    dispatch({ type: 'highlight-preset', index });
     clearTimeout(helpTimer.current);
     if (index === moreIndex)
       dispatch({ type: 'update', value: { help: true } });
@@ -564,8 +561,7 @@ export function DateTimeRangePicker({
                 : 1) as -1 | 1,
             };
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-              dispatch({ type: 'update', value: { status: 'editing' } });
-              dispatch({ type: 'update', value: { highlight: -1 } });
+              dispatch({ type: 'edit-segment' });
               const selection = getDateTimeRangeInputSegmentSelection(args);
               if (selection) {
                 event.preventDefault();
@@ -732,6 +728,9 @@ export function DateTimeRangePicker({
                 ].map((text, index) => {
                   const preset = presets[index];
                   const isComparison = index === comparisonIndex;
+                  const isSelected = isComparison
+                    ? comparison?.enabled
+                    : preset === selected && !!preset;
                   return (
                     <button
                       data-atbl-internal-surface="option"
@@ -742,17 +741,9 @@ export function DateTimeRangePicker({
                       tabIndex={-1}
                       id={`${id}-option-${index}`}
                       key={index}
-                      aria-selected={
-                        isComparison
-                          ? comparison?.enabled
-                          : !!preset && preset === selected
-                      }
+                      aria-selected={isSelected}
                       disabled={isComparison && !comparison?.range}
-                      data-selected={
-                        (isComparison
-                          ? comparison?.enabled
-                          : !!preset && preset === selected) || undefined
-                      }
+                      data-selected={isSelected || undefined}
                       data-highlighted={highlight === index || undefined}
                       data-divider={
                         index === calendarIndex ||
@@ -762,13 +753,7 @@ export function DateTimeRangePicker({
                         undefined
                       }
                       onMouseDown={event => event.preventDefault()}
-                      onMouseMove={() => {
-                        dispatch({
-                          type: 'update',
-                          value: { status: 'presets' },
-                        });
-                        highlightOption(index);
-                      }}
+                      onMouseMove={() => highlightOption(index)}
                       onClick={() => choose(index)}
                     >
                       <span
@@ -807,10 +792,7 @@ export function DateTimeRangePicker({
                         className="altertable-datetime-check"
                         aria-hidden="true"
                       >
-                        {(isComparison && comparison?.enabled) ||
-                        (preset && preset === selected) ? (
-                          <AppIcon name="check" />
-                        ) : null}
+                        {isSelected && <AppIcon name="check" />}
                       </span>
                     </button>
                   );

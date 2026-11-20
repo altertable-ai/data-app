@@ -27,9 +27,11 @@ type PickerAction =
   | { type: 'open'; draft: string; helpSide: PickerState['helpSide'] }
   | { type: 'close' }
   | { type: 'edit'; draft: string }
+  | { type: 'edit-segment' }
+  | { type: 'highlight-preset'; index: number }
   | { type: 'calendar'; selection: PickerState['calendarSelection'] }
   | { type: 'error'; error: string }
-  | { type: 'update'; value: Partial<PickerState> };
+  | { type: 'update'; value: Partial<Omit<PickerState, 'status'>> };
 
 export function dateTimeRangePickerReducer(
   state: PickerState,
@@ -38,16 +40,13 @@ export function dateTimeRangePickerReducer(
   switch (action.type) {
     case 'open':
       return {
-        ...state,
-        ...(state.status === 'closed'
-          ? { draft: action.draft, edited: false, error: '', help: false }
-          : {}),
+        ...initialPickerState,
         status: 'presets',
-        highlight: -1,
+        draft: action.draft,
         helpSide: action.helpSide,
       };
     case 'close':
-      return { ...state, status: 'closed', help: false, error: '' };
+      return initialPickerState;
     case 'edit':
       return {
         ...state,
@@ -57,6 +56,10 @@ export function dateTimeRangePickerReducer(
         highlight: -1,
         error: '',
       };
+    case 'edit-segment':
+      return { ...state, status: 'editing', highlight: -1 };
+    case 'highlight-preset':
+      return { ...state, status: 'presets', highlight: action.index };
     case 'calendar':
       return {
         ...state,
