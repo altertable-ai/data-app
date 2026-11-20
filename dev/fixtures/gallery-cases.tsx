@@ -13,7 +13,10 @@ import {
   Tooltip,
   UpdatedAt,
 } from '@altertable/data-app-react';
-import { Comparison } from '@altertable/data-app-react';
+import {
+  Comparison,
+  DataSection as ViewSection,
+} from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import {
   DimensionPicker,
@@ -32,12 +35,10 @@ import {
   GradientScroll,
   HelpPopover,
   LiveControl,
-  MetricWidget,
   PresentStory,
   SearchField,
   SearchMatch,
   Sheet,
-  TableWidget,
   Tabs,
   Tab,
   TabList,
@@ -68,6 +69,14 @@ import {
   gallerySections,
   type GalleryCategory,
 } from '@/dev/fixtures/gallery-catalog';
+import {
+  CaseStatusContext,
+  caseMetrics,
+  caseTables,
+  loadingMetricContent,
+  loadingTableContent,
+  stableMetricContent,
+} from '@/dev/fixtures/gallery-data';
 import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
 import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
 import { AppScope } from '@/packages/data-app-react/src/ui/AppScope.tsx';
@@ -136,21 +145,6 @@ const period = {
   end: '2026-09-30',
   timeZone: 'UTC',
 } as const;
-const row = {
-  id: 1,
-  name: 'A record with a long label / 多言語 / café',
-  amount: 1234567.89,
-};
-const columns = [
-  { id: 'name', header: 'Record', cell: (item: typeof row) => item.name },
-  {
-    id: 'amount',
-    header: 'Amount',
-    type: 'number' as const,
-    cell: (item: typeof row) => item.amount.toLocaleString(),
-  },
-] as const;
-
 const FrameContext = createContext('content');
 const CategoryContext = createContext<GalleryCategory>('overview');
 
@@ -576,56 +570,48 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="metrics" title="Metric formats and comparisons">
-        {([0, -12, 123456789] as const).map(value => (
+        {(
+          [
+            [0, caseMetrics.zero],
+            [-12, caseMetrics.negative],
+            [123456789, caseMetrics.large],
+          ] as const
+        ).map(([value, content]) => (
           <Case key={value} title={`Count ${value}`}>
-            <MetricWidget
-              label="Recorded value"
-              value={value}
-              format={{ kind: 'count' }}
-            />
+            <ViewSection content={content} />
           </Case>
         ))}
         <Case title="Ratio">
-          <MetricWidget
-            label="Conversion rate"
-            value={0.125}
-            format={{ kind: 'ratio' }}
-          />
+          <ViewSection content={caseMetrics.ratio} />
         </Case>
         <Case title="Currency">
-          <MetricWidget
-            label="Revenue"
-            value={12345.67}
-            format={{ kind: 'currency', currency: 'EUR' }}
-          />
+          <ViewSection content={caseMetrics.currency} />
         </Case>
         <Case title="Custom unavailable value">
-          <MetricWidget
-            label="Unavailable measurement"
-            content="—"
+          <DataWidget
+            title="Unavailable measurement"
             description="Unavailable differs from measured zero."
-          />
+          >
+            —
+          </DataWidget>
         </Case>
         <Case title="Metric loading">
-          <MetricWidget label="Loading metric" loading />
+          <ViewSection content={loadingMetricContent} />
         </Case>
         {([0, 100, null] as const).map(previous => (
           <Case
             key={String(previous)}
             title={`Previous ${previous ?? 'unavailable'}`}
+            widget
           >
-            <MetricWidget
+            <Comparison
               label="Compared events"
-              value={80}
-              format={{ kind: 'count' }}
-              comparison={{
-                current: { value: 80, formattedValue: '80' },
-                previous: {
-                  value: previous,
-                  formattedValue: previous === null ? '—' : String(previous),
-                },
-                favorableDirection: 'up',
+              current={{ value: 80, formattedValue: '80' }}
+              previous={{
+                value: previous,
+                formattedValue: previous === null ? '—' : String(previous),
               }}
+              favorableDirection="up"
             />
           </Case>
         ))}
@@ -640,44 +626,16 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
       </Section>
       <Section id="tables" title="Table boundaries">
         <Case title="Empty table keeps column headers">
-          <TableWidget
-            title="Empty records"
-            rows={[]}
-            rowKey={(item: typeof row) => item.id}
-            columns={columns}
-            emptyFallback={empty}
-          />
+          <ViewSection content={caseTables.empty} />
         </Case>
         <Case title="One complete row">
-          <TableWidget
-            title="Complete records"
-            rows={[row]}
-            rowKey={item => item.id}
-            columns={columns}
-            pagination={false}
-            emptyFallback={empty}
-          />
+          <ViewSection content={caseTables.complete} />
         </Case>
         <Case title="Preview cap">
-          <TableWidget
-            title="Preview records"
-            rows={[row, { ...row, id: 2 }]}
-            rowKey={item => item.id}
-            columns={columns}
-            limit={1}
-            emptyFallback={empty}
-          />
+          <ViewSection content={caseTables.preview} />
         </Case>
         <Case title="Table skeleton">
-          <TableWidget
-            title="Loading records"
-            reading={{ loading: true }}
-            evidence={evidence}
-            rowKey={(item: typeof row) => item.id}
-            columns={columns}
-            skeletonRows={3}
-            emptyFallback={empty}
-          />
+          <ViewSection content={loadingTableContent} />
         </Case>
         <Case title="Native table, numeric, share and timestamp" widget>
           <DataTable>
@@ -815,22 +773,14 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </DataWidget>
         </Case>
         <Case title="Metric refresh">
-          <MetricWidget
-            label="Stable metric"
-            value={42}
-            format={{ kind: 'count' }}
-            status={widgetStatus}
-          />
+          <CaseStatusContext value={widgetStatus}>
+            <ViewSection content={stableMetricContent} />
+          </CaseStatusContext>
         </Case>
         <Case title="Table refresh">
-          <TableWidget
-            title="Stable table"
-            rows={[row]}
-            rowKey={item => item.id}
-            columns={columns}
-            status={widgetStatus}
-            emptyFallback={empty}
-          />
+          <CaseStatusContext value={widgetStatus}>
+            <ViewSection content={caseTables.stable} />
+          </CaseStatusContext>
         </Case>
       </Section>
       <Section id="requests" title="Request boundaries and recovery">
@@ -1056,13 +1006,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
                 id: 'zero',
                 headline: 'A measured zero is still evidence',
                 context: 'Use arrows to navigate; Escape exits.',
-                visual: (
-                  <MetricWidget
-                    label="Measured count"
-                    value={0}
-                    format={{ kind: 'count' }}
-                  />
-                ),
+                visual: <DataWidget title="Measured count">0</DataWidget>,
                 evidence,
               },
               {
@@ -1150,11 +1094,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               value="postgres"
               onChange={() => {}}
             />
-            <MetricWidget
-              label="A long metric label that wraps without overflowing its container"
-              value={0}
-              format={{ kind: 'count' }}
-            />
+            <ViewSection content={caseMetrics.longLabel} />
           </Stack>
         </Case>
         <Case title="Narrow widget with long title, description, count and action">
@@ -1191,11 +1131,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
                 </DataWidget>
               </GridItem>
               <GridItem>
-                <MetricWidget
-                  label="Weekly visits"
-                  value={12480}
-                  format={{ kind: 'count' }}
-                />
+                <ViewSection content={caseMetrics.visits} />
               </GridItem>
             </Grid>
           </Case>

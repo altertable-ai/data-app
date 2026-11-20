@@ -45,4 +45,19 @@ export const migrationsByVersion: Readonly<
         'Review custom page actions and move embedded controls into the host where needed.',
     },
   ],
+  '0.79.0': [
+    {
+      id: 'unbound-ui-widgets',
+      pattern:
+        /import\s*(?:type\s*)?\{[^}]*\b(?:DataApp|DataValue|MetricWidget|TableWidget|TextWidget|VisualizationWidget)(?:Props)?\b[^}]*\}\s*from\s*['"]@altertable\/data-app-react\/ui['"]/,
+      message:
+        'Bind these widgets to a view: `@altertable/data-app-react/ui` no longer exports unbound `DataApp`, `DataValue`, `MetricWidget`, `TableWidget`, `TextWidget`, or `VisualizationWidget`.',
+    },
+    {
+      id: 'empty-row-views',
+      pattern: /\bdefine(?:Detail)?View\(/,
+      message:
+        "Review views that return rows without `isEmpty`: a result with no rows now shows the view's empty state.",
+    },
+  ],
 };

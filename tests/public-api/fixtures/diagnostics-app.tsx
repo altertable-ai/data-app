@@ -5,12 +5,7 @@ import {
   Button,
   TextContent,
 } from '@altertable/data-app-react';
-import {
-  DataWidget,
-  DataAppProvider,
-  TextWidget,
-  VisualizationWidget,
-} from '@altertable/data-app-react/ui';
+import { DataWidget, DataAppProvider } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   getDataAppTransport,
@@ -41,31 +36,32 @@ function WidgetRegressions() {
           <span>Inline one</span>
           <span>Inline two</span>
         </DataWidget>
-        <TextWidget
+        <DataWidget
           title="Narrative"
           description="Static narrative description"
           footer="Static narrative footer"
           reading={{ loading: false, value: 1 }}
+          isEmpty={() => false}
+          emptyFallback={{ title: 'No narrative' }}
           evidence={{ id: 'narrative', queryNames: ['narrative'] }}
         >
           {() => {
             if (broken) throw new Error('Narrative renderer failed');
-            return 'Narrative ready';
+            return <TextContent>Narrative ready</TextContent>;
           }}
-        </TextWidget>
-        <VisualizationWidget
+        </DataWidget>
+        <DataWidget
           title="Alternate views"
           reading={{ loading: false, value: [1] }}
           isEmpty={rows => !rows.length}
           emptyFallback={{ title: 'No rows' }}
           evidence={{ id: 'views', queryNames: ['views'] }}
-          viewLabel="Chart views"
-          views={
-            broken
-              ? []
-              : [{ id: 'one', label: 'One', render: () => 'View ready' }]
-          }
-        />
+        >
+          {() => {
+            if (broken) throw new Error('View renderer failed');
+            return 'View ready';
+          }}
+        </DataWidget>
         <DataWidget title={broken ? <BrokenHeading /> : 'Custom heading'}>
           Ready body
         </DataWidget>
@@ -95,11 +91,9 @@ function OverflowRegressions() {
       <Button onClick={() => setHide(true)}>Hide first 30 widgets</Button>
       {Array.from({ length: 31 }, (_, index) =>
         !hide || index === 30 ? (
-          <VisualizationWidget
-            key={index}
-            title={`Overflow ${index + 1}`}
-            visual={<BadChart broken={broken} />}
-          />
+          <DataWidget key={index} title={`Overflow ${index + 1}`}>
+            <BadChart broken={broken} />
+          </DataWidget>
         ) : null
       )}
     </main>
@@ -178,7 +172,7 @@ function App() {
         {showFailed && (
           <>
             {' '}
-            <VisualizationWidget
+            <DataWidget
               title="Revenue"
               description="Monthly revenue by channel"
               footer={
@@ -187,23 +181,22 @@ function App() {
                 </span>
               }
               style={fixedWidth ? { width: 260, maxWidth: '100%' } : undefined}
-              visual={<BadChart broken={broken} />}
-            />
-            <VisualizationWidget
+            >
+              <BadChart broken={broken} />
+            </DataWidget>
+            <DataWidget
               title="Retention"
               description="Returning customer cohorts"
-              visual={<BadChart broken={broken} />}
-            />
+            >
+              <BadChart broken={broken} />
+            </DataWidget>
           </>
         )}
-        <VisualizationWidget
-          title="Healthy content"
-          visual={
-            <Button onClick={() => setCount(count + 1)}>
-              Healthy clicks {count}
-            </Button>
-          }
-        />
+        <DataWidget title="Healthy content">
+          <Button onClick={() => setCount(count + 1)}>
+            Healthy clicks {count}
+          </Button>
+        </DataWidget>
       </Grid>
       <TextContent>
         <p>Neighbor below the widgets</p>

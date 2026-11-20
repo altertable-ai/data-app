@@ -13,11 +13,6 @@ Each export and field has its own line. `?` marks optional fields;
 Methods are listed under the function that returns them, such as
 `createDataHooks().defineView().dataset`.
 
-`DataApp`, `DataValue`, `MetricWidget`, `TableWidget`, `TextWidget`, and `VisualizationWidget` exist twice. `@altertable/data-app-react` exports the bound
-component, which takes a view's `dataset` or `metric` and `source`;
-`@altertable/data-app-react/ui` exports a primitive that takes local values.
-Each of their fields names its import path.
-
 ```text
 AboutData (component, @altertable/data-app-react/ui): (props: AboutDataProps)
 AboutData.empty?: AboutEmpty
@@ -318,7 +313,7 @@ createDataHooks().defineView: <Name extends ViewOperationName<Operations>, const
 createDataHooks().defineView.definition.operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown)
 createDataHooks().defineView.definition.dataContext: DataContext & Context
 createDataHooks().defineView.definition.describeInput?: ((input: FilterInput<FiltersOf<Operations[Name]>>) => string) — Describe the displayed scope in prose. Defaults to the reporting period and each narrowed filter, such as `Mar 1–7, 2026 UTC · group Alpha`, or `all data`.
-createDataHooks().defineView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. By default a result with no rows is empty and any other result never is.
+createDataHooks().defineView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. Default: A result with no rows is empty; any other result never is.
 createDataHooks().defineView.definition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 createDataHooks().defineView().filter: (): FilterTarget<Partial<{ [Key in keyof FiltersOf<Operations[Name]>]: Extract<FiltersOf<Operations[Name]>[Key]['presentation'], { group: 'display'; }> extends never ? FilterValues<...>[Key] : never; }>>
 createDataHooks().defineView().breakdown: <Key extends DisplayChoiceName<Filters>>(key: Key): FiltersOf<Operations[Name]>[Key] extends ChoiceFilter<infer Value extends string> ? BreakdownTarget<Value> : never
@@ -331,7 +326,7 @@ createDataHooks().defineDetailView.definition.id: string
 createDataHooks().defineDetailView.definition.title: ReactNode
 createDataHooks().defineDetailView.definition.parseInput: (input: unknown) => InputOf<Operations[Name]> — Validates untrusted navigation input before a detail operation can run.
 createDataHooks().defineDetailView.definition.describeInput?: ((input: InputOf<Operations[Name]>) => string) — Describe the destination's scope. Defaults to the filters its operation reads; supply it to name the record, such as `orders for Customer 042`.
-createDataHooks().defineDetailView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. By default a result with no rows is empty and any other result never is.
+createDataHooks().defineDetailView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. Default: A result with no rows is empty; any other result never is.
 createDataHooks().defineDetailView.definition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 createDataHooks().defineDetailView.definition.operation: Name
 createDataHooks().defineDetailView.definition.dataContext: Context
@@ -347,31 +342,22 @@ CsvTable (type, @altertable/data-app-react/ui): One named dataset with ordered c
 CsvTable.name: string
 CsvTable.columns: readonly string[]
 CsvTable.rows: readonly (readonly CsvCell[])[]
-DataApp (component, @altertable/data-app-react): <Data, Input, const SummaryViews extends readonly AnyView[] = [ ]>(props: DataAppProps<Data, Input, SummaryViews>) — Executes the primary view and its summary views, and owns controls, inspection, exports, and stories.
-DataApp.children (@altertable/data-app-react): ReactNode
-DataApp.description? (@altertable/data-app-react): ReactNode — Override the declared subtitle; null hides it.
-DataApp.showToolbar? (@altertable/data-app-react): boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
-DataApp.toolbarActions? (@altertable/data-app-react): ReactNode — Standalone toolbar controls; embedded surfaces omit them.
-DataApp.footerActions? (@altertable/data-app-react): ReactNode — Standalone footer controls; embedded surfaces omit them.
-DataApp.footer? (@altertable/data-app-react): ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
-DataApp.showSearch? (@altertable/data-app-react): boolean — Show declared search controls. Defaults to true; hiding preserves their values.
-DataApp.showFilters? (@altertable/data-app-react): boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
-DataApp.view (@altertable/data-app-react): DataAppView<Data, Input> — The headline view. `<DataApp>` renders the controls for every filter its client's operations read and owns their URL state.
-DataApp.summaryViews? (@altertable/data-app-react): SummaryViews — Other views that the story and CSV export read, sharing `view`’s data context. They load with `view` instead of waiting for their sections to near the viewport.
-DataApp.showSearchSuggestions? (@altertable/data-app-react): boolean — Show supplied datasets’ record suggestions on the first declared search. Defaults to true.
-DataApp.story? (@altertable/data-app-react): ((snapshot: DisplayedSnapshot<Data, Input>, ...summaries: { [Index in keyof SummaryViews]: SnapshotOf<SummaryViews[Index]>; }) => StoryFindings) — Omit to leave presentation out of the toolbar. Receives `view`’s displayed snapshot, then one per summary view in `summaryViews` order.
-DataApp.datasets? (@altertable/data-app-react): readonly [ExportDataset<Data, Input> | ExportOf<SummaryViews[number]>, ...(ExportDataset<Data, Input> | ExportOf<...>)[]] — Omit to leave CSV export out of the toolbar. Datasets may belong to `view` or a summary view.
-DataApp.details? (@altertable/data-app-react): readonly DetailContent<any, any>[] — Detail destinations available to dataset actions and metric record inspection.
-DataApp (component, @altertable/data-app-react/ui): (props: DataAppProps) — Setup and static screens; fetched data uses the declared-view DataApp.
-DataApp.children (@altertable/data-app-react/ui): ReactNode
-DataApp.dataContext (@altertable/data-app-react/ui): DataContext
-DataApp.description? (@altertable/data-app-react/ui): ReactNode — Override the declared subtitle; null hides it.
-DataApp.showToolbar? (@altertable/data-app-react/ui): boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
-DataApp.toolbarActions? (@altertable/data-app-react/ui): ReactNode — Standalone toolbar controls; embedded surfaces omit them.
-DataApp.footerActions? (@altertable/data-app-react/ui): ReactNode — Standalone footer controls; embedded surfaces omit them.
-DataApp.footer? (@altertable/data-app-react/ui): ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
-DataApp.csvExport? (@altertable/data-app-react/ui): CsvExport
-DataApp.queries? (@altertable/data-app-react/ui): DisclosedQuery[]
+DataApp (component, @altertable/data-app-react): (props: DataAppScreenProps); <Data, Input, const SummaryViews extends readonly AnyView[] = [ ]>(props: DataAppProps<Data, Input, SummaryViews>) — Renders a setup or static screen from its `dataContext` and children. Executes the primary view and its summary views, and owns controls, inspection, exports, and stories.
+DataApp.props.children: ReactNode
+DataApp.props.dataContext: DataContext
+DataApp.props.description?: ReactNode — Override the declared subtitle; null hides it.
+DataApp.props.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
+DataApp.props.toolbarActions?: ReactNode — Standalone toolbar controls; embedded surfaces omit them.
+DataApp.props.footerActions?: ReactNode — Standalone footer controls; embedded surfaces omit them.
+DataApp.props.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
+DataApp.props.showSearch?: boolean — Show declared search controls. Defaults to true; hiding preserves their values.
+DataApp.props.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
+DataApp.props.view: DataAppView<Data, Input> — The headline view. `<DataApp>` renders the controls for every filter its client's operations read and owns their URL state.
+DataApp.props.summaryViews?: SummaryViews — Other views that the story and CSV export read, sharing `view`’s data context. They load with `view` instead of waiting for their sections to near the viewport.
+DataApp.props.showSearchSuggestions?: boolean — Show supplied datasets’ record suggestions on the first declared search. Defaults to true.
+DataApp.props.story?: ((snapshot: DisplayedSnapshot<Data, Input>, ...summaries: { [Index in keyof SummaryViews]: SnapshotOf<SummaryViews[Index]>; }) => StoryFindings) — Omit to leave presentation out of the toolbar. Receives `view`’s displayed snapshot, then one per summary view in `summaryViews` order.
+DataApp.props.datasets?: readonly [ExportDataset<Data, Input> | ExportOf<SummaryViews[number]>, ...(ExportDataset<Data, Input> | ExportOf<...>)[]] — Omit to leave CSV export out of the toolbar. Datasets may belong to `view` or a summary view.
+DataApp.props.details?: readonly DetailContent<any, any>[] — Detail destinations available to dataset actions and metric record inspection.
 DataAppConfig (type, @altertable/data-app, @altertable/data-app/config): <Queries>
 DataAppConfig.title: string
 DataAppConfig.scope: { organization: string; environment: string; } — Display labels; scope does not grant data access.
@@ -397,17 +383,7 @@ DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
 DataAppOperationRegistry (type, @altertable/data-app, @altertable/data-app/config): <Operations>
 DataAppOperationRegistry.createDataClient: () => DataClient<Operations> — Run operations in the browser using its installed query bridge.
-DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
-DataAppProps (type, @altertable/data-app-react/ui)
-DataAppProps.children (@altertable/data-app-react/ui): ReactNode
-DataAppProps.dataContext (@altertable/data-app-react/ui): DataContext
-DataAppProps.description? (@altertable/data-app-react/ui): ReactNode — Override the declared subtitle; null hides it.
-DataAppProps.showToolbar? (@altertable/data-app-react/ui): boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
-DataAppProps.toolbarActions? (@altertable/data-app-react/ui): ReactNode — Standalone toolbar controls; embedded surfaces omit them.
-DataAppProps.footerActions? (@altertable/data-app-react/ui): ReactNode — Standalone footer controls; embedded surfaces omit them.
-DataAppProps.footer? (@altertable/data-app-react/ui): ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
-DataAppProps.csvExport? (@altertable/data-app-react/ui): CsvExport
-DataAppProps.queries? (@altertable/data-app-react/ui): DisclosedQuery[]
+DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.props.*
 DataAppProvider (component, @altertable/data-app-react/ui): <const Queries extends QueryDefinitions>(props: {…}) — Provide one app identity and shared requests to a custom React root.
 DataAppProvider.app: DataAppDefinition<Queries>
 DataAppProvider.children: ReactNode
@@ -520,22 +496,16 @@ DataTableTimestamp.locale?: string
 DataTableTimestamp.precision?: 'minute' | 'second'
 DataTableTimestampProps (type, @altertable/data-app-react/ui): = props listed as DataTableTimestamp.*
 DataValue (component, @altertable/data-app-react): <Data, Input, Row>(props: DataValueProps<Data, Input, Row>)
-DataValue.loadingFallback? (@altertable/data-app-react): ReactNode
-DataValue.scope (@altertable/data-app-react): DataReading<string> [variant 1 of 3]
-DataValue.children? (@altertable/data-app-react): ((scope: string) => ReactNode) [variant 1 of 3]
-DataValue.metric (@altertable/data-app-react): Metric<Data, Input> [variant 2 of 3]
-DataValue.source (@altertable/data-app-react): ViewSource<NoInfer<Data>, NoInfer<Input>> [variants 2, 3 of 3]
-DataValue.children? (@altertable/data-app-react): ((values: MetricValues) => ReactNode) [variant 2 of 3]
-DataValue.dataset (@altertable/data-app-react): Dataset<Data, Input, Row> [variant 3 of 3]
-DataValue.children (@altertable/data-app-react): (rows: readonly Row[]) => ReactNode [variant 3 of 3]
-DataValue.… (@altertable/data-app-react): plus props inherited from React
-DataValue (component, @altertable/data-app-react/ui): <Value>(props: DataValueProps<Value>) — Bind inline content to displayed data. Keep static wording outside this span.
-DataValue.reading (@altertable/data-app-react/ui): DataReading<Value>
-DataValue.loadingFallback (@altertable/data-app-react/ui): ReactNode
-DataValue.children (@altertable/data-app-react/ui): (value: Value) => ReactNode
-DataValue.… (@altertable/data-app-react/ui): plus props inherited from React
+DataValue.loadingFallback?: ReactNode
+DataValue.scope: DataReading<string> [variant 1 of 3]
+DataValue.children?: ((scope: string) => ReactNode) [variant 1 of 3]
+DataValue.metric: Metric<Data, Input> [variant 2 of 3]
+DataValue.source: ViewSource<NoInfer<Data>, NoInfer<Input>> [variants 2, 3 of 3]
+DataValue.children?: ((values: MetricValues) => ReactNode) [variant 2 of 3]
+DataValue.dataset: Dataset<Data, Input, Row> [variant 3 of 3]
+DataValue.children: (rows: readonly Row[]) => ReactNode [variant 3 of 3]
+DataValue.…: plus props inherited from React
 DataValueProps (type, @altertable/data-app-react): <Data, Input, Row> = props listed as DataValue.*
-DataValueProps (type, @altertable/data-app-react/ui): <Value> = props listed as DataValue.*
 DataWidget (component, @altertable/data-app-react/ui): <Data>(props: DataWidgetProps<Data>)
 DataWidget.title: ReactNode
 DataWidget.headingLevel?: 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
@@ -712,7 +682,7 @@ DetailViewDefinition.id: string
 DetailViewDefinition.title: ReactNode
 DetailViewDefinition.parseInput: (input: unknown) => Input — Validates untrusted navigation input before a detail operation can run.
 DetailViewDefinition.describeInput?: ((input: Input) => string) — Describe the destination's scope. Defaults to the filters its operation reads; supply it to name the record, such as `orders for Customer 042`.
-DetailViewDefinition.isEmpty?: ((data: Data) => boolean) — App-owned semantics: measured zero need not mean an empty result. By default a result with no rows is empty and any other result never is.
+DetailViewDefinition.isEmpty?: ((data: Data) => boolean) — App-owned semantics: measured zero need not mean an empty result. Default: A result with no rows is empty; any other result never is.
 DetailViewDefinition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 dimensionFilter (function, @altertable/data-app/contract): <const T extends string>(config: DimensionFilterOptions<T>): DimensionFilter<T>; <const T extends number>(config: DimensionFilterOptions<T>): DimensionFilter<T> — A bounded categorical filter with app-owned fixed options.
 dimensionFilter.config.key: string
@@ -1082,38 +1052,18 @@ MetricValues (type, @altertable/data-app-react): Zero is measured data. null or 
 MetricValues.current: number
 MetricValues.previous?: number | null
 MetricWidget (component, @altertable/data-app-react): <Data, Input>(props: MetricWidgetProps<Data, Input>)
-MetricWidget.headingLevel? (@altertable/data-app-react): 2 | 3 | 4 | 5 | 6 — Document outline level. The label keeps the shared widget-heading appearance.
-MetricWidget.annotationId? (@altertable/data-app-react): string
-MetricWidget.description? (@altertable/data-app-react): ReactNode
-MetricWidget.action? (@altertable/data-app-react): ReactNode
-MetricWidget.status? (@altertable/data-app-react): WidgetStatus
-MetricWidget.visual? (@altertable/data-app-react): ReactNode
-MetricWidget.metric (@altertable/data-app-react): Metric<Data, Input>
-MetricWidget.source (@altertable/data-app-react): ViewSource<NoInfer<Data>, NoInfer<Input>>
-MetricWidget.records? (@altertable/data-app-react): MetricRecords<Data, Input, any, any>
-MetricWidget.actions? (@altertable/data-app-react): ExplorationActions<void, NoInfer<Input>>
-MetricWidget.… (@altertable/data-app-react): plus props inherited from React
-MetricWidget (component, @altertable/data-app-react/ui): (props: MetricWidgetProps)
-MetricWidget.headingLevel? (@altertable/data-app-react/ui): 2 | 3 | 4 | 5 | 6 — Document outline level. The label keeps the shared widget-heading appearance.
-MetricWidget.annotationId? (@altertable/data-app-react/ui): string
-MetricWidget.description? (@altertable/data-app-react/ui): ReactNode
-MetricWidget.records? (@altertable/data-app-react/ui): InspectionRecords
-MetricWidget.action? (@altertable/data-app-react/ui): ReactNode
-MetricWidget.status? (@altertable/data-app-react/ui): WidgetStatus
-MetricWidget.visual? (@altertable/data-app-react/ui): ReactNode
-MetricWidget.metric (@altertable/data-app-react/ui): MetricDefinition [variant 1 of 4]
-MetricWidget.reading (@altertable/data-app-react/ui): MetricReading [variant 1 of 4]
-MetricWidget.label (@altertable/data-app-react/ui): string [variants 2, 3, 4 of 4]
-MetricWidget.comparison? (@altertable/data-app-react/ui): MetricComparison [variants 2, 3, 4 of 4]
-MetricWidget.evidence? (@altertable/data-app-react/ui): WidgetEvidence [variants 2, 3, 4 of 4]
-MetricWidget.loading (@altertable/data-app-react/ui): true [variant 2 of 4]
-MetricWidget.loading? (@altertable/data-app-react/ui): false [variants 3, 4 of 4]
-MetricWidget.value (@altertable/data-app-react/ui): number [variant 3 of 4]
-MetricWidget.format (@altertable/data-app-react/ui): MetricFormat [variant 3 of 4]
-MetricWidget.content (@altertable/data-app-react/ui): string | (string & Iterable<ReactNode>) | (string & Promise<AwaitedReactNode>) | (string & ReactElement<unknown, string | JSXElementConstructor<any>>) | (string & ReactPortal) | undefined [variant 4 of 4]
-MetricWidget.… (@altertable/data-app-react/ui): plus props inherited from React
+MetricWidget.headingLevel?: 2 | 3 | 4 | 5 | 6 — Document outline level. The label keeps the shared widget-heading appearance.
+MetricWidget.annotationId?: string
+MetricWidget.description?: ReactNode
+MetricWidget.action?: ReactNode
+MetricWidget.status?: WidgetStatus
+MetricWidget.visual?: ReactNode
+MetricWidget.metric: Metric<Data, Input>
+MetricWidget.source: ViewSource<NoInfer<Data>, NoInfer<Input>>
+MetricWidget.records?: MetricRecords<Data, Input, any, any>
+MetricWidget.actions?: ExplorationActions<void, NoInfer<Input>>
+MetricWidget.…: plus props inherited from React
 MetricWidgetProps (type, @altertable/data-app-react): <Data, Input> = props listed as MetricWidget.*
-MetricWidgetProps (type, @altertable/data-app-react/ui): = props listed as MetricWidget.* — VisualizationWidget with a formatted metric, optional comparison, and evidence.
 mountDataApp (function, @altertable/data-app-react): <const Queries extends QueryDefinitions>(options: {…}): void — Mount once per browser document; server imports do not mount.
 mountDataApp.options.app: DataAppDefinition<Queries>
 mountDataApp.options.component: ComponentType
@@ -1585,54 +1535,30 @@ TableIdentifier.catalog: string
 TableIdentifier.schema: string
 TableIdentifier.name: string
 TableWidget (component, @altertable/data-app-react): <Row, Data, Input>(props: TableWidgetProps<Row, Data, Input>)
-TableWidget.headingLevel? (@altertable/data-app-react): 2 | 3 | 4 | 5 | 6
-TableWidget.annotationId? (@altertable/data-app-react): string
-TableWidget.showCount? (@altertable/data-app-react): boolean — Show the matching supplied-row count before pagination or limits. Defaults to true.
-TableWidget.count? (@altertable/data-app-react): number — Override the derived count, for example with a server total. Hidden when showCount is false or loading.
-TableWidget.onClearFilters? (@altertable/data-app-react): (() => void) — Clear only filters affecting this dataset. Supply only while those filters are active; enables empty-result recovery.
-TableWidget.description? (@altertable/data-app-react): ReactNode
-TableWidget.status? (@altertable/data-app-react): WidgetStatus
-TableWidget.action? (@altertable/data-app-react): ReactNode
-TableWidget.search? (@altertable/data-app-react): TableWidgetSearch<Row>
-TableWidget.noMatchesFallback? (@altertable/data-app-react): EmptyContent — No local search matches or explicitly filtered results. Defaults to “No matching results” with recovery guidance.
-TableWidget.skeletonRows? (@altertable/data-app-react): number
-TableWidget.limit (@altertable/data-app-react): number [variant 1 of 2] — Positive integer preview cap after search; disables pagination.
-TableWidget.dataset (@altertable/data-app-react): Dataset<Data, Input, Row>
-TableWidget.source (@altertable/data-app-react): ViewSource<NoInfer<Data>, NoInfer<Input>>
-TableWidget.title? (@altertable/data-app-react): ReactNode
-TableWidget.actions? (@altertable/data-app-react): ExplorationActions<NoInfer<Row>, NoInfer<Input>>
-TableWidget.pagination? (@altertable/data-app-react): false | { pageSize: number; } [variant 2 of 2] — Local pagination after search: 10 rows by default, false shows all supplied rows. pageSize must be a positive integer. Counts refer only to supplied rows.
-TableWidget.… (@altertable/data-app-react): plus props inherited from React
-TableWidget (component, @altertable/data-app-react/ui): <Row>(props: TableWidgetProps<Row>)
-TableWidget.title (@altertable/data-app-react/ui): ReactNode
-TableWidget.headingLevel? (@altertable/data-app-react/ui): 2 | 3 | 4 | 5 | 6
-TableWidget.annotationId? (@altertable/data-app-react/ui): string
-TableWidget.showCount? (@altertable/data-app-react/ui): boolean — Show the matching supplied-row count before pagination or limits. Defaults to true.
-TableWidget.count? (@altertable/data-app-react/ui): number — Override the derived count, for example with a server total. Hidden when showCount is false or loading.
-TableWidget.onClearFilters? (@altertable/data-app-react/ui): (() => void) — Clear only filters affecting this dataset. Supply only while those filters are active; enables empty-result recovery.
-TableWidget.description? (@altertable/data-app-react/ui): ReactNode
-TableWidget.columns (@altertable/data-app-react/ui): readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]]
-TableWidget.rowKey (@altertable/data-app-react/ui): (row: Row) => string | number — Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide.
-TableWidget.status? (@altertable/data-app-react/ui): WidgetStatus
-TableWidget.action? (@altertable/data-app-react/ui): ReactNode
-TableWidget.evidence? (@altertable/data-app-react/ui): WidgetEvidence [variants 1, 3 of 4]
-TableWidget.search? (@altertable/data-app-react/ui): TableWidgetSearch<Row>
-TableWidget.emptyFallback (@altertable/data-app-react/ui): EmptyContent — Valid result with no rows; the header remains visible.
-TableWidget.noMatchesFallback? (@altertable/data-app-react/ui): EmptyContent — No local search matches or explicitly filtered results. Defaults to “No matching results” with recovery guidance.
-TableWidget.limit (@altertable/data-app-react/ui): number [variants 1, 2 of 4] — Positive integer preview cap after search; disables pagination.
-TableWidget.rows (@altertable/data-app-react/ui): readonly Row[] [variants 1, 3 of 4]
-TableWidget.evidence (@altertable/data-app-react/ui): (WidgetEvidence | undefined) & WidgetEvidence [variants 2, 4 of 4]
-TableWidget.reading (@altertable/data-app-react/ui): DataReading<readonly Row[]> [variants 2, 4 of 4]
-TableWidget.skeletonRows? (@altertable/data-app-react/ui): number [variants 2, 4 of 4]
-TableWidget.pagination? (@altertable/data-app-react/ui): false | { pageSize: number; } [variants 3, 4 of 4] — Local pagination after search: 10 rows by default, false shows all supplied rows. pageSize must be a positive integer. Counts refer only to supplied rows.
-TableWidget.… (@altertable/data-app-react/ui): plus props inherited from React
+TableWidget.headingLevel?: 2 | 3 | 4 | 5 | 6
+TableWidget.annotationId?: string
+TableWidget.showCount?: boolean — Show the matching supplied-row count before pagination or limits. Defaults to true.
+TableWidget.count?: number — Override the derived count, for example with a server total. Hidden when showCount is false or loading.
+TableWidget.onClearFilters?: (() => void) — Clear only filters affecting this dataset. Supply only while those filters are active; enables empty-result recovery.
+TableWidget.description?: ReactNode
+TableWidget.status?: WidgetStatus
+TableWidget.action?: ReactNode
+TableWidget.search?: TableWidgetSearch<Row>
+TableWidget.noMatchesFallback?: EmptyContent — No local search matches or explicitly filtered results. Defaults to “No matching results” with recovery guidance.
+TableWidget.skeletonRows?: number
+TableWidget.limit: number [variant 1 of 2] — Positive integer preview cap after search; disables pagination.
+TableWidget.dataset: Dataset<Data, Input, Row>
+TableWidget.source: ViewSource<NoInfer<Data>, NoInfer<Input>>
+TableWidget.title?: ReactNode
+TableWidget.actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>
+TableWidget.pagination?: false | { pageSize: number; } [variant 2 of 2] — Local pagination after search: 10 rows by default, false shows all supplied rows. pageSize must be a positive integer. Counts refer only to supplied rows.
+TableWidget.…: plus props inherited from React
 TableWidgetColumn (type, @altertable/data-app-react/ui): <Row>
 TableWidgetColumn.id: string — Stable, nonempty identity; unique within this table.
 TableWidgetColumn.header: ReactNode
 TableWidgetColumn.type?: 'datetime' | 'number'
 TableWidgetColumn.cell: (row: Row, hit?: SearchHit<Row> | undefined) => ReactNode — Render this column's value for one row. The table owns its cell element and semantics.
 TableWidgetProps (type, @altertable/data-app-react): <Row, Data, Input> = props listed as TableWidget.*
-TableWidgetProps (type, @altertable/data-app-react/ui): <Row> = props listed as TableWidget.* — Composes VisualizationWidget with DataTable, search, and local pagination. Columns own header and body semantics; the first column is the row header.
 TableWidgetSearch (type, @altertable/data-app-react): <Row>
 TableWidgetSearch.label: string
 TableWidgetSearch.value: string
@@ -1656,40 +1582,22 @@ TextContent.…: plus props inherited from React
 TextContentProps (type, @altertable/data-app-react): <HTMLAttributes<HTMLDivElement>, HTMLDivElement>
 TextContentProps.…: plus props inherited from React
 TextWidget (component, @altertable/data-app-react): <Data, Input, Row>(props: TextWidgetProps<Data, Input, Row>)
-TextWidget.headingLevel? (@altertable/data-app-react): 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
-TextWidget.annotationId? (@altertable/data-app-react): string — Unique stable target for persisted feedback; overrides automatic evidence identity.
-TextWidget.count? (@altertable/data-app-react): number — Result count beside the heading. Derive from the displayed result; zero is visible.
-TextWidget.description? (@altertable/data-app-react): ReactNode
-TextWidget.records? (@altertable/data-app-react): InspectionRecords — Lazy detail records rendered as the first inspection tab.
-TextWidget.action? (@altertable/data-app-react): ReactNode
-TextWidget.status? (@altertable/data-app-react): WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
-TextWidget.footer? (@altertable/data-app-react): ReactNode
-TextWidget.metric (@altertable/data-app-react): Metric<Data, Input> [variant 1 of 2]
-TextWidget.source (@altertable/data-app-react): ViewSource<NoInfer<Data>, NoInfer<Input>>
-TextWidget.children? (@altertable/data-app-react): ((values: MetricValues) => ReactNode) [variant 1 of 2]
-TextWidget.title? (@altertable/data-app-react): ReactNode
-TextWidget.dataset (@altertable/data-app-react): Dataset<Data, Input, Row> [variant 2 of 2]
-TextWidget.children (@altertable/data-app-react): (rows: readonly Row[]) => ReactNode [variant 2 of 2]
-TextWidget.… (@altertable/data-app-react): plus props inherited from React
-TextWidget (component, @altertable/data-app-react/ui): <Data>(props: TextWidgetProps<Data>)
-TextWidget.title (@altertable/data-app-react/ui): ReactNode
-TextWidget.headingLevel? (@altertable/data-app-react/ui): 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
-TextWidget.annotationId? (@altertable/data-app-react/ui): string — Unique stable target for persisted feedback; overrides automatic evidence identity.
-TextWidget.count? (@altertable/data-app-react/ui): number — Result count beside the heading. Derive from the displayed result; zero is visible.
-TextWidget.description? (@altertable/data-app-react/ui): ReactNode
-TextWidget.evidence (@altertable/data-app-react/ui): (WidgetEvidence | undefined) & WidgetEvidence [variant 1 of 2]
-TextWidget.records? (@altertable/data-app-react/ui): InspectionRecords — Lazy detail records rendered as the first inspection tab.
-TextWidget.action? (@altertable/data-app-react/ui): ReactNode
-TextWidget.status? (@altertable/data-app-react/ui): WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
-TextWidget.footer? (@altertable/data-app-react/ui): ReactNode
-TextWidget.emptyFallback? (@altertable/data-app-react/ui): EmptyContent
-TextWidget.reading (@altertable/data-app-react/ui): DataReading<Data> [variant 1 of 2]
-TextWidget.children (@altertable/data-app-react/ui): (data: Data) => ReactNode [variant 1 of 2]
-TextWidget.evidence? (@altertable/data-app-react/ui): WidgetEvidence [variant 2 of 2]
-TextWidget.children (@altertable/data-app-react/ui): ReactNode [variant 2 of 2]
-TextWidget.… (@altertable/data-app-react/ui): plus props inherited from React
+TextWidget.headingLevel?: 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
+TextWidget.annotationId?: string — Unique stable target for persisted feedback; overrides automatic evidence identity.
+TextWidget.count?: number — Result count beside the heading. Derive from the displayed result; zero is visible.
+TextWidget.description?: ReactNode
+TextWidget.records?: InspectionRecords — Lazy detail records rendered as the first inspection tab.
+TextWidget.action?: ReactNode
+TextWidget.status?: WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
+TextWidget.footer?: ReactNode
+TextWidget.metric: Metric<Data, Input> [variant 1 of 2]
+TextWidget.source: ViewSource<NoInfer<Data>, NoInfer<Input>>
+TextWidget.children?: ((values: MetricValues) => ReactNode) [variant 1 of 2]
+TextWidget.title?: ReactNode
+TextWidget.dataset: Dataset<Data, Input, Row> [variant 2 of 2]
+TextWidget.children: (rows: readonly Row[]) => ReactNode [variant 2 of 2]
+TextWidget.…: plus props inherited from React
 TextWidgetProps (type, @altertable/data-app-react): <Data, Input, Row> = props listed as TextWidget.*
-TextWidgetProps (type, @altertable/data-app-react/ui): <Data> = props listed as TextWidget.* — Narrative sibling of VisualizationWidget, composing DataWidget with TextContent. Use TextContent directly for borderless prose. Bind claims and scope to the same displayed reading.
 Theme (type, @altertable/data-app/appearance): = 'dark' | 'light' — Appearance configured by app authors.
 ThemePreference (type, @altertable/data-app/appearance): = 'system' | Theme
 Tooltip (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: TooltipProps) — Supplemental, non-interactive description for one already labeled control. Supply a single child that forwards aria-describedby to its focusable DOM element.
@@ -1735,52 +1643,26 @@ ViewSource.loading?: false [variant 2 of 2]
 ViewSource.data: Data [variant 2 of 2]
 ViewSource.input: Input [variant 2 of 2]
 VisualizationWidget (component, @altertable/data-app-react): <Row, Data, Input>(props: VisualizationWidgetProps<Row, Data, Input>)
-VisualizationWidget.skeleton? (@altertable/data-app-react): SkeletonContent
-VisualizationWidget.headingLevel? (@altertable/data-app-react): 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
-VisualizationWidget.annotationId? (@altertable/data-app-react): string — Unique stable target for persisted feedback; overrides automatic evidence identity.
-VisualizationWidget.count? (@altertable/data-app-react): number — Result count beside the heading. Derive from the displayed result; zero is visible.
-VisualizationWidget.description? (@altertable/data-app-react): ReactNode
-VisualizationWidget.records? (@altertable/data-app-react): InspectionRecords — Lazy detail records rendered as the first inspection tab.
-VisualizationWidget.action? (@altertable/data-app-react): ReactNode
-VisualizationWidget.status? (@altertable/data-app-react): WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
-VisualizationWidget.footer? (@altertable/data-app-react): ReactNode — Footer controls, such as table pagination.
-VisualizationWidget.children (@altertable/data-app-react): (rows: readonly Row[], actions: ItemActions<Row>) => ReactNode [variant 1 of 2]
-VisualizationWidget.dataset (@altertable/data-app-react): Dataset<Data, Input, Row>
-VisualizationWidget.source (@altertable/data-app-react): ViewSource<NoInfer<Data>, NoInfer<Input>>
-VisualizationWidget.title? (@altertable/data-app-react): ReactNode
-VisualizationWidget.actions? (@altertable/data-app-react): ExplorationActions<NoInfer<Row>, NoInfer<Input>>
-VisualizationWidget.breakdown? (@altertable/data-app-react): BreakdownTarget<any>
-VisualizationWidget.views (@altertable/data-app-react): readonly VisualizationWidgetView<Row>[] [variant 2 of 2]
-VisualizationWidget.viewLabel (@altertable/data-app-react): string [variant 2 of 2]
-VisualizationWidget.initialView? (@altertable/data-app-react): string [variant 2 of 2]
-VisualizationWidget.… (@altertable/data-app-react): plus props inherited from React
-VisualizationWidget (component, @altertable/data-app-react/ui): <Data>(props: VisualizationWidgetProps<Data>) — Compose an unframed visual with the shared heading and inspection.
-VisualizationWidget.title (@altertable/data-app-react/ui): ReactNode
-VisualizationWidget.headingLevel? (@altertable/data-app-react/ui): 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
-VisualizationWidget.annotationId? (@altertable/data-app-react/ui): string — Unique stable target for persisted feedback; overrides automatic evidence identity.
-VisualizationWidget.count? (@altertable/data-app-react/ui): number — Result count beside the heading. Derive from the displayed result; zero is visible.
-VisualizationWidget.description? (@altertable/data-app-react/ui): ReactNode
-VisualizationWidget.evidence? (@altertable/data-app-react/ui): (Omit<AboutSubject, 'description' | 'id' | 'references' | 'title' | 'visual' | 'visualKind'> & { id: string; } & { glossaryIds: [string, ...string[]]; queryNames?: string[] | undefined; }) | (Omit<...> & ... 1 more ... & { ...; }) | (Omit<...> & ... 2 more ... & { ...; }) | (Omit<...> & ... 2 more… [variants 1, 2 of 4]
-VisualizationWidget.records? (@altertable/data-app-react/ui): InspectionRecords — Lazy detail records rendered as the first inspection tab.
-VisualizationWidget.action? (@altertable/data-app-react/ui): ReactNode
-VisualizationWidget.status? (@altertable/data-app-react/ui): WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
-VisualizationWidget.emptyFallback? (@altertable/data-app-react/ui): EmptyContent
-VisualizationWidget.footer? (@altertable/data-app-react/ui): ReactNode — Footer controls, such as table pagination.
-VisualizationWidget.loading (@altertable/data-app-react/ui): true [variant 1 of 4]
-VisualizationWidget.loadingContent? (@altertable/data-app-react/ui): ReactNode [variant 1 of 4]
-VisualizationWidget.loading? (@altertable/data-app-react/ui): false [variant 2 of 4]
-VisualizationWidget.visual (@altertable/data-app-react/ui): ReactNode [variant 2 of 4]
-VisualizationWidget.evidence (@altertable/data-app-react/ui): ((Omit<AboutSubject, 'description' | 'id' | 'references' | 'title' | 'visual' | 'visualKind'> & { id: string; } & { glossaryIds: [string, ...string[]]; queryNames?: string[] | undefined; }) | (Omit<...> & ... 1 more ... & { ...; }) | (Omit<...> & ... 2 more ... & { ...; }) | (Omit<...> & ... 2 more… [variants 3, 4 of 4]
-VisualizationWidget.reading (@altertable/data-app-react/ui): DataReading<Data> [variants 3, 4 of 4]
-VisualizationWidget.isEmpty (@altertable/data-app-react/ui): (data: Data) => boolean [variants 3, 4 of 4]
-VisualizationWidget.skeleton? (@altertable/data-app-react/ui): SkeletonContent [variants 3, 4 of 4]
-VisualizationWidget.children (@altertable/data-app-react/ui): (data: Data) => ReactNode [variant 3 of 4]
-VisualizationWidget.views (@altertable/data-app-react/ui): readonly VisualizationWidgetView<Data>[] [variant 4 of 4]
-VisualizationWidget.viewLabel (@altertable/data-app-react/ui): string [variant 4 of 4]
-VisualizationWidget.initialView? (@altertable/data-app-react/ui): string [variant 4 of 4] — An existing view ID; defaults to the first view. Validated while loading too.
-VisualizationWidget.… (@altertable/data-app-react/ui): plus props inherited from React
+VisualizationWidget.skeleton?: SkeletonContent
+VisualizationWidget.headingLevel?: 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.
+VisualizationWidget.annotationId?: string — Unique stable target for persisted feedback; overrides automatic evidence identity.
+VisualizationWidget.count?: number — Result count beside the heading. Derive from the displayed result; zero is visible.
+VisualizationWidget.description?: ReactNode
+VisualizationWidget.records?: InspectionRecords — Lazy detail records rendered as the first inspection tab.
+VisualizationWidget.action?: ReactNode
+VisualizationWidget.status?: WidgetStatus — Reserved feedback slot; retain displayed content while refreshing or after failure.
+VisualizationWidget.footer?: ReactNode — Footer controls, such as table pagination.
+VisualizationWidget.children: (rows: readonly Row[], actions: ItemActions<Row>) => ReactNode [variant 1 of 2]
+VisualizationWidget.dataset: Dataset<Data, Input, Row>
+VisualizationWidget.source: ViewSource<NoInfer<Data>, NoInfer<Input>>
+VisualizationWidget.title?: ReactNode
+VisualizationWidget.actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>
+VisualizationWidget.breakdown?: BreakdownTarget<any>
+VisualizationWidget.views: readonly VisualizationWidgetView<Row>[] [variant 2 of 2]
+VisualizationWidget.viewLabel: string [variant 2 of 2]
+VisualizationWidget.initialView?: string [variant 2 of 2]
+VisualizationWidget.…: plus props inherited from React
 VisualizationWidgetProps (type, @altertable/data-app-react): <Row, Data, Input> = props listed as VisualizationWidget.*
-VisualizationWidgetProps (type, @altertable/data-app-react/ui): <Data> = props listed as VisualizationWidget.* — DataWidget frame for charts, DataTable, metrics, or a custom data display. Owns alternate-view selection and shares it with inspection.
 VisualizationWidgetView (type, @altertable/data-app-react): <Row>
 VisualizationWidgetView.id: string — Stable, nonempty identity; unique within this widget.
 VisualizationWidgetView.label: ReactNode

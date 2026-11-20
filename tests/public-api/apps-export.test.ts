@@ -23,7 +23,7 @@ describe('export', () => {
     const downloaded = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
     const download = await downloaded;
-    expect(download.suggestedFilename()).toBe('gallery.csv');
+    expect(download.suggestedFilename()).toBe('counts-all-data.csv');
     expect(await contents(download)).toBe(
       '\uFEFFName,Count\r\n"München, ""East""",0\r\n"Two\nlines",\r\n\'=1+1,-10\r\n\' +SUM(A1),false\r\n\'@SUM(A1),true\r\n'
     );
@@ -203,7 +203,7 @@ describe('export', () => {
       .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
       .click();
     download = await downloaded;
-    expect(download.suggestedFilename()).toBe('gallery.zip');
+    expect(download.suggestedFilename()).toBe('activity-report-all-data.zip');
     const files = unzipSync(await bytes(download));
     expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
     expect(Array.from(files['Summary.csv']!.slice(0, 3))).toEqual([
@@ -215,7 +215,9 @@ describe('export', () => {
     await app
       .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
       .click();
-    expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
+    expect((await downloaded).suggestedFilename()).toBe(
+      'activity-report-all-data.zip'
+    );
     await button.click();
 
     await app.getByRole('menu').press('Escape');
@@ -253,7 +255,7 @@ describe('export', () => {
       .getByRole('button', { name: 'Export all ZIP', exact: true })
       .click();
     download = await downloaded;
-    expect(download.suggestedFilename()).toBe('gallery.zip');
+    expect(download.suggestedFilename()).toBe('embedded-report-all-data.zip');
     const files = unzipSync(await bytes(download));
     expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
   });

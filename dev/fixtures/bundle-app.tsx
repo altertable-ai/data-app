@@ -1,13 +1,15 @@
 import { defineDataApp } from '@altertable/data-app';
-import { injectDataAppStyles } from '@altertable/data-app-react';
-import { AnnotationTarget } from '@altertable/data-app-react';
-import { mountDataApp } from '@altertable/data-app-react';
 import {
+  AnnotationTarget,
+  createDataContext,
+  createDataHooks,
   DataApp,
-  DataWidget,
+  DataSection,
   MetricWidget,
-  useAppFilters,
-} from '@altertable/data-app-react/ui';
+  injectDataAppStyles,
+  mountDataApp,
+} from '@altertable/data-app-react';
+import { DataWidget, useAppFilters } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
   createDataClient,
@@ -19,6 +21,7 @@ import { connectionCheck, searchFilter } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
+import { literalLakehouse } from '@/tests/public-api/fixtures/literal-client';
 const dataApp = defineDataApp({
   title: 'Embedded report',
   description: 'Explore embedded queries and host interactions.',
@@ -40,6 +43,60 @@ const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
   period: searchFilter({ key: 'period', history: 'push' }),
 };
+// The report's values are literal, so they load without the host's query bridge.
+const { defineView } = createDataHooks(
+  createDataClient({
+    operations: {
+      report: dataApp.defineOperation({
+        policy: { maxQueryRows: 10 },
+        async run() {
+          return {
+            customers: 42,
+            counts: [
+              { name: 'München, "East"', count: 0 },
+              { name: 'Two\nlines', count: null },
+            ],
+            summary: [{ total: 0 }],
+          };
+        },
+      }),
+    },
+    lakehouse: literalLakehouse,
+  })
+);
+const reportView = defineView({
+  dataContext: createDataContext(dataApp.queryNames)({
+    description: 'Test report',
+    glossary: { count: { term: 'Count', definition: 'Recorded count.' } },
+  }),
+  operation: 'report',
+});
+const counts = reportView.dataset({
+  name: 'Counts',
+  select: report => report.counts,
+  rowKey: row => row.name,
+  columns: { name: {}, count: {} },
+  evidence: { id: 'counts', glossaryIds: ['count'] },
+});
+const summary = reportView.dataset({
+  name: 'Summary',
+  select: report => report.summary,
+  rowKey: row => row.total,
+  columns: { total: {} },
+  evidence: { id: 'summary', glossaryIds: ['count'] },
+});
+const customers = reportView.metric(
+  {
+    id: 'customer-count',
+    glossaryId: 'count',
+    label: 'Customers',
+    format: { kind: 'count' },
+  },
+  report => ({ current: report.customers })
+);
+const customersContent = reportView.content(result => (
+  <MetricWidget metric={customers} source={result} annotationId="customers" />
+));
 
 function App() {
   const [crashed, setCrashed] = useState(false);
@@ -50,21 +107,8 @@ function App() {
 
   return (
     <DataApp
-      csvExport={{
-        filename: 'gallery',
-        tables: [
-          {
-            name: 'Counts',
-            columns: ['Name', 'Count'],
-            rows: [
-              ['München, "East"', 0],
-              ['Two\nlines', null],
-            ],
-          },
-          { name: 'Summary', columns: ['Total'], rows: [[0]] },
-        ],
-      }}
-      dataContext={{ description: 'Test report', glossary: {} }}
+      view={reportView}
+      datasets={[counts, summary]}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
@@ -77,12 +121,7 @@ function App() {
           Explore revenue
         </button>
       </DataWidget>
-      <MetricWidget
-        label="Customers"
-        annotationId="customers"
-        value={42}
-        format={{ kind: 'count' }}
-      />
+      <DataSection content={customersContent} />
       <AnnotationTarget annotationId="intro" label="Introduction">
         <p>Revenue is growing.</p>
       </AnnotationTarget>

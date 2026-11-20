@@ -3,6 +3,7 @@ import {
   Button,
   Grid,
   Comparison,
+  Skeleton,
   TextContent,
 } from '@altertable/data-app-react';
 import {
@@ -10,7 +11,6 @@ import {
   DateTimeRangePicker,
   SearchField,
   LiveControl,
-  MetricWidget,
   DataWidget,
   DataTable,
 } from '@altertable/data-app-react/ui';
@@ -113,10 +113,12 @@ function Stress() {
         </Button>
       </ControlBar>
       <Grid columns={2}>
-        <MetricWidget
-          label="A precisely formatted amount with an exceptionally long descriptive label"
-          {...(loading ? { loading: true as const } : { content: exactValue })}
-        />
+        <DataWidget
+          title="A precisely formatted amount with an exceptionally long descriptive label"
+          aria-busy={loading}
+        >
+          {loading ? <Skeleton /> : exactValue}
+        </DataWidget>
         <DataWidget title="A comparison with long period descriptions">
           <Comparison
             label="Full precision comparison"

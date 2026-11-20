@@ -82,8 +82,8 @@ Host `queryParams` supplies protected parameters that callers cannot override.
 Other values come from `query()` arguments or defaults. The host/backend enforces
 data access and limits. Each operation's `policy` sets `maxQueryRows` to a positive
 integer no greater than 10,000, which also limits each `query()` unless it passes
-its own `limit`. `maxDurationMs` defaults to 15 seconds. The shared SQL host
-handler also rejects requests for more than 10,000 rows.
+its own `limit`. The shared SQL host handler also rejects requests for more than
+10,000 rows.
 
 ### Declare query projections
 

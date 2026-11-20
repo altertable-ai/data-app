@@ -16,8 +16,6 @@ import {
 } from '@altertable/data-app-react';
 import {
   DataAppProvider,
-  DataApp as StaticApp,
-  MetricWidget as StaticMetric,
   useAppFilters,
   PresentStory,
   AboutData,
@@ -84,9 +82,12 @@ const section: DataSectionProps<number, Record<string, never>> = {
 <DataApp {...app}>
   <DataSection {...section} />
 </DataApp>;
-<StaticApp {...base}>
-  <StaticMetric label="Count" value={1} format={{ kind: 'count' }} />
-</StaticApp>;
+// Without a view, the same component renders a static screen.
+<DataApp dataContext={base.dataContext}>Setup</DataApp>;
+// @ts-expect-error A static screen has no displayed result to present or export.
+<DataApp dataContext={base.dataContext} story={() => []}>
+  Setup
+</DataApp>;
 // @ts-expect-error Data apps require a declared primary view.
 const withoutView: DataAppProps<number, Record<string, never>> = {
   ...base,
@@ -437,6 +438,13 @@ const groupRows = rowsView.dataset({
   evidence: { id: 'groups', glossaryIds: ['total'] },
 });
 <TableWidget dataset={groupRows} source={{ loading: true }} />;
+<TableWidget
+  dataset={groupRows}
+  source={{ loading: true }}
+  limit={1}
+  // @ts-expect-error Preview limits and pagination cannot coexist.
+  pagination={false}
+/>;
 rowsView.dataset({
   name: 'Unknown field',
   rowKey: row => row.name,

@@ -38,8 +38,8 @@ export type ResolvedViewDefinition<
 
 /** Omit both for rows, or for a result that is never empty, such as a total. */
 export type ViewEmptiness<Data> = {
-  /** App-owned semantics: measured zero need not mean an empty result. By default a
-   * result with no rows is empty and any other result never is. */
+  /** App-owned semantics: measured zero need not mean an empty result.
+   * @default A result with no rows is empty; any other result never is */
   isEmpty?: (data: Data) => boolean;
   /** Inherited by DataSection unless it supplies its own copy. */
   emptyFallback?: EmptyContent;

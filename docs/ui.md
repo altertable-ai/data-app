@@ -1,11 +1,11 @@
 # Direct UI composition
 
-Import from `@altertable/data-app-react/ui` for setup/static screens, custom
-controls, or a deliberately custom shell. For data-backed content, prefer declared views
+Import from `@altertable/data-app-react/ui` for charts, custom controls, or a
+deliberately custom shell. For data-backed content, prefer declared views
 and bound widgets from `@altertable/data-app-react`.
 
-`<DataApp>` here renders a static screen and accepts optional direct CSV data.
-Direct widget forms accept local values or rows. `<DataWidget>` supplies a generic
+`<DataApp>` from `@altertable/data-app-react` renders a setup or static screen
+when it has a `dataContext` and no `view`. `<DataWidget>` supplies a generic
 frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
@@ -40,11 +40,7 @@ function ReportLink() {
 ```
 
 For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
-`navigateNewWindowOrTab` from `@altertable/data-app/client`. For example,
-`navigateNewWindowOrTab(url, event)` accepts a DOM or React event: Shift requests
-a window, Ctrl/Cmd requests a tab, and an unmodified event does nothing.
-
-Embedded hosts must enable the [external link route](embed.md#external-links).
+`navigateNewWindowOrTab` from `@altertable/data-app/client`.
 
 ## Tooltips and explanations
 
@@ -207,54 +203,6 @@ conversion windows, and cohort definitions; these components visualize results.
   supplied points; numeric spacing preserves elapsed distance.
 - `<JourneyChart>`: full ordered paths with counts and outcomes; preserve repeated
   events and mark cut-off paths as `truncated`.
-
-Each chart takes an `ariaLabel` and a population `unit`:
-
-```tsx
-<FunnelChart
-  ariaLabel="Activation funnel"
-  unit="users"
-  steps={[
-    { id: 'visit', label: 'Visited' },
-    { id: 'signup', label: 'Signed up' },
-  ]}
-  series={[{ id: 'free', label: 'Free plan', values: [1000, 600] }]}
-/>
-
-<RetentionChart
-  ariaLabel="Weekly signup retention"
-  unit="users"
-  series={[
-    {
-      id: 'sep7',
-      label: 'Sep 7 signups',
-      cohortSize: 1000,
-      points: [
-        { offset: 0, label: 'Week 0', rate: 1, retainedCount: 1000 },
-        { offset: 1, label: 'Week 1', rate: 0.47, retainedCount: 470 },
-        { offset: 2, label: 'Week 2', rate: null, retainedCount: null },
-      ],
-    },
-  ]}
-/>
-
-<JourneyChart
-  ariaLabel="Onboarding journey"
-  unit="users"
-  paths={[
-    {
-      id: 'subscribed',
-      steps: [
-        { event: 'Signed up', property: null },
-        { event: 'Subscribed', property: null },
-      ],
-      count: 460,
-      converted: true,
-      truncated: false,
-    },
-  ]}
-/>
-```
 
 Search [REFERENCE.md](../REFERENCE.md) for `FunnelChartSeries`,
 `RetentionChartPoint`, and `JourneyChartPath` before adapting displayed rows.

@@ -567,14 +567,14 @@ export { createDataClient } from '@altertable/data-app/client';
     authoring,
     `export { defineDataApp } from '@altertable/data-app';
 export { createDataHooks, Grid, MetricWidget } from '@altertable/data-app-react';
-export { MetricWidget as StaticMetric } from '@altertable/data-app-react/ui';`
+export { DataWidget } from '@altertable/data-app-react/ui';`
   );
   await writeFile(
     join(authoring, 'app.jsx'),
     `import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget } from '@altertable/data-app-react/ui';
-const html = renderToString(<MetricWidget label="Authoring only" value={0} format={{kind:'count'}} />);
+import { DataWidget } from '@altertable/data-app-react/ui';
+const html = renderToString(<DataWidget title="Authoring only">0</DataWidget>);
 if (!html.includes('Authoring only') || !html.includes('>0<')) throw new Error('Authoring render failed');`
   );
   await run(['bun', join(authoring, 'app.jsx')], authoring);
@@ -695,13 +695,13 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataClient } from "@altertable/data-app/client";
 import { Grid, injectDataAppStyles } from '@altertable/data-app-react';
-import { MetricWidget } from '@altertable/data-app-react/ui';
+import { DataWidget } from '@altertable/data-app-react/ui';
 injectDataAppStyles();
 import { dateTimeRangeFilter, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app-embed";
 import { DataAppBridge } from "@altertable/data-app-embed/react";
 export const app = defineDataApp({ title: "Packed app", description: "Portable declaration", scope: { organization: "demo", environment: "test" }, queries: {} });
-export const api = { defineDataApp, createDataClient, Grid, MetricWidget, dateTimeRangeFilter, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
+export const api = { defineDataApp, createDataClient, Grid, DataWidget, dateTimeRangeFilter, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
 `
   );
   await writeFile(
@@ -713,11 +713,11 @@ export { DataAppBridge };
   await writeFile(
     join(temporary, 'preview-app.tsx'),
     `import { defineDataApp } from '@altertable/data-app';
-import { MetricWidget } from '@altertable/data-app-react/ui';
+import { DataWidget } from '@altertable/data-app-react/ui';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'demo', environment: 'test' }, queries: { ready: { statement: 'SELECT 1', params: {}, projections: { ready: { type: 'number' } } } } });
 document.title = 'Packed preview';
-console.log(MetricWidget, DataAppBridge);\n`
+console.log(DataWidget, DataAppBridge);\n`
   );
   await writeFile(
     join(temporary, 'server.ts'),
@@ -923,13 +923,13 @@ export { Grid };
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget } from '@altertable/data-app-react/ui';
+import { DataWidget } from '@altertable/data-app-react/ui';
 import { injectDataAppStyles } from '@altertable/data-app-react';
 if (typeof document !== 'undefined' || typeof injectDataAppStyles !== 'function')
   throw new Error('React styles must be importable without a DOM');
 if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')
   throw new Error('Minimum React consumer resolved the wrong peers');
-const html = renderToString(<MetricWidget label="Minimum React" value={0} format={{ kind: 'count' }} />);
+const html = renderToString(<DataWidget title="Minimum React">0</DataWidget>);
 if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('Minimum React render failed');
 `
   );

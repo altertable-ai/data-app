@@ -190,36 +190,12 @@ together. Repair requests preserve the existing authorization boundary and cover
 only exercised checks and interactions. See [diagnostics and repair](diagnostics.md)
 for host integration.
 
-## Fix common failures
-
-| Symptom                                                          | Fix                                                                                         |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| The hosted app declaration is rejected                           | Keep the `defineDataApp()` argument literal; see [hosted apps](hosted-apps.md)              |
-| `Unknown query name` or a parameter type error in `query()`      | Use a name and the exact parameters declared in `queries`                                   |
-| A result column is missing or has the wrong type                 | Declare every returned SQL alias in `projections` with its exact casing                     |
-| A column asks for `value`, or reports that its rows lack a field | Name the column after a field of the returned rows, or set `value` for a computed column    |
-| A dataset asks for `select`                                      | The operation returns an object; select its row array                                       |
-| A filter reports a duplicate name or URL key                     | Reuse one filter constant across operations instead of declaring it twice                   |
-| A filter reports a reserved URL key                              | Choose a `key` other than `view`, `about`, `tab`, `present`, `step`, and `details`          |
-| An operation reports its row or duration limit                   | Set `policy.maxQueryRows` between 1 and 10,000; paginate larger results in the query        |
-| A binding requires the source from its own view                  | Pass the `result` of the same view's `content()` to its datasets and metrics                |
-| Evidence reports an unknown query or glossary ID                 | Cite names from `dataApp.queryNames` and glossary keys from the view's data context         |
-| A metric comparison is rejected                                  | Return `previous` only when the operation reads a `dateTimeRangeFilter()` with `comparison` |
-
 ## Look up only what is missing
 
 Search [REFERENCE.md](../REFERENCE.md) for the exact export or method first:
 
 ```sh
 rg '(^|\.)defineView\b' REFERENCE.md
-```
-
-`DataApp` and the widgets exist twice: `@altertable/data-app-react` exports the
-bound component and `/ui` a primitive with different props. Each field in the
-reference names its import path, so read the fields of the one you import:
-
-```sh
-rg '^TableWidget\..*\(@altertable/data-app-react\)' REFERENCE.md
 ```
 
 Open only the section needed for a requirement the starter does not cover:

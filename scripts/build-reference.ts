@@ -733,48 +733,12 @@ async function generate() {
   }
 }
 
-/** Names exported with different contracts, such as a bound widget and its `/ui` primitive. */
-function sharedNames(entries: Entry[]) {
-  const counts = new Map<string, number>();
-  for (const { name, kind } of entries) {
-    const key = `${name}\0${kind}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return new Set(
-    entries
-      .filter(({ name, kind }) => counts.get(`${name}\0${kind}`)! > 1)
-      .map(({ name }) => name)
-  );
-}
-
-/** Tag a field with its import path, so a search result names the export it belongs to. */
-function qualifyField(line: string, name: string, specifiers: string[]) {
-  const separator = line.indexOf(': ');
-  if (!line.startsWith(`${name}.`) || separator < 0) return line;
-  return `${line.slice(0, separator)} (${specifiers.join(', ')})${line.slice(separator)}`;
-}
-
 function render(entries: Entry[]) {
-  const shared = sharedNames(entries);
   const body = entries.flatMap(({ name, kind, specifiers, lines }) => {
     const [first = '', ...rest] = lines;
     const head = `${name} (${kind}, ${specifiers.join(', ')})`;
-    return [
-      first ? `${head}: ${first}` : head,
-      ...(shared.has(name)
-        ? rest.map(line => qualifyField(line, name, specifiers))
-        : rest),
-    ];
+    return [first ? `${head}: ${first}` : head, ...rest];
   });
-  const components = new Intl.ListFormat('en').format(
-    [
-      ...new Set(
-        entries
-          .filter(({ name, kind }) => kind === 'component' && shared.has(name))
-          .map(({ name }) => `\`${name}\``)
-      ),
-    ].sort((left, right) => left.localeCompare(right, 'en'))
-  );
   const header = `# Data app API reference
 
 Search an export or method to find its import paths, signature, and props:
@@ -789,11 +753,6 @@ Each export and field has its own line. \`?\` marks optional fields;
 \`= props listed as Name.*\` points to a component's prop definitions.
 Methods are listed under the function that returns them, such as
 \`createDataHooks().defineView().dataset\`.
-
-${components} exist twice. \`@altertable/data-app-react\` exports the bound
-component, which takes a view's \`dataset\` or \`metric\` and \`source\`;
-\`@altertable/data-app-react/ui\` exports a primitive that takes local values.
-Each of their fields names its import path.
 `;
   return `${header}
 \`\`\`text

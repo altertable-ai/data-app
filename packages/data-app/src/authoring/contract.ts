@@ -153,8 +153,9 @@ type OperationRun<Input, Output, Queries extends QueryDefinitions> = (
 ) => Promise<Output>;
 const DEFAULT_MAX_DURATION_MS = 15_000;
 type ResolvedOperationPolicy = DataOperation<unknown, unknown>['policy'];
-/** Limits for one operation. `maxQueryRows` caps each query; the duration defaults to 15 seconds. */
+/** Limits for one operation. `maxQueryRows` caps each query. */
 type OperationPolicy = Omit<ResolvedOperationPolicy, 'maxDurationMs'> & {
+  /** @default 15000 */
   maxDurationMs?: number;
 };
 

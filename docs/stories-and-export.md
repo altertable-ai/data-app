@@ -5,8 +5,7 @@ callback and optional nonempty `datasets` list. Omit either prop to omit its too
 control, or the matching [page action](embed.md#page-actions) when embedded. Supplied features use the displayed snapshot, including during refresh or
 failure. A story callback returning `[]` leaves a disabled presentation action.
 Set `showToolbar={false}` to omit page actions together; data loading, error states,
-and declared filters remain available. Setup and static screens can use `<DataApp>`
-from `/ui`.
+and declared filters remain available. Setup and static screens omit `view`.
 
 These are component contracts. The app brief determines the
 intended presentation and export coverage. A presentation story is distinct from

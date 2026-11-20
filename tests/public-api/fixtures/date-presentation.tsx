@@ -17,11 +17,7 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
-import {
-  DataApp as StaticDataApp,
-  LineChart,
-  DataTableTimestamp,
-} from '@altertable/data-app-react/ui';
+import { LineChart, DataTableTimestamp } from '@altertable/data-app-react/ui';
 import {
   dateTimeRangeFilter,
   type DataOperation,
@@ -227,7 +223,7 @@ const dataApp = defineDataApp({
 function App() {
   if (new URLSearchParams(location.search).has('appDefaults')) {
     return (
-      <StaticDataApp
+      <DataApp
         dataContext={{
           description: 'App date formatting defaults.',
           glossary: {},
@@ -248,7 +244,7 @@ function App() {
             </span>
           </p>
         </TextContent>
-      </StaticDataApp>
+      </DataApp>
     );
   }
   return (
