@@ -169,7 +169,7 @@ export async function serveAppFile({
       const queries: Record<string, string> = {};
       for (const [id, definition] of Object.entries(declaredQueries)) {
         if (
-          !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(id) ||
+          !REGISTERED_QUERY_ID_PATTERN.test(id) ||
           !definition ||
           typeof definition !== 'object' ||
           Array.isArray(definition) ||
@@ -177,8 +177,6 @@ export async function serveAppFile({
           !definition.statement.trim()
         )
           throw new Error(`Invalid registered query: ${id}.`);
-        if (!REGISTERED_QUERY_ID_PATTERN.test(id))
-          throw new Error(`Invalid registered query name: ${id}.`);
         const unsupported = unsupportedParameterReference(definition.statement);
         if (unsupported)
           throw new Error(
@@ -241,6 +239,7 @@ export async function serveAppFile({
     rebuildTimer = setTimeout(() => {
       rebuildQueue = rebuildQueue
         .then(async () => {
+          if (stopped) return;
           const result = await buildApp();
           if (stopped) return;
           currentBundle = result.bundle;
