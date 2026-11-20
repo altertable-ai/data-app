@@ -1,90 +1,104 @@
 import ts from 'typescript';
 
-const contract = '@altertable/data-app/contract';
-const renamed = new Map([
+const contractModule = '@altertable/data-app/contract';
+const reactModule = '@altertable/data-app-react';
+const filterExports = new Map([
   ['searchVariable', 'searchFilter'],
   ['choiceVariable', 'choiceFilter'],
   ['multiChoiceVariable', 'multiChoiceFilter'],
 ]);
 
-/** Move named imports while preserving their local names and all call sites. */
+function renameFilterImport(specifier: ts.ImportSpecifier): ts.ImportSpecifier {
+  const exportedName = (specifier.propertyName ?? specifier.name).text;
+  const replacement = filterExports.get(exportedName);
+  return replacement
+    ? ts.factory.updateImportSpecifier(
+        specifier,
+        specifier.isTypeOnly,
+        ts.factory.createIdentifier(replacement),
+        specifier.name
+      )
+    : specifier;
+}
+
+function rewriteImport(
+  declaration: ts.ImportDeclaration,
+  file: ts.SourceFile
+): ts.ImportDeclaration[] {
+  const { moduleSpecifier, importClause } = declaration;
+  const bindings = importClause?.namedBindings;
+  if (
+    !ts.isStringLiteral(moduleSpecifier) ||
+    declaration.attributes ||
+    !importClause ||
+    !bindings ||
+    !ts.isNamedImports(bindings)
+  )
+    return [];
+
+  const moduleName = moduleSpecifier.text;
+  if (moduleName !== contractModule && moduleName !== reactModule) return [];
+
+  const specifiers = bindings.elements.map(renameFilterImport);
+  const renamedFilters = specifiers.filter(
+    (specifier, index) => specifier !== bindings.elements[index]
+  );
+  if (renamedFilters.length === 0) return [];
+
+  const singleQuote = file.text[moduleSpecifier.getStart(file)] === "'";
+  const remaining =
+    moduleName === contractModule
+      ? specifiers
+      : bindings.elements.filter(
+          (specifier, index) => specifier === specifiers[index]
+        );
+  const replacements: ts.ImportDeclaration[] = [];
+  if (remaining.length || importClause.name) {
+    const clause = ts.factory.updateImportClause(
+      importClause,
+      importClause.phaseModifier,
+      importClause.name,
+      remaining.length
+        ? ts.factory.updateNamedImports(bindings, remaining)
+        : undefined
+    );
+    replacements.push(
+      ts.factory.updateImportDeclaration(
+        declaration,
+        declaration.modifiers,
+        clause,
+        ts.factory.createStringLiteral(moduleName, singleQuote),
+        undefined
+      )
+    );
+  }
+  if (moduleName === reactModule)
+    replacements.push(
+      ts.factory.createImportDeclaration(
+        undefined,
+        ts.factory.createImportClause(
+          importClause.phaseModifier,
+          undefined,
+          ts.factory.createNamedImports(renamedFilters)
+        ),
+        ts.factory.createStringLiteral(contractModule, singleQuote)
+      )
+    );
+  return replacements;
+}
+
+/** Move named imports while preserving their local names and call sites. */
 export function moveFilterImports(source: string): string {
   const file = ts.createSourceFile('app.tsx', source, ts.ScriptTarget.Latest);
   const printer = ts.createPrinter();
-  for (const statement of [...file.statements].reverse()) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !ts.isStringLiteral(statement.moduleSpecifier) ||
-      ![contract, '@altertable/data-app-react'].includes(
-        statement.moduleSpecifier.text
-      ) ||
-      statement.attributes
-    )
-      continue;
-    const clause = statement.importClause;
-    const bindings = clause?.namedBindings;
-    if (!clause || !bindings || !ts.isNamedImports(bindings)) continue;
+  const chunks: string[] = [];
+  let cursor = 0;
+  for (const statement of file.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const replacements = rewriteImport(statement, file);
+    if (!replacements.length) continue;
 
-    const kept: ts.ImportSpecifier[] = [];
-    const moved: ts.ImportSpecifier[] = [];
-    for (const item of bindings.elements) {
-      const replacement = renamed.get((item.propertyName ?? item.name).text);
-      if (!replacement) {
-        kept.push(item);
-        continue;
-      }
-      moved.push(
-        ts.factory.updateImportSpecifier(
-          item,
-          item.isTypeOnly,
-          ts.factory.createIdentifier(replacement),
-          item.name
-        )
-      );
-    }
-    if (moved.length === 0) continue;
-
-    const sameModule = statement.moduleSpecifier.text === contract;
-    const singleQuote =
-      source[statement.moduleSpecifier.getStart(file)] === "'";
-    const declarations: ts.ImportDeclaration[] = [];
-    if (sameModule || kept.length || clause.name)
-      declarations.push(
-        ts.factory.updateImportDeclaration(
-          statement,
-          statement.modifiers,
-          ts.factory.updateImportClause(
-            clause,
-            clause.phaseModifier,
-            clause.name,
-            sameModule || kept.length
-              ? ts.factory.updateNamedImports(
-                  bindings,
-                  sameModule ? [...kept, ...moved] : kept
-                )
-              : undefined
-          ),
-          ts.factory.createStringLiteral(
-            statement.moduleSpecifier.text,
-            singleQuote
-          ),
-          undefined
-        )
-      );
-    if (!sameModule)
-      declarations.push(
-        ts.factory.createImportDeclaration(
-          undefined,
-          ts.factory.createImportClause(
-            clause.phaseModifier,
-            undefined,
-            ts.factory.createNamedImports(moved)
-          ),
-          ts.factory.createStringLiteral(contract, singleQuote)
-        )
-      );
-
-    const text = declarations
+    const replacement = replacements
       .map(declaration =>
         printer.printNode(
           ts.EmitHint.Unspecified,
@@ -96,10 +110,9 @@ export function moveFilterImports(source: string): string {
         )
       )
       .join('\n');
-    source =
-      source.slice(0, statement.getStart(file)) +
-      text +
-      source.slice(statement.end);
+    chunks.push(source.slice(cursor, statement.getStart(file)), replacement);
+    cursor = statement.end;
   }
-  return source;
+  chunks.push(source.slice(cursor));
+  return chunks.join('');
 }

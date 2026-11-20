@@ -42,7 +42,7 @@ const search = searchVariable({ key: 'group', label: 'Group', defaultValue: '' }
 
   it('keeps other imports, comments, and code outside the migration', () => {
     const source = `// Explain the filters.
-import { parseCount, /* Keep this note. */ searchVariable } from '@altertable/data-app/contract';
+import { searchVariable, /* Keep this note. */ parseCount } from '@altertable/data-app/contract';
 import { searchVariable as unrelated } from './other.ts';
 `;
     const result = upgradeDataApp({
@@ -51,7 +51,7 @@ import { searchVariable as unrelated } from './other.ts';
       toVersion: '0.77.0',
     });
     expect(result.source).toBe(`// Explain the filters.
-import { parseCount, /* Keep this note. */ searchFilter as searchVariable } from '@altertable/data-app/contract';
+import { searchFilter as searchVariable, /* Keep this note. */ parseCount } from '@altertable/data-app/contract';
 import { searchVariable as unrelated } from './other.ts';
 `);
   });

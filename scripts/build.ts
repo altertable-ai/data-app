@@ -125,7 +125,7 @@ for (const { directory, manifest } of packages) {
   const define: Record<string, string> = {};
   if (manifest.name === '@altertable/data-app-upgrade') {
     define.DATA_APP_SDK_VERSION = JSON.stringify(manifest.version);
-    define.DATA_APP_MIGRATION_VERSIONS = JSON.stringify(
+    define.DATA_APP_MIGRATION_HISTORY = JSON.stringify(
       await buildMigrationGuides(directory, outdir, manifest.version)
     );
   }

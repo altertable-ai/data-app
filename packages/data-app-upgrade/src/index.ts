@@ -1,9 +1,12 @@
 import { moveFilterImports } from './move-filter-imports.ts';
 
 declare const DATA_APP_SDK_VERSION: string;
-declare const DATA_APP_MIGRATION_VERSIONS: readonly string[];
+declare const DATA_APP_MIGRATION_HISTORY: {
+  oldestSupportedVersion: string;
+  releases: readonly string[];
+};
 
-const oldestSupportedVersion = '0.75.0';
+const stableVersionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 const codemods: Readonly<Record<string, (source: string) => string>> = {
   '0.77.0': moveFilterImports,
@@ -22,23 +25,20 @@ export interface DataAppUpgradeResult {
   migrationGuides: string[];
 }
 
-function versionParts(version: string): number[] {
-  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version))
+type Version = readonly [major: number, minor: number, patch: number];
+
+function parseVersion(version: string): Version {
+  const match = stableVersionPattern.exec(version);
+  if (!match)
     throw new RangeError(`Expected a stable SDK version, got ${version}`);
-  const parts = version.split('.').map(Number);
+  const parts: Version = [Number(match[1]), Number(match[2]), Number(match[3])];
   if (!parts.every(Number.isSafeInteger))
     throw new RangeError(`Invalid SDK version: ${version}`);
   return parts;
 }
 
-function compareVersions(left: string, right: string): number {
-  const leftParts = versionParts(left);
-  const rightParts = versionParts(right);
-  return (
-    leftParts[0]! - rightParts[0]! ||
-    leftParts[1]! - rightParts[1]! ||
-    leftParts[2]! - rightParts[2]!
-  );
+function compareVersions(left: Version, right: Version): number {
+  return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
 }
 
 /** Apply available codemods in release order and list guides for the requested upgrade. */
@@ -47,27 +47,32 @@ export function upgradeDataApp({
   fromVersion,
   toVersion = DATA_APP_SDK_VERSION,
 }: DataAppUpgradeOptions): DataAppUpgradeResult {
+  const from = parseVersion(fromVersion);
+  const to = parseVersion(toVersion);
+  const { oldestSupportedVersion, releases } = DATA_APP_MIGRATION_HISTORY;
   if (
-    compareVersions(fromVersion, oldestSupportedVersion) < 0 ||
-    compareVersions(toVersion, DATA_APP_SDK_VERSION) > 0 ||
-    compareVersions(fromVersion, toVersion) > 0
+    compareVersions(from, parseVersion(oldestSupportedVersion)) < 0 ||
+    compareVersions(to, parseVersion(DATA_APP_SDK_VERSION)) > 0 ||
+    compareVersions(from, to) > 0
   )
     throw new RangeError(
       `Unsupported SDK upgrade: ${fromVersion} to ${toVersion}`
     );
 
-  const migrationGuides = DATA_APP_MIGRATION_VERSIONS.filter(
-    version =>
-      compareVersions(version, fromVersion) > 0 &&
-      compareVersions(version, toVersion) <= 0
-  );
+  const migrationGuides: string[] = [];
   const appliedCodemods: string[] = [];
-  for (const version of migrationGuides) {
-    const migrate = codemods[version];
-    if (!migrate) continue;
-    const updated = migrate(source);
-    if (updated !== source) appliedCodemods.push(version);
-    source = updated;
+  let upgradedSource = source;
+  for (const version of releases) {
+    const release = parseVersion(version);
+    if (compareVersions(release, from) <= 0 || compareVersions(release, to) > 0)
+      continue;
+    migrationGuides.push(version);
+
+    const codemod = codemods[version];
+    if (!codemod) continue;
+    const updated = codemod(upgradedSource);
+    if (updated !== upgradedSource) appliedCodemods.push(version);
+    upgradedSource = updated;
   }
-  return { source, appliedCodemods, migrationGuides };
+  return { source: upgradedSource, appliedCodemods, migrationGuides };
 }
