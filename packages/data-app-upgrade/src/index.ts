@@ -6,7 +6,7 @@ declare const DATA_APP_MIGRATION_HISTORY: {
   releases: readonly string[];
 };
 
-const stableVersionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const STABLE_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 const codemods: Readonly<Record<string, (source: string) => string>> = {
   '0.77.0': moveFilterImports,
@@ -28,7 +28,7 @@ export interface DataAppUpgradeResult {
 type Version = readonly [major: number, minor: number, patch: number];
 
 function parseVersion(version: string): Version {
-  const match = stableVersionPattern.exec(version);
+  const match = STABLE_VERSION_PATTERN.exec(version);
   if (!match)
     throw new RangeError(`Expected a stable SDK version, got ${version}`);
   const parts: Version = [Number(match[1]), Number(match[2]), Number(match[3])];

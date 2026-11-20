@@ -10,6 +10,9 @@ task needs a pattern that source does not cover. Search [REFERENCE.md](REFERENCE
 
 Read [Contributing](CONTRIBUTING.md) before changing packages or contributor
 tooling. App authoring guides teach agents how to build apps with the SDK.
+For every breaking SDK change, include the migration in the same PR.
+Follow [SDK migrations](https://github.com/altertable-ai/data-app/blob/main/.github/RELEASING.md#sdk-migrations).
+
 Keep reusable behavior in components, defaults, types, and tests. Add authoring
 documentation only when an app author must make a decision or take an action;
 do not restate patterns already handled by the SDK.
