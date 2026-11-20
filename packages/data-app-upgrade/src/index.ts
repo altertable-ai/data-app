@@ -1,4 +1,4 @@
-import { moveFilterImports } from './move-filter-imports.ts';
+import { migrationsByVersion } from './migrations.ts';
 
 declare const DATA_APP_SDK_VERSION: string;
 declare const DATA_APP_MIGRATION_HISTORY: {
@@ -8,12 +8,6 @@ declare const DATA_APP_MIGRATION_HISTORY: {
 
 const STABLE_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
-type Codemod = (source: string) => string;
-
-const codemodsByVersion: Readonly<Record<string, readonly Codemod[]>> = {
-  '0.77.0': [moveFilterImports],
-};
-
 export interface DataAppUpgradeOptions {
   source: string;
   fromVersion: string;
@@ -22,10 +16,15 @@ export interface DataAppUpgradeOptions {
 
 export interface DataAppUpgradeResult {
   source: string;
-  appliedCodemods: string[];
+  steps: DataAppMigrationOutcome[];
   /** Review these releases' guides under dist/migrations before saving the app. */
   migrationGuides: string[];
 }
+
+export type DataAppMigrationOutcome = { id: string; version: string } & (
+  | { status: 'applied' | 'unchanged' }
+  | { status: 'review_required'; message: string }
+);
 
 type Version = readonly [major: number, minor: number, patch: number];
 
@@ -62,7 +61,7 @@ export function upgradeDataApp({
     );
 
   const migrationGuides: string[] = [];
-  const appliedCodemods: string[] = [];
+  const steps: DataAppMigrationOutcome[] = [];
   let upgradedSource = source;
   for (const version of releases) {
     const release = parseVersion(version);
@@ -70,14 +69,24 @@ export function upgradeDataApp({
       continue;
     migrationGuides.push(version);
 
-    const releaseCodemods = codemodsByVersion[version];
-    if (!releaseCodemods) continue;
-    const updated = releaseCodemods.reduce(
-      (currentSource, codemod) => codemod(currentSource),
-      upgradedSource
-    );
-    if (updated !== upgradedSource) appliedCodemods.push(version);
-    upgradedSource = updated;
+    for (const step of migrationsByVersion[version] ?? []) {
+      const { id } = step;
+      if ('rewrite' in step) {
+        const nextSource = step.rewrite(upgradedSource);
+        steps.push({
+          id,
+          version,
+          status: nextSource === upgradedSource ? 'unchanged' : 'applied',
+        });
+        upgradedSource = nextSource;
+      } else {
+        steps.push(
+          step.pattern.test(upgradedSource)
+            ? { id, version, status: 'review_required', message: step.message }
+            : { id, version, status: 'unchanged' }
+        );
+      }
+    }
   }
-  return { source: upgradedSource, appliedCodemods, migrationGuides };
+  return { source: upgradedSource, steps, migrationGuides };
 }

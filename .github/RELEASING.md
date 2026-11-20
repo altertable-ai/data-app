@@ -57,9 +57,9 @@ hosts. Add or update the expected release's guide under
 `packages/data-app-upgrade/migrations/`. Explain what users must change and
 what to verify. Include a codemod and a historical source fixture for changes
 that can be applied reliably. Document manual steps for changes that need review.
-Register each codemod in the expected release's list in
-`packages/data-app-upgrade/src/index.ts`. Codemods run in list order and each
-receives the source produced by the previous one.
+Register codemods and checks for recognizable manual cases in the expected
+release's list in `packages/data-app-upgrade/src/migrations.ts`. Give each
+step a unique, stable ID. Steps run in list order on the source produced so far.
 
 The upgrade package ships with the SDK. Its build checks Release Please's
 changelog for missing guides and supplies a no-migration guide for releases

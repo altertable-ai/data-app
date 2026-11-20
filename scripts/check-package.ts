@@ -280,7 +280,9 @@ import { upgradeDataApp } from '@altertable/data-app-upgrade';
 
 const source = "import { searchVariable } from '@altertable/data-app-react';";
 const result = upgradeDataApp({ source, fromVersion: '0.75.0' });
-assert.deepEqual(result.appliedCodemods, ['0.77.0']);
+assert.deepEqual(result.steps.filter(step => step.status === 'applied'), [
+  { id: 'move-filter-imports', version: '0.77.0', status: 'applied' },
+]);
 assert.equal(result.migrationGuides.at(-1), ${JSON.stringify(workspace.version)});
 for (const version of result.migrationGuides) {
   const guide = new URL(\`./migrations/\${version}.md\`, import.meta.resolve('@altertable/data-app-upgrade'));

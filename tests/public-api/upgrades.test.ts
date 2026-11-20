@@ -11,33 +11,50 @@ const search = searchVariable({ key: 'group', label: 'Group', defaultValue: '' }
       fromVersion: '0.75.0',
       toVersion: '0.78.0',
     });
-    expect(result).toEqual({
-      source: `import { DataSection } from '@altertable/data-app-react';
+    expect(result.source)
+      .toBe(`import { DataSection } from '@altertable/data-app-react';
 import { searchFilter as searchVariable, choiceFilter as choice } from '@altertable/data-app/contract';
 const search = searchVariable({ key: 'group', label: 'Group', defaultValue: '' });
-`,
-      appliedCodemods: ['0.77.0'],
-      migrationGuides: ['0.76.0', '0.77.0', '0.78.0'],
-    });
+`);
+    expect(result.migrationGuides).toEqual(['0.76.0', '0.77.0', '0.78.0']);
     expect(
-      upgradeDataApp({
-        source: result.source,
-        fromVersion: '0.75.0',
-        toVersion: '0.78.0',
-      }).appliedCodemods
-    ).toEqual([]);
+      result.steps.map(({ id, version, status }) => [version, id, status])
+    ).toEqual([
+      ['0.76.0', 'calendar-date-ranges', 'unchanged'],
+      ['0.77.0', 'move-filter-imports', 'applied'],
+      ['0.77.0', 'operation-filters-and-views', 'review_required'],
+      ['0.78.0', 'registered-query-client', 'unchanged'],
+      ['0.78.0', 'embedded-page-actions', 'unchanged'],
+    ]);
+
+    const repeated = upgradeDataApp({
+      source: result.source,
+      fromVersion: '0.75.0',
+      toVersion: '0.78.0',
+    });
+    expect(repeated.source).toBe(result.source);
+    expect(
+      repeated.steps.find(step => step.id === 'move-filter-imports')?.status
+    ).toBe('unchanged');
   });
 
-  it('keeps a guide-only release from rewriting imports before their removal', () => {
-    const source =
-      "import { searchVariable } from '@altertable/data-app-react';";
-    expect(
-      upgradeDataApp({ source, fromVersion: '0.75.0', toVersion: '0.76.0' })
-    ).toEqual({
+  it('reports calendar SQL for review without applying a later codemod', () => {
+    const source = `import { dateRangeVariable, searchVariable } from '@altertable/data-app-react';`;
+    const result = upgradeDataApp({
       source,
-      appliedCodemods: [],
-      migrationGuides: ['0.76.0'],
+      fromVersion: '0.75.0',
+      toVersion: '0.76.0',
     });
+    expect(result.source).toBe(source);
+    expect(result.migrationGuides).toEqual(['0.76.0']);
+    expect(result.steps).toEqual([
+      {
+        id: 'calendar-date-ranges',
+        version: '0.76.0',
+        status: 'review_required',
+        message: expect.stringContaining('SQL predicates'),
+      },
+    ]);
   });
 
   it('keeps other imports, comments, and code outside the migration', () => {

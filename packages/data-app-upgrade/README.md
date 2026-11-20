@@ -15,11 +15,17 @@ const result = upgradeDataApp({
 ```
 
 Omit `toVersion` to target the installed package's version. Upgrades from
-`0.75.0` onward are supported. `appliedCodemods` lists releases that changed
-the source. `migrationGuides` lists every crossed release in order. The
-corresponding Markdown files ship in the package at
-`dist/migrations/<version>.md`.
+`0.75.0` onward are supported.
 
-Review those guides and validate the result against the target SDK before
-saving it. A codemod can prepare part of a migration while leaving query,
-filter, or host behavior changes for review.
+`steps` reports each registered migration in order with a stable `id`, its
+release `version`, and its `status`:
+
+- `applied`: the codemod edited the source.
+- `unchanged`: the step made no edit or its review check did not match.
+- `review_required`: a source pattern suggests a manual change. See the step's
+  `message` and the corresponding guide.
+
+Review checks recognize common source patterns. They cannot prove that a
+change is irrelevant to a custom app. `migrationGuides` lists every crossed
+release in order. Read the Markdown files at `dist/migrations/<version>.md`
+and validate the candidate against the target SDK before saving it.
