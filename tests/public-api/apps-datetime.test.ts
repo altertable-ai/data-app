@@ -123,6 +123,7 @@ test('calendar starts from applied dates, requires a complete selection, and Esc
     .poll(() => output.textContent())
     .toContain('2026-07-05T00:00:00.000Z');
   expect(await output.textContent()).toContain('2026-07-08T00:00:00.000Z');
+  expect(await input.getAttribute('aria-haspopup')).toBe('listbox');
   await input.click();
   await page.getByRole('option', { name: 'Select from calendar…' }).click();
   await page.keyboard.press('Escape');

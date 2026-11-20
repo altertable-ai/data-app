@@ -15,6 +15,7 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
+import { parseDate, today } from '@internationalized/date';
 import {
   useEffect,
   useId,
@@ -177,6 +178,31 @@ function summaryLabel(value: DateTimeRange | null, options: DateFormatOptions) {
   return formatDateTimeRange(value);
 }
 
+function initialCalendarSelection(
+  value: DateTimeRange | null,
+  policy?: DateTimeRangePolicy
+) {
+  if (!value) return null;
+  try {
+    const now = new Date();
+    const resolved = policy
+      ? policy.resolve(value, now)
+      : resolveDateTimeRange(value, now);
+    const firstDay = resolved.from?.toISOString().slice(0, 10);
+    const lastAllowedDay =
+      policy?.bounds(now).maxDate ?? now.toISOString().slice(0, 10);
+    if (!firstDay || firstDay > lastAllowedDay) return null;
+    return {
+      start: parseDate(firstDay),
+      end: parseDate(
+        new Date(resolved.to.getTime() - 1).toISOString().slice(0, 10)
+      ),
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** A datetime picker with presets, natural-language input, and a calendar.
  * Presets apply immediately; Enter or calendar Apply commits edits; dismissal discards them.
  * Unmodified arrows navigate presets or edit date segments. Escape returns from the
@@ -214,17 +240,26 @@ export function DateTimeRangePicker({
     initialPickerState
   );
   const {
-    open,
-    mode,
+    status,
     draft,
     edited,
     highlight,
     error,
     help,
     helpSide,
-    calendar,
+    calendarSelection,
     complete,
   } = state;
+  const open = status !== 'closed';
+  // The calendar includes both selected days. The filter ends at the next UTC midnight.
+  const calendarRange =
+    status === 'calendar' && calendarSelection
+      ? {
+          from: calendarSelection.start.toDate('UTC'),
+          to: calendarSelection.end.add({ days: 1 }).toDate('UTC'),
+        }
+      : null;
+  const calendarBounds = status === 'calendar' ? policy?.bounds() : undefined;
   const [selectionRevision, setSelectionRevision] = useState(0);
   useLayoutEffect(() => {
     if (selectionRevision) {
@@ -247,7 +282,7 @@ export function DateTimeRangePicker({
       // an underlay over the page: while one is open, an outside press only
       // dismisses that nested overlay.
       if (
-        mode === 'calendar' &&
+        status === 'calendar' &&
         [...document.querySelectorAll('.altertable-popover-surface')].some(
           surface => !surface.contains(popup.current)
         )
@@ -262,7 +297,7 @@ export function DateTimeRangePicker({
       document.removeEventListener('pointerdown', dismissOutside, true);
       document.removeEventListener('focusin', dismissOutside, true);
     };
-  }, [open, mode]);
+  }, [open, status]);
 
   useEffect(() => () => clearTimeout(helpTimer.current), []);
   function rangeError(range: DateTimeRange) {
@@ -386,22 +421,10 @@ export function DateTimeRangePicker({
       return;
     }
     if (index === calendarIndex) {
-      let nextCalendar: DateTimeRange | null = null;
-      try {
-        if (value) {
-          const resolved = policy
-            ? policy.resolve(value)
-            : resolveDateTimeRange(value);
-          const from = resolved.from ? new Date(resolved.from) : null;
-          const to = new Date(resolved.to.getTime() - 1);
-          from?.setUTCHours(0, 0, 0, 0);
-          to.setUTCHours(24, 0, 0, 0);
-          nextCalendar = from ? { from, to } : null;
-        }
-      } catch {
-        nextCalendar = null;
-      }
-      dispatch({ type: 'calendar', value: nextCalendar });
+      dispatch({
+        type: 'calendar',
+        selection: initialCalendarSelection(value, policy),
+      });
     } else {
       dispatch({ type: 'update', value: { highlight: moreIndex, help: true } });
       selectInput();
@@ -410,7 +433,7 @@ export function DateTimeRangePicker({
   function back() {
     dispatch({
       type: 'update',
-      value: { mode: 'presets', highlight: calendarIndex },
+      value: { status: 'presets', highlight: calendarIndex },
     });
     selectInput();
   }
@@ -463,10 +486,10 @@ export function DateTimeRangePicker({
           aria-label={label}
           aria-expanded={open}
           aria-controls={open ? `${id}-popup` : undefined}
-          aria-haspopup={mode === 'calendar' ? 'dialog' : 'listbox'}
-          aria-autocomplete={mode === 'presets' ? 'list' : 'none'}
+          aria-haspopup={status === 'calendar' ? 'dialog' : 'listbox'}
+          aria-autocomplete={!open || status === 'presets' ? 'list' : 'none'}
           aria-activedescendant={
-            open && mode !== 'calendar' && highlight >= 0
+            open && status !== 'calendar' && highlight >= 0
               ? `${id}-option-${highlight}`
               : undefined
           }
@@ -506,7 +529,7 @@ export function DateTimeRangePicker({
             }
             if (event.key === 'Escape') {
               event.preventDefault();
-              if (mode === 'calendar') back();
+              if (status === 'calendar') back();
               else close(true);
               return;
             }
@@ -516,10 +539,10 @@ export function DateTimeRangePicker({
             }
             if (event.key === 'Enter') {
               event.preventDefault();
-              if (mode === 'presets' && highlight >= 0 && !edited)
+              if (status === 'presets' && highlight >= 0 && !edited)
                 choose(highlight);
-              else if (mode === 'calendar') {
-                if (complete && calendar) commit(calendar);
+              else if (status === 'calendar') {
+                if (complete && calendarRange) commit(calendarRange);
               } else {
                 submit(pending.current?.value ?? event.currentTarget.value);
                 pending.current = null;
@@ -541,7 +564,7 @@ export function DateTimeRangePicker({
                 : 1) as -1 | 1,
             };
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-              dispatch({ type: 'update', value: { mode: 'editing' } });
+              dispatch({ type: 'update', value: { status: 'editing' } });
               dispatch({ type: 'update', value: { highlight: -1 } });
               const selection = getDateTimeRangeInputSegmentSelection(args);
               if (selection) {
@@ -564,7 +587,7 @@ export function DateTimeRangePicker({
                   if (next)
                     input.current?.setSelectionRange(next.start, next.end);
                 });
-              } else if (mode === 'presets') {
+              } else if (status === 'presets') {
                 event.preventDefault();
                 navigateOption(
                   highlight < 0
@@ -580,7 +603,7 @@ export function DateTimeRangePicker({
               }
             }
             if (
-              mode === 'presets' &&
+              status === 'presets' &&
               (event.key === 'Home' || event.key === 'End')
             ) {
               event.preventDefault();
@@ -630,7 +653,7 @@ export function DateTimeRangePicker({
             if (event.key === 'Escape') {
               event.preventDefault();
               event.stopPropagation();
-              if (mode === 'calendar') back();
+              if (status === 'calendar') back();
               else close(true);
             }
             if (
@@ -644,7 +667,7 @@ export function DateTimeRangePicker({
             }
           }}
         >
-          {mode === 'calendar' ? (
+          {status === 'calendar' ? (
             <div
               id={`${id}-popup`}
               role="dialog"
@@ -652,14 +675,23 @@ export function DateTimeRangePicker({
               className="altertable-datetime-calendar-panel"
             >
               <DateTimeRangeCalendar
-                value={value}
+                value={calendarSelection}
+                currentDay={
+                  calendarBounds
+                    ? parseDate(calendarBounds.maxDate)
+                    : today('UTC')
+                }
+                minDay={
+                  calendarBounds?.minDate
+                    ? parseDate(calendarBounds.minDate)
+                    : undefined
+                }
                 maxRangeDays={Math.min(
                   maxRangeDays ?? Infinity,
-                  policy?.bounds().maxRangeDays ?? Infinity
+                  calendarBounds?.maxRangeDays ?? Infinity
                 )}
-                policy={policy}
-                onChange={calendar =>
-                  dispatch({ type: 'update', value: { calendar } })
+                onChange={calendarSelection =>
+                  dispatch({ type: 'update', value: { calendarSelection } })
                 }
                 onCompleteChange={complete =>
                   dispatch({ type: 'update', value: { complete } })
@@ -671,9 +703,11 @@ export function DateTimeRangePicker({
                 </Button>
                 <Button
                   variant="primary"
-                  disabled={!complete || !calendar || !!rangeError(calendar)}
+                  disabled={
+                    !complete || !calendarRange || !!rangeError(calendarRange)
+                  }
                   onClick={() => {
-                    if (calendar) commit(calendar);
+                    if (calendarRange) commit(calendarRange);
                   }}
                 >
                   Apply
@@ -731,7 +765,7 @@ export function DateTimeRangePicker({
                       onMouseMove={() => {
                         dispatch({
                           type: 'update',
-                          value: { mode: 'presets' },
+                          value: { status: 'presets' },
                         });
                         highlightOption(index);
                       }}
