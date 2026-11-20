@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.79.0](https://github.com/altertable-ai/data-app/compare/v0.78.0...v0.79.0) (2026-11-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bind every widget to a view and simplify data app authoring ([#168](https://github.com/altertable-ai/data-app/issues/168))
+
+### Features
+
+* bind every widget to a view and simplify data app authoring ([#168](https://github.com/altertable-ai/data-app/issues/168)) ([34b10c1](https://github.com/altertable-ai/data-app/commit/34b10c10e0c5bd5e4866d6c40b82bfc4f76a82d6))
+* **react:** show refresh feedback per widget ([#163](https://github.com/altertable-ai/data-app/issues/163)) ([267c69f](https://github.com/altertable-ai/data-app/commit/267c69ff366a78cd5eeaf28416b541a9f82e5710))
+* **sdk:** ship versioned data app migrations ([#167](https://github.com/altertable-ai/data-app/issues/167)) ([c931aac](https://github.com/altertable-ai/data-app/commit/c931aac6ea6ef8604f2903a03777b80ca73524f4))
+
+
+### Bug Fixes
+
+* correct date picker state and local development edge cases ([#166](https://github.com/altertable-ai/data-app/issues/166)) ([721b538](https://github.com/altertable-ai/data-app/commit/721b538ffcab8ffb8a3a7374d0479831d3320238))
+* **react:** show primary refresh failures while summaries load ([#164](https://github.com/altertable-ai/data-app/issues/164)) ([f9a8d57](https://github.com/altertable-ai/data-app/commit/f9a8d579b36c6cc3db82f9dd35aa433f19c0a51f))
+
+
+### Performance Improvements
+
+* **react:** stop chart hover from re-rendering whole charts ([#169](https://github.com/altertable-ai/data-app/issues/169)) ([34135ab](https://github.com/altertable-ai/data-app/commit/34135ab18c3bf7bfbba4b5b986cf868c4d2736a8))
+
 ## [0.78.0](https://github.com/altertable-ai/data-app/compare/v0.77.0...v0.78.0) (2026-11-19)
 
 
