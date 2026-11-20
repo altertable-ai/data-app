@@ -24,7 +24,12 @@ import { packages } from '@/scripts/packages';
 async function checkout() {
   const root = resolve('.');
   const temporary = await mkdtemp(join(tmpdir(), 'data-app-watcher-'));
-  for (const name of ['package.json', 'tsconfig.json', 'scripts'])
+  for (const name of [
+    'package.json',
+    'tsconfig.json',
+    'CHANGELOG.md',
+    'scripts',
+  ])
     await cp(join(root, name), join(temporary, name), { recursive: true });
   await symlink(join(root, 'node_modules'), join(temporary, 'node_modules'));
   for (const { directory } of packages) {
@@ -37,6 +42,8 @@ async function checkout() {
       join(temporary, directory, 'node_modules')
     );
   }
+  const guides = 'packages/data-app-upgrade/migrations';
+  await cp(join(root, guides), join(temporary, guides), { recursive: true });
   return temporary;
 }
 

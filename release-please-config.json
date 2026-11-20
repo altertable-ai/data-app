@@ -12,6 +12,16 @@
         {
           "type": "json",
           "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-upgrade']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-upgrade/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
           "jsonpath": "$.devDependencies['@altertable/data-app']"
         },
         {

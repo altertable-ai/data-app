@@ -1,0 +1,51 @@
+{
+  "name": "@altertable/data-app-upgrade",
+  "version": "0.78.0",
+  "description": "Versioned codemods and migration guides for Altertable data apps.",
+  "keywords": [
+    "altertable",
+    "data-app",
+    "codemod",
+    "migration",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-upgrade"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-upgrade",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}

@@ -40,6 +40,7 @@
     "@altertable/data-app-examples": "0.78.0",
     "@altertable/data-app-manifest": "0.78.0",
     "@altertable/data-app-react": "0.78.0",
+    "@altertable/data-app-upgrade": "0.78.0",
     "@altertable/data-app-worker": "0.78.0",
     "@types/bun": "1.4.3",
     "@types/react": "19.3.0",

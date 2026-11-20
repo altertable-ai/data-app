@@ -27,8 +27,10 @@ async function snapshot() {
   const files = [
     'package.json',
     'bun.lock',
+    'CHANGELOG.md',
     'tsconfig.json',
     'scripts/build.ts',
+    'scripts/build-migration-guides.ts',
     'scripts/dev-paths.ts',
     'scripts/packages.ts',
   ];
@@ -45,6 +47,9 @@ async function snapshot() {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
+  const guides = 'packages/data-app-upgrade/migrations';
+  for (const guide of await readdir(resolve(root, guides)))
+    files.push(`${guides}/${guide}`);
   const versions = await Promise.all(
     files.sort().map(async file => {
       try {

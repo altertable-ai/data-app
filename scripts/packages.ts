@@ -3,6 +3,7 @@ import embed from '@/packages/data-app-embed/package.json';
 import examples from '@/packages/data-app-examples/package.json';
 import manifest from '@/packages/data-app-manifest/package.json';
 import react from '@/packages/data-app-react/package.json';
+import upgrade from '@/packages/data-app-upgrade/package.json';
 import worker from '@/packages/data-app-worker/package.json';
 import core from '@/packages/data-app/package.json';
 
@@ -15,6 +16,7 @@ export const packages = [
   bun,
   worker,
   examples,
+  upgrade,
 ].map(manifest => ({
   manifest,
   directory: `packages/${manifest.name.slice('@altertable/'.length)}`,

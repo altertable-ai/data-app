@@ -53,6 +53,7 @@ Host apps in your product with [embedding](docs/embed.md) or
 | [`@altertable/data-app-worker`](packages/data-app-worker)     | Serve apps from a self-contained sandbox Worker       |
 | [`@altertable/data-app-manifest`](packages/data-app-manifest) | Extract and rewrite manifests in build tooling        |
 | [`@altertable/data-app-examples`](packages/data-app-examples) | Start from canonical app templates                    |
+| [`@altertable/data-app-upgrade`](packages/data-app-upgrade)   | Apply codemods and find release migration guides      |
 
 ## Development
 
