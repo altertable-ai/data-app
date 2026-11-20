@@ -47,22 +47,18 @@ const emptyFallback = {
 const totalsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleTotals',
-  isEmpty: rows => rows.length === 0,
   emptyFallback,
 });
 const totals = totalsView.dataset({
   name: 'Period totals',
-  select: rows => rows,
   rowKey: () => 'total',
   columns: {
     currentCount: {
       label: 'Selected period',
-      value: row => row.currentCount,
       format: count,
     },
     previousCount: {
       label: 'Previous period',
-      value: row => row.previousCount,
       format: count,
     },
   },
@@ -71,49 +67,41 @@ const totals = totalsView.dataset({
 const trendView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesOverTime',
-  isEmpty: rows => rows.length === 0,
   emptyFallback,
 });
 const trend = trendView.dataset({
   name: 'Samples over time',
-  select: rows => rows,
   rowKey: row => row.periodStart,
   columns: {
-    periodStart: { label: 'Period start', value: row => row.periodStart },
-    sampleCount: { value: row => row.sampleCount, format: count },
+    periodStart: { label: 'Period start' },
+    sampleCount: { format: count },
   },
   evidence: { id: 'samples-over-time', glossaryIds: ['sampleCount'] },
 });
 const memberView = defineView({
   dataContext: sampleDataContext,
   operation: 'samplesByMember',
-  isEmpty: rows => rows.length === 0,
   emptyFallback,
 });
 const byMember = memberView.dataset({
   name: 'Member comparison',
-  select: rows => rows,
   rowKey: row => row.member,
   columns: {
-    member: { label: 'Member', value: row => row.member },
+    member: { label: 'Member' },
     currentCount: {
       label: 'Selected period',
-      value: row => row.currentCount,
       format: count,
     },
     previousCount: {
       label: 'Previous period',
-      value: row => row.previousCount,
       format: count,
     },
     change: {
       label: 'Change',
-      value: row => row.change,
       format: row => formatNumber(row.change, { signDisplay: 'exceptZero' }),
     },
     changeRate: {
       label: 'Change %',
-      value: row => row.changeRate,
       format: row => formatPercent(row.changeRate),
     },
   },
@@ -124,13 +112,11 @@ const byMember = memberView.dataset({
 });
 const selectedMembers = memberView.dataset({
   name: 'Selected-period samples',
-  select: rows => rows,
   rowKey: row => row.member,
   columns: {
-    member: { label: 'Member', value: row => row.member },
+    member: { label: 'Member' },
     currentCount: {
       label: 'Samples',
-      value: row => row.currentCount,
       format: count,
     },
   },
@@ -139,17 +125,15 @@ const selectedMembers = memberView.dataset({
 const rowsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleRows',
-  isEmpty: rows => rows.length === 0,
   emptyFallback,
 });
 const sampleRows = rowsView.dataset({
   name: 'Samples',
-  select: rows => rows,
   rowKey: row => `${row.periodStart}:${row.member}`,
   columns: {
-    periodStart: { label: 'Period start', value: row => row.periodStart },
-    member: { label: 'Member', value: row => row.member },
-    sampleCount: { value: row => row.sampleCount, format: count },
+    periodStart: { label: 'Period start' },
+    member: { label: 'Member' },
+    sampleCount: { format: count },
   },
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });

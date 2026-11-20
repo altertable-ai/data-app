@@ -10,7 +10,7 @@ renders. Import filters from `@altertable/data-app/contract`.
 This sample-count example shares one fixed group choice across operations:
 
 ```tsx
-import { choiceFilter, parseCount } from '@altertable/data-app/contract';
+import { choiceFilter } from '@altertable/data-app/contract';
 
 // ... dataApp, sampleDataContext, and section contents
 const groupName = choiceFilter({
@@ -27,14 +27,12 @@ const groupName = choiceFilter({
 const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleCountsByGroup', {
-        groupName: groupName === 'all' ? '' : groupName,
-      });
-      return result.rows.map(row => ({
+      const { rows } = await query('sampleCountsByGroup', { groupName });
+      return rows.map(row => ({
         groupName: row.group_name,
-        sampleCount: parseCount(row.sample_count),
+        sampleCount: row.sample_count,
       }));
     },
   }),
@@ -44,7 +42,6 @@ const { defineView } = createDataHooks(operations.createDataClient());
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
 
@@ -59,6 +56,8 @@ function App() {
 
 - Reuse the same constant on every operation that reads it; two filters with one
   name, or one URL key, fail.
+- Give a choice its unrestricted option, such as `all`, and handle that ID in
+  the query: `WHERE $groupName = 'all' OR group_name = $groupName`.
 - Omit `filters` for an operation without inputs.
 - A detail operation that also needs its own fields, such as a record ID, keeps
   `filters` for the scope and adds `input` and `checks` for those fields only.
@@ -230,7 +229,7 @@ const periodFilter = dateTimeRangeFilter({
 });
 const dailyCounts = dataApp.defineOperation({
   filters: { period: periodFilter, groupName },
-  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
+  policy: { maxQueryRows: 100 },
   async run({ query }, { period, groupName }) {
     const current = await query('dailyCounts', {
       ...queryDateTimeRangeParams(periodFilter, period, 'period').current,
@@ -266,6 +265,5 @@ Clear removes filter predicates and returns dates to defaults, preserving search
 and display choices. `resetAll()` restores all defaults. Filters apply immediately;
 use app-owned drafts only when the task needs Apply/Cancel.
 
-Custom control ownership is needed only when generated controls cannot express
-the requirement; use `/ui` for that case. Do not reuse reserved inspection,
-presentation, or navigation URL keys.
+The keys `view`, `about`, `tab`, `present`, `step`, and `details` are reserved
+for inspection, presentation, and navigation.

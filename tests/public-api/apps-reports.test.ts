@@ -287,6 +287,7 @@ test('a report formats missing values, precise ratios, localized numbers and cal
 }) => {
   await page.goto('/static');
   for (const row of [
+    'Omitted optional field —',
     'Rounded number 12.35',
     'Negative zero 0',
     'Compact count 12.3K',

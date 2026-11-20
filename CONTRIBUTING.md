@@ -135,7 +135,8 @@ a nonzero status; rerun the command to reconnect.
 ## Preview UI changes
 
 For SDK UI work, `bun run dev:gallery` starts the example gallery at
-`http://127.0.0.1:27418/gallery`, `/playground`, and a Docker-backed mock API.
+`http://127.0.0.1:27418/gallery`, `/playground`, the `/cost-dashboard` example, and a
+Docker-backed mock API.
 Package and fixture edits reload. Restart after changing `dev/server.ts`; add
 `?delay=2000` to inspect loading states.
 

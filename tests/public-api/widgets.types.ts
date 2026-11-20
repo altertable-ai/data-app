@@ -1,8 +1,5 @@
 import type { WidgetEvidence } from '@altertable/data-app-react';
-import type {
-  DataWidgetProps,
-  VisualizationWidgetProps,
-} from '@altertable/data-app-react/ui';
+import type { DataWidgetProps } from '@altertable/data-app-react/ui';
 
 // Compile-only assertions: readings always carry evidence and empty-result semantics.
 function verifyBoundWidgets(evidence: WidgetEvidence) {
@@ -14,29 +11,14 @@ function verifyBoundWidgets(evidence: WidgetEvidence) {
   };
   const emptyFallback = { title: 'No activity' };
   const data: DataWidgetProps<number> = { ...content, evidence, emptyFallback };
-  const visual: VisualizationWidgetProps<number> = {
-    ...content,
-    evidence,
-    emptyFallback,
-  };
 
   // @ts-expect-error A data reading requires evidence.
   const dataWithoutEvidence: DataWidgetProps<number> = {
     ...content,
     emptyFallback,
   };
-  // @ts-expect-error A visual reading requires evidence.
-  const visualWithoutEvidence: VisualizationWidgetProps<number> = {
-    ...content,
-    emptyFallback,
-  };
   // @ts-expect-error A data reading requires an authored empty state.
   const dataWithoutEmpty: DataWidgetProps<number> = { ...content, evidence };
-  // @ts-expect-error A visual reading requires an authored empty state.
-  const visualWithoutEmpty: VisualizationWidgetProps<number> = {
-    ...content,
-    evidence,
-  };
   // @ts-expect-error A renderer callback requires a bound reading.
   const unbound: DataWidgetProps<number> = {
     title: 'Activity',
@@ -45,11 +27,8 @@ function verifyBoundWidgets(evidence: WidgetEvidence) {
 
   return {
     data,
-    visual,
     dataWithoutEvidence,
-    visualWithoutEvidence,
     dataWithoutEmpty,
-    visualWithoutEmpty,
     unbound,
   };
 }

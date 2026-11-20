@@ -16,8 +16,6 @@ import {
 } from '@altertable/data-app-react';
 import {
   DataAppProvider,
-  DataApp as StaticApp,
-  MetricWidget as StaticMetric,
   useAppFilters,
   PresentStory,
   AboutData,
@@ -84,9 +82,12 @@ const section: DataSectionProps<number, Record<string, never>> = {
 <DataApp {...app}>
   <DataSection {...section} />
 </DataApp>;
-<StaticApp {...base}>
-  <StaticMetric label="Count" value={1} format={{ kind: 'count' }} />
-</StaticApp>;
+// Without a view, the same component renders a static screen.
+<DataApp dataContext={base.dataContext}>Setup</DataApp>;
+// @ts-expect-error A static screen has no displayed result to present or export.
+<DataApp dataContext={base.dataContext} story={() => []}>
+  Setup
+</DataApp>;
 // @ts-expect-error Data apps require a declared primary view.
 const withoutView: DataAppProps<number, Record<string, never>> = {
   ...base,
@@ -368,3 +369,125 @@ void invalidCalendarFormat;
 
 // @ts-expect-error Custom activity labels belong to the direct UI entry.
 void authoring.ShimmerText;
+
+const rowsApp = defineDataApp({
+  title: 'Rows',
+  description: 'Verify row-backed dataset contracts.',
+  scope: { organization: 'a', environment: 'b' },
+  queries: {
+    groups: {
+      statement: 'SELECT 1',
+      params: {},
+      projections: { name: { type: 'string' }, total: { type: 'number' } },
+    },
+  },
+});
+// The app owns its query names; a glossary entry cites the ones behind it.
+const rowsContext = registerContext(rowsApp.queryNames)({
+  description: 'Rows',
+  glossary: {
+    total: {
+      term: 'Total',
+      definition: 'Total',
+      queryNames: [rowsApp.queryNames.groups],
+    },
+  },
+});
+// @ts-expect-error Only registered queries have names.
+void rowsApp.queryNames.missing;
+const rowsOperations = rowsApp.defineOperations({
+  // The duration limit defaults; the row limit stays explicit.
+  groups: rowsApp.defineOperation({
+    policy: { maxQueryRows: 10 },
+    async run() {
+      const rows: {
+        name: string;
+        total: number;
+        day: string;
+        nested: { id: number };
+        optional?: number;
+      }[] = [{ name: 'Alpha', total: 1, day: '2026-09-24', nested: { id: 1 } }];
+      return rows;
+    },
+  }),
+  summary: rowsApp.defineOperation({
+    policy: { maxQueryRows: 1 },
+    async run() {
+      return { rows: [{ name: 'Alpha' }] };
+    },
+  }),
+  unlimited: rowsApp.defineOperation({
+    // @ts-expect-error Each operation states its row limit.
+    policy: {},
+    async run() {
+      return 1;
+    },
+  }),
+});
+const rowsHooks = createDataHooks(rowsOperations.createDataClient());
+const rowsView = rowsHooks.defineView({
+  dataContext: rowsContext,
+  operation: 'groups',
+});
+// An operation that returns rows needs no selector, and a column named after a field reads it.
+const groupRows = rowsView.dataset({
+  name: 'Groups',
+  rowKey: row => row.name,
+  columns: {
+    name: { label: 'Group' },
+    total: { format: { kind: 'count' } },
+    day: { format: { kind: 'date' } },
+    // A row may omit an optional field; its cell shows a missing value.
+    optional: { format: { kind: 'count' } },
+    share: { value: row => row.total / 2, format: { kind: 'ratio' } },
+    link: { value: row => row.name, format: row => <b>{row.name}</b> },
+  },
+  evidence: { id: 'groups', glossaryIds: ['total'] },
+});
+<TableWidget dataset={groupRows} source={{ loading: true }} />;
+<TableWidget
+  dataset={groupRows}
+  source={{ loading: true }}
+  limit={1}
+  // @ts-expect-error Preview limits and pagination cannot coexist.
+  pagination={false}
+/>;
+rowsView.dataset({
+  name: 'Unknown field',
+  rowKey: row => row.name,
+  // @ts-expect-error A column without `value` must be named after a row field.
+  columns: { missing: { label: 'Missing' } },
+  evidence: { id: 'unknown-field', glossaryIds: ['total'] },
+});
+rowsView.dataset({
+  name: 'Mismatched format',
+  rowKey: row => row.name,
+  // @ts-expect-error A metric format needs a numeric field.
+  columns: { name: { format: { kind: 'count' } } },
+  evidence: { id: 'mismatched-format', glossaryIds: ['total'] },
+});
+rowsView.dataset({
+  name: 'Nested field',
+  rowKey: row => row.name,
+  // @ts-expect-error Object fields need an accessor that returns a cell value.
+  columns: { nested: {} },
+  evidence: { id: 'nested-field', glossaryIds: ['total'] },
+});
+const summaryView = rowsHooks.defineView({
+  dataContext: rowsContext,
+  operation: 'summary',
+});
+// @ts-expect-error A result that is not a row array needs `select`.
+summaryView.dataset({
+  name: 'Summary rows',
+  rowKey: (row: { name: string }) => row.name,
+  columns: { name: {} },
+  evidence: { id: 'summary-rows', glossaryIds: ['total'] },
+});
+summaryView.dataset({
+  name: 'Summary rows',
+  select: summary => summary.rows,
+  rowKey: row => row.name,
+  columns: { name: {} },
+  evidence: { id: 'summary-rows', glossaryIds: ['total'] },
+});

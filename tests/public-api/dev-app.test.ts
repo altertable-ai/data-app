@@ -670,7 +670,7 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   });
   const [, firstUrl] = await waitForOutput(
     command,
-    /Infrastructure costs running at (http:\/\/127\.0\.0\.1:\d+\/)/
+    /Sample counts running at (http:\/\/127\.0\.0\.1:\d+\/)/
   );
 
   expect(command.output()).toContain('App preload preserved');
@@ -680,12 +680,12 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   expect(script).toBeDefined();
   const client = await fetch(new URL(script!, firstUrl));
   expect(client.status).toBe(200);
-  expect(await client.text()).toContain('Infrastructure costs');
+  expect(await client.text()).toContain('Sample counts');
 
   await writeFile(
     join(directory, 'app.ts'),
     (await readFile(join(directory, 'app.ts'), 'utf8')).replace(
-      "title: 'Infrastructure costs'",
+      "title: 'Sample counts'",
       "title: 'Hot reloaded'"
     )
   );

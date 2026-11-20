@@ -7,8 +7,9 @@ import {
   TextContent,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
-import { DataAppProvider, MetricWidget } from '@altertable/data-app-react/ui';
+import { DataAppProvider, DataWidget } from '@altertable/data-app-react/ui';
 import { defineQueryNames } from '@altertable/data-app/contract';
+import { formatCount } from '@altertable/data-app/format';
 import { type DataView } from '@altertable/data-app/internal';
 import { createRoot } from 'react-dom/client';
 
@@ -43,6 +44,27 @@ const view: DataView<number, string> =
               message: 'Showing previous results.',
             }
           : { kind: 'ready', data: 1, input: 'current' };
+function LayoutMetric({
+  title,
+  value,
+  loading,
+}: {
+  title: string;
+  value: number;
+  loading: boolean;
+}) {
+  return (
+    <DataWidget
+      title={title}
+      reading={loading ? { loading: true } : { loading: false, value }}
+      isEmpty={() => false}
+      emptyFallback={{ title: 'No value' }}
+      evidence={{ id: title, queryNames: ['layout'] }}
+    >
+      {current => formatCount(current)}
+    </DataWidget>
+  );
+}
 function Cards({ loading = false }: { loading?: boolean }) {
   return (
     <Grid
@@ -51,26 +73,10 @@ function Cards({ loading = false }: { loading?: boolean }) {
       data-testid="cards"
     >
       <GridItem span={2}>
-        {loading ? (
-          <MetricWidget label="First metric" loading />
-        ) : (
-          <MetricWidget
-            label="First metric"
-            value={1}
-            format={{ kind: 'count' }}
-          />
-        )}
+        <LayoutMetric title="First metric" value={1} loading={loading} />
       </GridItem>
       <GridItem>
-        {loading ? (
-          <MetricWidget label="Second metric" loading />
-        ) : (
-          <MetricWidget
-            label="Second metric"
-            value={2}
-            format={{ kind: 'count' }}
-          />
-        )}
+        <LayoutMetric title="Second metric" value={2} loading={loading} />
       </GridItem>
     </Grid>
   );

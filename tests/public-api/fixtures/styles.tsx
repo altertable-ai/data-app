@@ -3,7 +3,7 @@ import {
   GridItem,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
-import { VisualizationWidget } from '@altertable/data-app-react/ui';
+import { DataWidget } from '@altertable/data-app-react/ui';
 import { createRoot } from 'react-dom/client';
 function Report() {
   return (
@@ -20,22 +20,18 @@ function Report() {
           align={align}
         >
           <GridItem span={2}>
-            <VisualizationWidget
-              title={`${align} short`}
-              visual={<p>One finding.</p>}
-            />
+            <DataWidget title={`${align} short`}>
+              <p>One finding.</p>
+            </DataWidget>
           </GridItem>
           <GridItem>
-            <VisualizationWidget
-              title={`${align} tall`}
-              visual={
-                <div>
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <p key={i}>Finding {i + 1}</p>
-                  ))}
-                </div>
-              }
-            />
+            <DataWidget title={`${align} tall`}>
+              <div>
+                {Array.from({ length: 8 }, (_, i) => (
+                  <p key={i}>Finding {i + 1}</p>
+                ))}
+              </div>
+            </DataWidget>
           </GridItem>
         </Grid>
       ))}

@@ -21,10 +21,10 @@ const dataApp = defineDataApp({
       statement: `
 WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
 SELECT group_name, sample_count FROM sample_counts
-WHERE $groupName = '' OR group_name = $groupName
+WHERE $groupName = 'all' OR group_name = $groupName
 ORDER BY group_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
+        groupName: { type: 'string', defaultValue: 'all' },
         limit: { type: 'number', defaultValue: 10 },
       },
       projections: {
@@ -42,7 +42,7 @@ List the [filters](filters.md) an operation reads; `run()` receives one flat
 field per filter, and you derive SQL parameters inside it:
 
 ```ts
-import { choiceFilter, parseCount } from '@altertable/data-app/contract';
+import { choiceFilter } from '@altertable/data-app/contract';
 
 // ... dataApp
 const groupName = choiceFilter({
@@ -58,14 +58,12 @@ const groupName = choiceFilter({
 const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    policy: { maxQueryRows: 10 },
     async run({ query }, { groupName }) {
-      const result = await query('sampleCountsByGroup', {
-        groupName: groupName === 'all' ? '' : groupName,
-      });
-      return result.rows.map(row => ({
+      const { rows } = await query('sampleCountsByGroup', { groupName });
+      return rows.map(row => ({
         groupName: row.group_name,
-        sampleCount: parseCount(row.sample_count),
+        sampleCount: row.sample_count,
       }));
     },
   }),
@@ -82,18 +80,21 @@ returned type. HTTP results must be JSON-serializable.
 
 Host `queryParams` supplies protected parameters that callers cannot override.
 Other values come from `query()` arguments or defaults. The host/backend enforces
-data access and limits. Operation policies must set `maxQueryRows` to a positive
-integer no greater than 10,000. The shared SQL host handler also rejects requests
-for more than 10,000 rows.
+data access and limits. Each operation's `policy` sets `maxQueryRows` to a positive
+integer no greater than 10,000, which also limits each `query()` unless it passes
+its own `limit`. The shared SQL host handler also rejects requests for more than
+10,000 rows.
 
 ### Declare query projections
 
 Declare every returned SQL alias with `{ type, nullable? }` and keep its exact
 casing. Infer nullability from the schema and SQL, not sampled rows. Update
-projections when changing SQL. `query()` converts cells to declared types;
-return SQL text and declare `string` when exact numeric precision matters.
+projections when changing SQL. `query()` converts cells to declared types, so a
+`number` projection is already a number; return SQL text and declare `string`
+when exact numeric precision matters. Use `parseCount()` only to reject negative
+or fractional counts.
 
-Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
+Use `dataApp.queryNames` for context and evidence.
 
 ### Bind date ranges
 

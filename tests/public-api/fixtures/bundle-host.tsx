@@ -32,7 +32,9 @@ const { frameURL } = await fetch('/__test/config').then(response =>
   response.json()
 );
 const params = new URLSearchParams(location.search);
-const starter = location.pathname.startsWith('/starter-');
+const starter =
+  location.pathname.startsWith('/starter-') ||
+  location.pathname === '/cost-dashboard';
 const javascript = await fetch(
   starter
     ? `/__test${location.pathname}`

@@ -7,6 +7,7 @@ import {
   Stack,
   TextContent,
 } from '@altertable/data-app-react';
+import { DataWidget } from '@altertable/data-app-react/ui';
 import {
   BarChart,
   AreaChart,
@@ -17,7 +18,7 @@ import {
   ScatterChart,
   ComposedChart,
 } from '@altertable/data-app-react/ui';
-import { DataTable, VisualizationWidget } from '@altertable/data-app-react/ui';
+import { DataTable } from '@altertable/data-app-react/ui';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { type ReactNode } from 'react';
 
@@ -119,11 +120,9 @@ function Example({
   return (
     <GridItem span={span}>
       <section aria-label={`${name} basic example`}>
-        <VisualizationWidget
-          title={name}
-          description={description}
-          visual={children}
-        />
+        <DataWidget title={name} description={description}>
+          {children}
+        </DataWidget>
       </section>
     </GridItem>
   );

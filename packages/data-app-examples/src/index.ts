@@ -9,13 +9,15 @@ export const dataAppExamples = [
   {
     id: 'starter-data-app',
     title: 'Hosted data app',
-    description: 'A single-file React app for hosted execution.',
+    description:
+      'One query, view, and chart in a single file for hosted execution.',
     mode: 'hosted',
   },
   {
     id: 'starter-local-data-app',
     title: 'Local data app',
-    description: 'A Bun and React project with server-side lakehouse access.',
+    description:
+      'One query, view, and chart in a Bun project with server-side lakehouse access.',
     mode: 'local',
   },
   {

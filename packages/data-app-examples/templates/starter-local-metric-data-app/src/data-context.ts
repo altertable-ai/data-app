@@ -1,12 +1,8 @@
 import { createDataContext } from '@altertable/data-app-react';
 
-import { operations } from '#app/operations.ts';
+import { dataApp } from '#config';
 
-const queryNames = {
-  ...operations.sampleCountsByGroup.queryNames,
-  ...operations.sampleCountsBySegment.queryNames,
-};
-export const sampleDataContext = createDataContext(queryNames)({
+export const sampleDataContext = createDataContext(dataApp.queryNames)({
   description:
     'The starter_sample_counts semantic view measures fictional sample volume by group and segment. The source has no time dimension.',
   glossary: {
@@ -15,8 +11,8 @@ export const sampleDataContext = createDataContext(queryNames)({
       definition:
         'Sum of recorded sample counts in the selected group scope. Additive across groups and segments.',
       queryNames: [
-        queryNames.sampleCountsByGroup,
-        queryNames.sampleCountsBySegment,
+        dataApp.queryNames.sampleCountsByGroup,
+        dataApp.queryNames.sampleCountsBySegment,
       ],
     },
   },

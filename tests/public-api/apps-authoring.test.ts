@@ -63,7 +63,7 @@ describe('authoring', () => {
     ).toBe(403);
   });
 
-  test('hosted cost starter charts services and opens customer detail', async ({
+  test('hosted cost dashboard charts services and opens customer detail', async ({
     page,
   }) => {
     const requests: { queryId: string; params?: Record<string, string> }[] = [];
@@ -71,7 +71,7 @@ describe('authoring', () => {
       requests.push(route.request().postDataJSON());
       await route.continue();
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/cost-dashboard');
     const app = page.frameLocator('iframe');
     await expect
       .poll(() =>
@@ -163,7 +163,7 @@ describe('authoring', () => {
         await route.fulfill({ status: 503, json: { error: 'Unavailable' } });
       else await route.continue();
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/cost-dashboard');
     const app = page.frameLocator('iframe');
     const chart = app.getByLabel('Costs by service', { exact: true });
     await chart.getByRole('button', { name: /^Compute.*Actions/ }).click();
@@ -184,10 +184,10 @@ describe('authoring', () => {
       .toBe(true);
   });
 
-  test('local cost starter supports responsive customer drill-down', async ({
+  test('local cost dashboard supports responsive customer drill-down', async ({
     mobilePage: page,
   }) => {
-    await page.goto('/local-data-app');
+    await page.goto('/local-cost-dashboard');
     const chart = page.getByLabel('Costs by service', { exact: true });
     await expect
       .poll(() =>
@@ -324,7 +324,7 @@ describe('authoring', () => {
       if (fail) await route.fulfill({ status: 503, json: failure });
       else await route.continue();
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/cost-dashboard');
     const app = page.frameLocator('iframe');
     const overview = app.getByRole('region', {
       name: 'Cost overview',
@@ -352,7 +352,7 @@ describe('authoring', () => {
       const result = await response.json();
       await route.fulfill({ response, json: { ...result, rows: [] } });
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/cost-dashboard');
     const app = page.frameLocator('iframe');
     await app
       .getByRole('button', { name: /^Networking.*View customers$/ })

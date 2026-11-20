@@ -1,14 +1,16 @@
 import { defineDataApp } from '@altertable/data-app';
-import { injectDataAppStyles } from '@altertable/data-app-react';
-import { AnnotationTarget } from '@altertable/data-app-react';
-import { mountDataApp } from '@altertable/data-app-react';
 import {
+  AnnotationTarget,
+  createDataContext,
+  createDataHooks,
   DataApp,
-  DataWidget,
+  DataSection,
   MetricWidget,
-  TextWidget,
-  useAppFilters,
-} from '@altertable/data-app-react/ui';
+  TextContent,
+  injectDataAppStyles,
+  mountDataApp,
+} from '@altertable/data-app-react';
+import { DataWidget, useAppFilters } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
   createDataClient,
@@ -19,6 +21,7 @@ import { connectionCheck, searchFilter } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
+import { literalLakehouse } from '@/tests/public-api/fixtures/literal-client';
 const dataApp = defineDataApp({
   title: 'Embedded report',
   description: 'Explore embedded queries and host interactions.',
@@ -40,6 +43,41 @@ const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
   period: searchFilter({ key: 'period', history: 'push' }),
 };
+// The customer count is literal, so it loads without the host's query bridge.
+const { defineView } = createDataHooks(
+  createDataClient({
+    operations: {
+      customers: dataApp.defineOperation({
+        policy: { maxQueryRows: 1 },
+        async run() {
+          return 42;
+        },
+      }),
+    },
+    lakehouse: literalLakehouse,
+  })
+);
+const customersView = defineView({
+  dataContext: createDataContext(dataApp.queryNames)({
+    description: 'Test report',
+    glossary: {
+      customers: { term: 'Customers', definition: 'Counted customers.' },
+    },
+  }),
+  operation: 'customers',
+});
+const customers = customersView.metric(
+  {
+    id: 'customer-count',
+    glossaryId: 'customers',
+    label: 'Customers',
+    format: { kind: 'count' },
+  },
+  count => ({ current: count })
+);
+const customersContent = customersView.content(result => (
+  <MetricWidget metric={customers} source={result} annotationId="customers" />
+));
 
 function App() {
   const [crashed, setCrashed] = useState(false);
@@ -60,21 +98,7 @@ function App() {
 
   return (
     <DataApp
-      csvExport={{
-        filename: 'gallery',
-        tables: [
-          {
-            name: 'Counts',
-            columns: ['Name', 'Count'],
-            rows: [
-              ['München, "East"', 0],
-              ['Two\nlines', null],
-            ],
-          },
-          { name: 'Summary', columns: ['Total'], rows: [[0]] },
-        ],
-      }}
-      dataContext={{ description: 'Test report', glossary: {} }}
+      view={customersView}
       description="Report description"
       footerActions={<button>Custom footer action</button>}
     >
@@ -86,22 +110,17 @@ function App() {
           Explore revenue
         </button>
       </DataWidget>
-      <MetricWidget
-        label="Customers"
-        annotationId="customers"
-        value={42}
-        format={{ kind: 'count' }}
-      />
+      <DataSection content={customersContent} />
       {showSharedNarrative && (
-        <TextWidget
+        <DataWidget
           title="Average trip duration"
           evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
         >
-          20.0 minutes from start to end.
-        </TextWidget>
+          <TextContent>20.0 minutes from start to end.</TextContent>
+        </DataWidget>
       )}
       {params.has('annotation-loading') && (
-        <TextWidget
+        <DataWidget
           title="Loading narrative"
           evidence={{ id: 'loading-narrative', queryNames: ['revenue'] }}
           reading={
@@ -109,24 +128,26 @@ function App() {
               ? { loading: true }
               : { loading: false, value: 'Ready narrative' }
           }
+          isEmpty={() => false}
+          emptyFallback={{ title: 'No narrative' }}
         >
-          {value => value}
-        </TextWidget>
+          {value => <TextContent>{value}</TextContent>}
+        </DataWidget>
       )}
       {showExplicitCollision && (
-        <TextWidget
+        <DataWidget
           title="Explicitly identified revenue"
           annotationId="monthly-revenue"
         >
-          Author-controlled identity.
-        </TextWidget>
+          <TextContent>Author-controlled identity.</TextContent>
+        </DataWidget>
       )}
-      <TextWidget title="Trip narrative">
-        An automatically identified narrative.
-      </TextWidget>
-      <TextWidget title="Explicit narrative" annotationId="explicit-narrative">
-        An explicitly identified narrative.
-      </TextWidget>
+      <DataWidget title="Trip narrative">
+        <TextContent>An automatically identified narrative.</TextContent>
+      </DataWidget>
+      <DataWidget title="Explicit narrative" annotationId="explicit-narrative">
+        <TextContent>An explicitly identified narrative.</TextContent>
+      </DataWidget>
       {params.has('annotation-scroll') && (
         <div style={{ height: 1600 }}>Long report</div>
       )}

@@ -47,11 +47,8 @@ keeps the originals:
 const dailyCounts = dailyCountsView.dataset({
   // ... name, select, rowKey, and evidence
   columns: {
-    day: { value: row => row.day, format: { kind: 'date' } },
-    observed: {
-      value: row => row.observed,
-      format: { kind: 'dateTime', precision: 'second' },
-    },
+    day: { format: { kind: 'date' } },
+    observed: { format: { kind: 'dateTime', precision: 'second' } },
   },
 });
 ```

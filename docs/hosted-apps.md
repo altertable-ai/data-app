@@ -1,7 +1,7 @@
-# Author a data app
+# Author a hosted data app
 
 Follow the [SDK integration guide](app-authoring.md) with a version-matched hosted
-starter selected by the authoring workflow. The shared starter
+starter selected by the authoring workflow. The general starter
 is `starter-data-app/index.tsx`; its sample content is replaceable. Keep the app in
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.

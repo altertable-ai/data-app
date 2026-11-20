@@ -1,14 +1,8 @@
 import { createDataContext } from '@altertable/data-app-react';
 
-import { operations } from '#app/operations.ts';
+import { dataApp } from '#config';
 
-const queryNames = {
-  ...operations.sampleTotals.queryNames,
-  ...operations.samplesOverTime.queryNames,
-  ...operations.samplesByMember.queryNames,
-  ...operations.sampleRows.queryNames,
-};
-export const sampleDataContext = createDataContext(queryNames)({
+export const sampleDataContext = createDataContext(dataApp.queryNames)({
   description:
     'Fictional daily sample counts by group and segment. Comparisons use equal-length periods in UTC.',
   glossary: {
@@ -22,7 +16,7 @@ export const sampleDataContext = createDataContext(queryNames)({
       term: 'Sample count',
       definition:
         'Number of samples recorded for each day, group, and segment.',
-      queryNames: Object.values(queryNames),
+      queryNames: Object.values(dataApp.queryNames),
     },
   },
 });

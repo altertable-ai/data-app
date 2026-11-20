@@ -1,7 +1,7 @@
 import { Button, Stack } from '@altertable/data-app-react';
 import {
   ComposedChart,
-  VisualizationWidget,
+  DataWidget,
   injectDataAppStyles,
 } from '@altertable/data-app-react/ui';
 import { applyAppearance } from '@altertable/data-app/appearance';
@@ -215,28 +215,24 @@ function DateAxisFixture() {
         </Button>
         <div className="date-axis-grid">
           {(edges ? edgeExamples : examples).map(example => (
-            <VisualizationWidget
+            <DataWidget
               key={example.title}
               title={example.title}
               description={example.description}
-              visual={
-                <ComposedChart data={example.rows} ariaLabel={example.title}>
-                  <ComposedChart.XAxis<Row>
-                    dataKey="bucket"
-                    {...example.axis}
-                  />
-                  <ComposedChart.YAxis />
-                  <ComposedChart.Tooltip />
-                  <ComposedChart.Legend />
-                  <ComposedChart.Line dataKey="current" name="Current" />
-                  <ComposedChart.Line
-                    dataKey="previous"
-                    name="Comparison"
-                    stroke="var(--atbl-chart-2)"
-                  />
-                </ComposedChart>
-              }
-            />
+            >
+              <ComposedChart data={example.rows} ariaLabel={example.title}>
+                <ComposedChart.XAxis<Row> dataKey="bucket" {...example.axis} />
+                <ComposedChart.YAxis />
+                <ComposedChart.Tooltip />
+                <ComposedChart.Legend />
+                <ComposedChart.Line dataKey="current" name="Current" />
+                <ComposedChart.Line
+                  dataKey="previous"
+                  name="Comparison"
+                  stroke="var(--atbl-chart-2)"
+                />
+              </ComposedChart>
+            </DataWidget>
           ))}
         </div>
       </Stack>

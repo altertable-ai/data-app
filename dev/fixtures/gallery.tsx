@@ -1,5 +1,8 @@
-import { defineDataApp } from '@altertable/data-app';
 import {
+  DataApp,
+  DataSection,
+  TableWidget,
+  VisualizationWidget,
   PeriodSummary,
   Breakdown,
   Ranking,
@@ -11,16 +14,11 @@ import {
 } from '@altertable/data-app-react';
 import { type WidgetEvidence, mountDataApp } from '@altertable/data-app-react';
 import {
-  DataApp,
   HelpPopover,
-  MetricWidget,
   Checkbox,
   ChoicePicker,
   DataWidget,
   SearchField,
-  TableWidget,
-  VisualizationWidget,
-  TextWidget,
   Tabs,
   Tab,
   TabList,
@@ -40,6 +38,15 @@ import {
   galleryCategories,
   gallerySections,
 } from '@/dev/fixtures/gallery-catalog';
+import {
+  activityView,
+  dataApp,
+  overviewMetrics,
+  weeklyActivity,
+  workspaceActivity,
+  workspaceRows,
+  workspacesView,
+} from '@/dev/fixtures/gallery-data';
 import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
 import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
 import { ControlBar } from '@/packages/data-app-react/src/ui/ControlBar.tsx';
@@ -51,91 +58,11 @@ const options = [
   { id: 'postgres', label: 'Postgres' },
   { id: 'other', label: 'Other' },
 ];
-const evidence: WidgetEvidence = {
-  id: 'gallery-trend',
-  glossaryIds: ['activity'],
-  queryNames: ['gallery-trend'],
-};
 const recordsEvidence: WidgetEvidence = {
   id: 'gallery-records',
   glossaryIds: ['activation'],
   queryNames: ['gallery-records'],
 };
-const bars = [
-  { id: 'monday', label: 'Monday', value: 12 },
-  { id: 'tuesday', label: 'Tuesday', value: 0 },
-  { id: 'wednesday', label: 'Wednesday', value: 8 },
-];
-const workspaces = [
-  'Northstar',
-  'Acme',
-  'Lumen',
-  'Atlas',
-  'Orbit',
-  'Beacon',
-  'Cedar',
-  'Delta',
-  'Ember',
-  'Fern',
-  'Grove',
-  'Harbor',
-  'Iris',
-  'Juniper',
-  'Kite',
-  'Lagoon',
-  'Maple',
-  'Nova',
-  'Opal',
-  'Pine',
-  'Quartz',
-  'Reed',
-  'Sol',
-];
-const rows = workspaces.map((name, id) => ({
-  id,
-  name,
-  source: id % 2 === 0 ? 'HTTP' : 'Postgres',
-  events: id === 0 ? 12 : id === 1 ? 8 : 0,
-}));
-const dataApp = defineDataApp({
-  title: 'Data app gallery',
-  description:
-    'Explore data app components and presentation patterns with sample data.',
-  scope: { organization: 'Demo workspace', environment: 'Sample data' },
-  appearance: { theme: 'light' },
-  queries: {},
-});
-const dataContext = {
-  description:
-    'Synthetic sample data for exploring data app patterns. The overview is a fixed September 28–30, 2026 snapshot; other tabs demonstrate independent component states. Sample SQL documents the fixture data and does not query a live source.',
-  glossary: {
-    activity: {
-      term: 'Recorded events',
-      definition:
-        'Events recorded during the sample period. A value of zero means no events were recorded that day.',
-      queryNames: ['gallery-trend'],
-    },
-    activation: {
-      term: 'Workspace activation',
-      definition:
-        'Share of the 23 tracked workspaces with at least one recorded event in the sample period: 2 ÷ 23.',
-      queryNames: ['gallery-records'],
-    },
-  },
-};
-const queries = [
-  {
-    name: 'gallery-trend',
-    statement:
-      "SELECT * FROM (VALUES ('Monday', 12), ('Tuesday', 0), ('Wednesday', 8)) AS sample_activity(day, events)",
-    queryId: 'sample-trend',
-  },
-  {
-    name: 'gallery-records',
-    statement: `SELECT * FROM (VALUES ${rows.map(row => `('${row.name}', '${row.source}', ${row.events})`).join(',\n  ')}) AS sample_workspaces(workspace, source, events)`,
-    queryId: 'sample-records',
-  },
-];
 const views = galleryCategories.map(category => category.id);
 
 const narrativeRows = bindDataset({
@@ -152,22 +79,26 @@ const narrativeRows = bindDataset({
 });
 const narrative = defineDataContent<{ count: number }, { region: string }>(
   result => (
-    <TextWidget
+    <DataWidget
       title="Activity for this selection"
       evidence={{ id: 'text-activity', queryNames: ['gallery-trend'] }}
       reading={narrativeRows.read(result)}
+      isEmpty={() => false}
+      emptyFallback={{ title: 'No activity' }}
     >
-      {rows =>
-        rows.map(({ count, region }) => (
-          <p key={region}>
-            {count === 0
-              ? `No activity was recorded in ${region}.`
-              : `${count} people were active in ${region}.`}{' '}
-            Compare feature use below to understand their activity.
-          </p>
-        ))
-      }
-    </TextWidget>
+      {rows => (
+        <TextContent>
+          {rows.map(({ count, region }) => (
+            <p key={region}>
+              {count === 0
+                ? `No activity was recorded in ${region}.`
+                : `${count} people were active in ${region}.`}{' '}
+              Compare feature use below to understand their activity.
+            </p>
+          ))}
+        </TextContent>
+      )}
+    </DataWidget>
   )
 );
 
@@ -207,24 +138,28 @@ function TextExamples() {
             Start with activity, then explore which features people use.
           </p>
         </TextContent>
-        <TextWidget
+        <DataWidget
           title="How to read this exploration"
           description="Static narrative with the standard widget frame"
         >
-          <p>
-            Use the charts to compare <strong>activity across regions</strong>.
-          </p>
-          <ul>
-            <li>A measured zero means no activity was recorded.</li>
-            <li>
-              Text explaining results follows the same selection as the charts.
-            </li>
-          </ul>
-          <p>
-            <a href="#widgets">Explore the dashboard composition</a> for a
-            complete example.
-          </p>
-        </TextWidget>
+          <TextContent>
+            <p>
+              Use the charts to compare <strong>activity across regions</strong>
+              .
+            </p>
+            <ul>
+              <li>A measured zero means no activity was recorded.</li>
+              <li>
+                Text explaining results follows the same selection as the
+                charts.
+              </li>
+            </ul>
+            <p>
+              <a href="#widgets">Explore the dashboard composition</a> for a
+              complete example.
+            </p>
+          </TextContent>
+        </DataWidget>
         <ControlBar>
           <ChoicePicker
             selectionMode="single"
@@ -392,8 +327,61 @@ function QuickControls() {
   );
 }
 
-function Overview() {
+const activityContent = activityView.content(result => (
+  <VisualizationWidget
+    dataset={weeklyActivity}
+    source={result}
+    viewLabel="Activity presentation"
+    views={[
+      {
+        id: 'chart',
+        label: 'Chart',
+        render: items => (
+          <BarChart
+            items={[...items]}
+            unit="events"
+            ariaLabel="Weekly events"
+          />
+        ),
+      },
+      {
+        id: 'summary',
+        label: 'Summary',
+        render: items => (
+          <p>
+            {items.reduce((sum, item) => sum + item.value, 0)} events this week,
+            concentrated on Monday and Wednesday. Tuesday had no recorded
+            activity.
+          </p>
+        ),
+      },
+    ]}
+  />
+));
+function WorkspaceTable({
+  result,
+}: {
+  result: Parameters<Parameters<typeof workspacesView.content>[0]>[0];
+}) {
   const [query, setQuery] = useState('');
+  return (
+    <TableWidget
+      dataset={workspaceActivity}
+      source={result}
+      search={{
+        label: 'Search table records',
+        value: query,
+        onChange: setQuery,
+        attributes: [{ name: 'name', getter: row => row.name }],
+      }}
+    />
+  );
+}
+const workspacesContent = workspacesView.content(result => (
+  <WorkspaceTable result={result} />
+));
+
+function Overview() {
   return (
     <section id="widgets" aria-label="Product activity dashboard">
       <Stack>
@@ -423,82 +411,10 @@ function Overview() {
             </HelpPopover>
           </ControlBar>
         </DataWidget>
-        <Grid columns={3} minItemWidth="compact">
-          <MetricWidget
-            label="Recorded events"
-            value={20}
-            format={{ kind: 'count' }}
-            evidence={evidence}
-          />
-          <MetricWidget
-            label="Active workspaces"
-            value={2}
-            format={{ kind: 'count' }}
-            evidence={recordsEvidence}
-          />
-          <MetricWidget
-            label="Workspace activation"
-            value={2 / 23}
-            format={{ kind: 'ratio', maximumFractionDigits: 1 }}
-            evidence={recordsEvidence}
-          />
-        </Grid>
+        <DataSection content={overviewMetrics} />
         <Grid columns={2}>
-          <VisualizationWidget
-            title="Weekly activity"
-            reading={{ loading: false, value: bars }}
-            evidence={evidence}
-            isEmpty={items => items.length === 0}
-            emptyFallback={{ title: 'No activity' }}
-            viewLabel="Activity presentation"
-            views={[
-              {
-                id: 'chart',
-                label: 'Chart',
-                render: items => (
-                  <BarChart
-                    items={items}
-                    unit="events"
-                    ariaLabel="Weekly events"
-                  />
-                ),
-              },
-              {
-                id: 'summary',
-                label: 'Summary',
-                render: items => (
-                  <p>
-                    {items.reduce((sum, item) => sum + item.value, 0)} events
-                    this week, concentrated on Monday and Wednesday. Tuesday had
-                    no recorded activity.
-                  </p>
-                ),
-              },
-            ]}
-          />
-          <TableWidget
-            title="Workspace activity"
-            rows={rows}
-            rowKey={row => row.id}
-            columns={[
-              { id: 'name', header: 'Workspace', cell: row => row.name },
-              { id: 'source', header: 'Source', cell: row => row.source },
-              {
-                id: 'events',
-                header: 'Events',
-                type: 'number',
-                cell: row => row.events,
-              },
-            ]}
-            search={{
-              label: 'Search table records',
-              value: query,
-              onChange: setQuery,
-              attributes: [{ name: 'name', getter: row => row.name }],
-            }}
-            evidence={recordsEvidence}
-            emptyFallback={{ title: 'No matching records' }}
-          />
+          <DataSection content={activityContent} />
+          <DataSection content={workspacesContent} />
           <DataWidget title="Activity by source" evidence={recordsEvidence}>
             <Breakdown
               total={20}
@@ -511,7 +427,7 @@ function Overview() {
           </DataWidget>
           <DataWidget title="Most active workspaces" evidence={recordsEvidence}>
             <Ranking
-              items={rows.slice(0, 3).map(row => ({
+              items={workspaceRows.slice(0, 3).map(row => ({
                 id: String(row.id),
                 label: row.name,
                 value: row.events,
@@ -569,8 +485,7 @@ function Gallery() {
 
   return (
     <DataApp
-      dataContext={dataContext}
-      queries={queries}
+      view={activityView}
       description="Explore the patterns behind useful data apps. Start with a working dashboard, then try the controls, displays, and states that fit your use case."
     >
       <Tabs

@@ -471,7 +471,13 @@ class Reference {
 
   private async factoryMembers(name: string, signature: Signature) {
     const returned = await this.checker.getReturnTypeOfSignature(signature);
-    if (!returned || (await returned.getAliasSymbol())) return [];
+    // Primitives return built-in methods, which are not part of this API.
+    if (
+      !returned ||
+      !(returned.flags & TypeFlags.Object) ||
+      (await returned.getAliasSymbol())
+    )
+      return [];
     const properties = await this.checker.getPropertiesOfType(returned);
     const lines: string[] = [];
     for (const property of properties) {
@@ -735,15 +741,18 @@ function render(entries: Entry[]) {
   });
   const header = `# Data app API reference
 
-Search an export to find its import paths, signature, and props:
+Search an export or method to find its import paths, signature, and props:
 
 \`\`\`sh
-rg '^LineChart\\b' REFERENCE.md
+rg '(^|\\.)LineChart\\b' REFERENCE.md
+rg '(^|\\.)defineView\\b' REFERENCE.md
 \`\`\`
 
 Each export and field has its own line. \`?\` marks optional fields;
 \`[variant 2 of 3]\` identifies union-specific fields.
 \`= props listed as Name.*\` points to a component's prop definitions.
+Methods are listed under the function that returns them, such as
+\`createDataHooks().defineView().dataset\`.
 `;
   return `${header}
 \`\`\`text

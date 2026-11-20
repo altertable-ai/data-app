@@ -20,7 +20,10 @@ import {
   bindDataset,
   bindMetric,
   displayedScope,
+  type DatasetColumns,
   type DatasetDefinition,
+  type DatasetRows,
+  type DatasetSelect,
   type Dataset,
   type Metric,
 } from './bindings.ts';
@@ -76,6 +79,21 @@ function getClientScope(client: object): string {
 type NonEmptyColumns<Columns extends object> = keyof Columns extends never
   ? never
   : Columns;
+
+/** A view's dataset: rows default to the operation's result, and a column named
+ * after a row field reads it. Evidence references are checked against the view's context. */
+type BoundDatasetDefinition<
+  Data,
+  Input,
+  Row,
+  Columns extends Record<string, object>,
+  Context extends AuthoringDataContext,
+> = DatasetDefinition<Data, Input, Row, Parameters<Context['evidence']>[0]> &
+  DatasetSelect<Data, Input, Row> & {
+    columns: Columns &
+      NonEmptyColumns<Columns> &
+      DatasetColumns<NoInfer<Row>, NoInfer<Columns>>;
+  };
 
 /** The filters an operation declares; `{}` when it reads none. */
 type FiltersOf<Operation> = Operation extends {
@@ -141,17 +159,16 @@ type BoundView<
     ? BreakdownTarget<Value>
     : never;
   dataset<
-    Row,
+    Row = DatasetRows<Data>,
     const Columns extends Record<string, object> = Record<string, object>,
   >(
-    definition: DatasetDefinition<
+    definition: BoundDatasetDefinition<
       Data,
       FilterInput<Filters>,
       Row,
-      Parameters<Context['evidence']>[0]
-    > & {
-      columns: Columns & NonEmptyColumns<Columns>;
-    }
+      Columns,
+      Context
+    >
   ): Dataset<Data, FilterInput<Filters>, Row>;
   metric(
     definition: Parameters<Context['metric']>[0],
@@ -175,15 +192,10 @@ type BoundDetailView<
   Own = Input,
 > = DetailView<Data, Input, Own> & {
   dataset<
-    Row,
+    Row = DatasetRows<Data>,
     const Columns extends Record<string, object> = Record<string, object>,
   >(
-    definition: DatasetDefinition<
-      Data,
-      Input,
-      Row,
-      Parameters<Context['evidence']>[0]
-    > & { columns: Columns & NonEmptyColumns<Columns> }
+    definition: BoundDatasetDefinition<Data, Input, Row, Columns, Context>
   ): Dataset<Data, Input, Row>;
   metric(
     definition: Parameters<Context['metric']>[0],
@@ -356,18 +368,9 @@ export function createDataHooks<Operations extends DataOperations>(
           return createBreakdownTarget({ owner: view, filters, key });
         },
         dataset<
-          Row,
+          Row = DatasetRows<Data>,
           const Columns extends Record<string, object> = Record<string, object>,
-        >(
-          dataset: DatasetDefinition<
-            Data,
-            Input,
-            Row,
-            Parameters<Context['evidence']>[0]
-          > & {
-            columns: Columns & NonEmptyColumns<Columns>;
-          }
-        ) {
+        >(dataset: BoundDatasetDefinition<Data, Input, Row, Columns, Context>) {
           return bindDataset(
             {
               ...dataset,
@@ -464,16 +467,9 @@ export function createDataHooks<Operations extends DataOperations>(
     );
     return Object.assign(target, {
       dataset<
-        Row,
+        Row = DatasetRows<Data>,
         const Columns extends Record<string, object> = Record<string, object>,
-      >(
-        dataset: DatasetDefinition<
-          Data,
-          Input,
-          Row,
-          Parameters<Context['evidence']>[0]
-        > & { columns: Columns & NonEmptyColumns<Columns> }
-      ) {
+      >(dataset: BoundDatasetDefinition<Data, Input, Row, Columns, Context>) {
         return bindDataset(
           {
             ...dataset,

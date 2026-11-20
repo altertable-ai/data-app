@@ -1,5 +1,13 @@
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp, injectDataAppStyles } from '@altertable/data-app-react';
+import {
+  createDataContext,
+  createDataHooks,
+  DataApp,
+  DataSection,
+  VisualizationWidget,
+  mountDataApp,
+  injectDataAppStyles,
+} from '@altertable/data-app-react';
 import {
   BarChart,
   LiveControl,
@@ -9,10 +17,12 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
-  VisualizationWidget,
   type LiveIntervalSeconds,
 } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
 import { useState } from 'react';
+
+import { literalLakehouse } from '@/tests/public-api/fixtures/literal-client';
 
 const dataApp = defineDataApp({
   title: 'Focus rings',
@@ -20,11 +30,58 @@ const dataApp = defineDataApp({
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });
-const days = [
-  { id: 'mon', label: 'Monday', value: 12 },
-  { id: 'tue', label: 'Tuesday', value: 0 },
-  { id: 'wed', label: 'Wednesday', value: 8 },
-];
+const operations = {
+  weeklyActivity: dataApp.defineOperation({
+    policy: { maxQueryRows: 10 },
+    async run() {
+      return [
+        { id: 'mon', label: 'Monday', value: 12 },
+        { id: 'tue', label: 'Tuesday', value: 0 },
+        { id: 'wed', label: 'Wednesday', value: 8 },
+      ];
+    },
+  }),
+};
+const dataContext = createDataContext({})({
+  description: 'Weekly activity.',
+  glossary: { events: { term: 'Events', definition: 'Recorded events.' } },
+});
+const { defineView } = createDataHooks(
+  createDataClient({ operations, lakehouse: literalLakehouse })
+);
+const activityView = defineView({
+  dataContext,
+  operation: 'weeklyActivity',
+  emptyFallback: { title: 'No activity' },
+});
+const days = activityView.dataset({
+  name: 'Weekly activity',
+  rowKey: row => row.id,
+  columns: { label: { label: 'Day' }, value: { label: 'Events' } },
+  evidence: { id: 'weekly-activity', glossaryIds: ['events'] },
+});
+const activityContent = activityView.content(result => (
+  <VisualizationWidget
+    dataset={days}
+    source={result}
+    title="Weekly activity"
+    viewLabel="Activity presentation"
+    views={[
+      {
+        id: 'chart',
+        label: 'Chart',
+        render: items => (
+          <BarChart
+            items={[...items]}
+            unit="events"
+            ariaLabel="Weekly events"
+          />
+        ),
+      },
+      { id: 'summary', label: 'Summary', render: () => <p>20 events</p> },
+    ]}
+  />
+));
 
 function App() {
   const [live, setLive] = useState(false);
@@ -57,24 +114,9 @@ function App() {
         value={grouping}
         onChange={setGrouping}
       />
-      <VisualizationWidget
-        title="Weekly activity"
-        reading={{ loading: false, value: days }}
-        isEmpty={items => items.length === 0}
-        emptyFallback={{ title: 'No activity' }}
-        evidence={{ id: 'weekly-activity', queryNames: ['weekly-activity'] }}
-        viewLabel="Activity presentation"
-        views={[
-          {
-            id: 'chart',
-            label: 'Chart',
-            render: items => (
-              <BarChart items={items} unit="events" ariaLabel="Weekly events" />
-            ),
-          },
-          { id: 'summary', label: 'Summary', render: () => <p>20 events</p> },
-        ]}
-      />
+      <DataApp view={activityView}>
+        <DataSection content={activityContent} />
+      </DataApp>
     </main>
   );
 }

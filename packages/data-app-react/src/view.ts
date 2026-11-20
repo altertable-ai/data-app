@@ -36,9 +36,10 @@ export type ResolvedViewDefinition<
   dateFilter?: keyof Filters & string;
 };
 
-/** Omit both for a result that is never empty, such as a total. */
+/** Omit both for rows, or for a result that is never empty, such as a total. */
 export type ViewEmptiness<Data> = {
-  /** App-owned semantics: measured zero need not mean an empty result. Defaults to never empty. */
+  /** App-owned semantics: measured zero need not mean an empty result.
+   * @default A result with no rows is empty; any other result never is */
   isEmpty?: (data: Data) => boolean;
   /** Inherited by DataSection unless it supplies its own copy. */
   emptyFallback?: EmptyContent;
@@ -49,7 +50,8 @@ export function resolveViewEmptiness<Data>(
   definition: ViewEmptiness<Data>
 ): Required<ViewEmptiness<Data>> {
   return {
-    isEmpty: definition.isEmpty ?? (() => false),
+    isEmpty:
+      definition.isEmpty ?? (data => Array.isArray(data) && data.length === 0),
     emptyFallback: definition.emptyFallback ?? { title: 'No results' },
   };
 }

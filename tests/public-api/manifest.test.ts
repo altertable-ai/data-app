@@ -294,13 +294,13 @@ test('extracts the standalone starter declaration', async () => {
   const result = extractDataAppManifest(text);
   expect(result.diagnostics).toEqual([]);
   expect(result.manifest).toMatchObject({
-    title: 'Infrastructure costs',
+    title: 'Sample counts',
     scope: { organization: 'demo', environment: 'sample' },
     queries: {
-      costBreakdown: {
+      sampleCountsByGroup: {
         projections: {
-          member_name: { type: 'string' },
-          cost_cents: { type: 'number' },
+          group_name: { type: 'string' },
+          sample_count: { type: 'number' },
         },
         params: {
           limit: { type: 'number', defaultValue: 10 },
@@ -327,7 +327,7 @@ test('extracts the metric starter declaration', async () => {
           sample_count: { type: 'number' },
         },
         params: {
-          groupName: { type: 'string', defaultValue: '' },
+          groupName: { type: 'string', defaultValue: 'all' },
           limit: { type: 'number', defaultValue: 10 },
         },
       },
@@ -417,11 +417,11 @@ describe('manifest override', () => {
       changed(text, manifest => {
         manifest.title = 'Renamed';
         // @ts-expect-error Literal values are not narrowed to the config shape.
-        manifest.queries.costBreakdown.params.limit.defaultValue = 25;
+        manifest.queries.sampleCountsByGroup.params.limit.defaultValue = 25;
       })
     ).toBe(
       text
-        .replace("title: 'Infrastructure costs'", "title: 'Renamed'")
+        .replace("title: 'Sample counts'", "title: 'Renamed'")
         .replace('defaultValue: 10', 'defaultValue: 25')
     );
   });

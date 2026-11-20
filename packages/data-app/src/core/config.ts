@@ -62,6 +62,9 @@ export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
 > = Readonly<Omit<DataAppConfig<Queries>, 'queries'>> & {
   readonly queries: QuerySnapshot<Queries>;
+  /** Every registered query name, keyed by itself. Pass it to `createDataContext()`,
+   * then cite the queries behind each glossary entry. */
+  readonly queryNames: { readonly [Name in keyof Queries & string]: Name };
   defineDimension<const Type extends 'string' | 'number'>(
     config: DimensionSourceConfig<Type> & {
       source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
@@ -118,6 +121,9 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
   return Object.freeze({
     ...config,
     queries,
+    queryNames: Object.freeze(
+      Object.fromEntries(Object.keys(queries).map(name => [name, name]))
+    ),
     defineDimension<const Type extends 'string' | 'number'>(
       config: DimensionSourceConfig<Type> & {
         source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };

@@ -1,7 +1,7 @@
-import { injectDataAppStyles } from '@altertable/data-app-react';
+import { injectDataAppStyles, TextContent } from '@altertable/data-app-react';
 import {
   DataAppProvider,
-  TextWidget,
+  DataWidget,
   useAppFilters,
 } from '@altertable/data-app-react/ui';
 import { type InputOf, type OutputOf } from '@altertable/data-app/client';
@@ -111,7 +111,7 @@ const narrative = defineDataContent<
   OutputOf<(typeof operations)[keyof typeof operations]>,
   InputOf<typeof operations.alpha>
 >(result => (
-  <TextWidget
+  <DataWidget
     title="Activity explained"
     data-testid="narrative"
     evidence={{
@@ -119,15 +119,19 @@ const narrative = defineDataContent<
       queryNames: ['alpha-evidence', 'beta-evidence'],
     }}
     reading={narrativeRows.read(result)}
+    isEmpty={() => false}
+    emptyFallback={{ title: 'No activity' }}
   >
-    {rows =>
-      rows.map(({ value, version }) => (
-        <p key={version}>
-          {value} for selection {version}
-        </p>
-      ))
-    }
-  </TextWidget>
+    {rows => (
+      <TextContent>
+        {rows.map(({ value, version }) => (
+          <p key={version}>
+            {value} for selection {version}
+          </p>
+        ))}
+      </TextContent>
+    )}
+  </DataWidget>
 ));
 
 function App() {

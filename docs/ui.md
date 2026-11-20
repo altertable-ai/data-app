@@ -1,11 +1,11 @@
 # Direct UI composition
 
-Import from `@altertable/data-app-react/ui` for setup/static screens, custom
-controls, or a deliberately custom shell. For data-backed content, prefer declared views
+Import from `@altertable/data-app-react/ui` for charts, custom controls, or a
+deliberately custom shell. For data-backed content, prefer declared views
 and bound widgets from `@altertable/data-app-react`.
 
-`<DataApp>` here renders a static screen and accepts optional direct CSV data.
-Direct widget forms accept local values or rows. `<DataWidget>` supplies a generic
+`<DataApp>` from `@altertable/data-app-react` renders a setup or static screen
+when it has a `dataContext` and no `view`. `<DataWidget>` supplies a generic
 frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
@@ -22,6 +22,25 @@ already own these experiences.
 For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
 `mountDataApp()` installs styles. For a custom root using `DataAppProvider`, call
 `injectDataAppStyles()` before mounting; imports do not install styles.
+
+## External links
+
+Use `<ExternalLink>` for HTTPS destinations in widget content:
+
+```tsx
+import { ExternalLink } from '@altertable/data-app-react';
+
+function ReportLink() {
+  return (
+    <ExternalLink href="https://example.com/report">
+      View full report
+    </ExternalLink>
+  );
+}
+```
+
+For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
+`navigateNewWindowOrTab` from `@altertable/data-app/client`.
 
 ## Tooltips and explanations
 
@@ -185,9 +204,8 @@ conversion windows, and cohort definitions; these components visualize results.
 - `<JourneyChart>`: full ordered paths with counts and outcomes; preserve repeated
   events and mark cut-off paths as `truncated`.
 
-See the [complete component examples](https://github.com/altertable-ai/data-app/blob/main/dev/fixtures/gallery-basics.tsx)
-for input shapes and composition. Read the exported types and JSDoc for exact
-constraints before adapting displayed rows.
+Search [REFERENCE.md](../REFERENCE.md) for `FunnelChartSeries`,
+`RetentionChartPoint`, and `JourneyChartPath` before adapting displayed rows.
 
 ### Composed charts
 

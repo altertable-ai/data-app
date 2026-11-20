@@ -11,7 +11,7 @@ function requestCount(requests: QueryRequest[], queryId: string) {
   return requests.filter(request => request.queryId === queryId).length;
 }
 
-describe('infrastructure cost dashboard starter', () => {
+describe('infrastructure cost dashboard', () => {
   test('hosted dashboard keeps its scoped charts, summary, breakdown, and detail aligned', async ({
     page,
   }) => {
@@ -20,7 +20,7 @@ describe('infrastructure cost dashboard starter', () => {
       requests.push(route.request().postDataJSON() as QueryRequest);
       await route.continue();
     });
-    await page.goto('/starter-data-app');
+    await page.goto('/cost-dashboard');
     const app = page.frameLocator('iframe');
 
     const trend = app.getByRole('region', {
@@ -209,7 +209,7 @@ describe('infrastructure cost dashboard starter', () => {
   test('local dashboard retains its three charts and responds to month filtering on mobile', async ({
     mobilePage: page,
   }) => {
-    await page.goto('/local-data-app');
+    await page.goto('/local-cost-dashboard');
     await expect
       .poll(() =>
         page

@@ -168,7 +168,7 @@ export const categoricalFindingOperations = dataApp.defineOperations({
     policy,
     async run({ query }, { groupName }) {
       const result = await query('sampleCountsByGroup', {
-        groupName: groupName === 'all' ? '' : groupName,
+        groupName,
       });
       return result.rows.map(row => ({
         group: row.group_name,

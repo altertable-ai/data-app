@@ -1,7 +1,13 @@
 import { defineDataApp } from '@altertable/data-app';
-import { ExternalLink, injectDataAppStyles } from '@altertable/data-app-react';
-import { mountDataApp } from '@altertable/data-app-react';
-import { DataApp, useAppFilters } from '@altertable/data-app-react/ui';
+import {
+  createDataContext,
+  createDataHooks,
+  DataApp,
+  ExternalLink,
+  injectDataAppStyles,
+  mountDataApp,
+} from '@altertable/data-app-react';
+import { useAppFilters } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
   navigateNewTab,
@@ -16,6 +22,7 @@ import { connectionCheck, searchFilter } from '@altertable/data-app/contract';
 import { Activity, useState } from 'react';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
+import { literalLakehouse } from '@/tests/public-api/fixtures/literal-client';
 const dataApp = defineDataApp({
   title: 'Embedded report',
   description: 'Explore embedded queries and host interactions.',
@@ -34,6 +41,53 @@ const data = createDataClient({
   operations: { connection: connectionCheck(dataApp.queries) },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
+// The exported tables are literal, so they load without the host's query bridge.
+const { defineView } = createDataHooks(
+  createDataClient({
+    operations: {
+      counts: dataApp.defineOperation({
+        policy: { maxQueryRows: 10 },
+        async run() {
+          return [
+            { name: 'München, "East"', count: 0 },
+            { name: 'Two\nlines', count: null },
+          ];
+        },
+      }),
+      summary: dataApp.defineOperation({
+        policy: { maxQueryRows: 1 },
+        async run() {
+          return [{ total: 0 }];
+        },
+      }),
+    },
+    lakehouse: literalLakehouse,
+  })
+);
+const reportContext = createDataContext(dataApp.queryNames)({
+  description: 'Test report',
+  glossary: { count: { term: 'Count', definition: 'Recorded count.' } },
+});
+const countsView = defineView({
+  dataContext: reportContext,
+  operation: 'counts',
+});
+const summaryView = defineView({
+  dataContext: reportContext,
+  operation: 'summary',
+});
+const counts = countsView.dataset({
+  name: 'Counts',
+  rowKey: row => row.name,
+  columns: { name: {}, count: {} },
+  evidence: { id: 'counts', glossaryIds: ['count'] },
+});
+const summary = summaryView.dataset({
+  name: 'Summary',
+  rowKey: row => row.total,
+  columns: { total: {} },
+  evidence: { id: 'summary', glossaryIds: ['count'] },
+});
 const variables = {
   period: searchFilter({ key: 'period', history: 'push' }),
 };
@@ -52,21 +106,9 @@ function App() {
 
   return (
     <DataApp
-      csvExport={{
-        filename: 'gallery',
-        tables: [
-          {
-            name: 'Counts',
-            columns: ['Name', 'Count'],
-            rows: [
-              ['München, "East"', 0],
-              ['Two\nlines', null],
-            ],
-          },
-          { name: 'Summary', columns: ['Total'], rows: [[0]] },
-        ],
-      }}
-      dataContext={{ description: 'Test report', glossary: {} }}
+      view={countsView}
+      summaryViews={[summaryView]}
+      datasets={[counts, summary]}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}

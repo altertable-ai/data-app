@@ -1,8 +1,8 @@
 import { Button, Grid, GridItem, Stack } from '@altertable/data-app-react';
+import { DataWidget } from '@altertable/data-app-react/ui';
 import {
   ChartLegend,
   ComposedChart,
-  VisualizationWidget,
   injectDataAppStyles,
 } from '@altertable/data-app-react/ui';
 import { applyAppearance } from '@altertable/data-app/appearance';
@@ -60,11 +60,9 @@ function Example({
   return (
     <GridItem span={span}>
       <section aria-label={`${name} basic example`}>
-        <VisualizationWidget
-          title={name}
-          description={description}
-          visual={children}
-        />
+        <DataWidget title={name} description={description}>
+          {children}
+        </DataWidget>
       </section>
     </GridItem>
   );

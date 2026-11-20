@@ -61,12 +61,11 @@ only when the view's operation reads a `dateTimeRangeFilter()` with
 // ... sampleCountsView, sampleTotalView, and imports
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
-  select: rows => rows,
   rowKey: row => row.groupName,
   evidence: { id: 'counts-by-group', glossaryIds: ['sampleCount'] },
   columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+    groupName: { label: 'Group' },
+    sampleCount: { format: { kind: 'count' } },
   },
 });
 const totalSamples = sampleTotalView.metric(
@@ -106,8 +105,11 @@ const countsContent = sampleCountsView.content(result => (
 Render each content in its own `<DataSection>`.
 
 Column keys supply IDs and default labels; set `label` for a different header.
-Keep row keys stable and unique. Custom cells use `format: row => ...`; CSV uses
-the raw `value` accessor. Metric comparisons require that reporting period.
+A column named after a row field reads that field. Set `value` for a computed
+column, such as `{ value: row => row.revenue / row.orders }`, and `select` when
+the operation returns an object rather than its rows, such as
+`select: summary => summary.rows`. Keep row keys stable and unique. Custom cells
+use `format: row => ...`; CSV exports the raw value. Metric comparisons require that reporting period.
 Reuse bindings in stories with the snapshot of the view that owns them.
 
 Tables search and paginate only supplied rows. Use query-backed pagination with a
@@ -143,9 +145,6 @@ inside `<VisualizationWidget dataset={dataset} source={result}>` for displayed r
 The dataset owns evidence and empty copy; an empty row selection shows that fallback. A visualization's `views` declaration keeps
 alternate-view selection shared with its inspection sheet. Give views stable IDs
 and keep interactive state above the widget, since inspection may render it again.
-
-Use custom controls, tables, or overlays only when bound components cannot
-express the requirement; see [direct UI composition](ui.md).
 
 ## Exploration actions
 

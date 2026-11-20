@@ -54,6 +54,15 @@ type StoryFindings = readonly (Omit<StoryFinding, 'evidence'> & {
   evidence: RegisteredBinding;
 })[];
 
+/** A setup or static screen: the page shell without a view, filters, story, or export. */
+type DataAppScreenProps = DataAppBaseProps & {
+  view?: never;
+  summaryViews?: never;
+  story?: never;
+  datasets?: never;
+  details?: never;
+};
+
 export type DataAppProps<
   Data,
   Input = unknown,
@@ -85,12 +94,24 @@ export type DataAppProps<
     details?: readonly DetailContent<any, any>[];
   };
 
+/** Renders a setup or static screen from its `dataContext` and children. */
+export function DataApp(props: DataAppScreenProps): ReactNode;
 /** Executes the primary view and its summary views, and owns controls, inspection, exports, and stories. */
 export function DataApp<
   Data,
   Input,
   const SummaryViews extends readonly AnyView[] = [],
->(props: DataAppProps<Data, Input, SummaryViews>) {
+>(props: DataAppProps<Data, Input, SummaryViews>): ReactNode;
+export function DataApp(
+  props: DataAppScreenProps | DataAppProps<unknown, unknown, readonly AnyView[]>
+) {
+  if (!props.view) return <DataAppFrame {...props} />;
+  return <ViewDataApp {...props} />;
+}
+
+function ViewDataApp<Data, Input, SummaryViews extends readonly AnyView[]>(
+  props: DataAppProps<Data, Input, SummaryViews>
+) {
   const { summaryViews = [], ...appProps } = props;
   const { clientFilters } = getViewDefinition(props.view) as {
     clientFilters: ClientFilters;

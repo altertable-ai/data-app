@@ -1,13 +1,21 @@
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp, injectDataAppStyles } from '@altertable/data-app-react';
 import {
+  createDataContext,
+  createDataHooks,
   DataApp,
-  DataAppProvider,
+  DataSection,
   MetricWidget,
   TableWidget,
+  mountDataApp,
+  injectDataAppStyles,
+} from '@altertable/data-app-react';
+import {
+  DataAppProvider,
+  DataWidget,
   LineChart,
   PieChart,
 } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
 import {
   formatPercent,
   formatNumber,
@@ -18,6 +26,8 @@ import {
 } from '@altertable/data-app/format';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
+import { literalLakehouse } from '@/tests/public-api/fixtures/literal-client';
 const dataApp = defineDataApp({
   title: 'Activity report',
   description: 'Explore activity across groups.',
@@ -33,18 +43,6 @@ const rows = [
     count: index,
   })),
 ];
-const counts = {
-  name: 'Counts',
-  columns: ['Name', 'Count'],
-  rows: [
-    ['München, "East"', 0],
-    ['Two\nlines', null],
-    ['=1+1', -10],
-    [' +SUM(A1)', false],
-    ['@SUM(A1)', true],
-  ],
-};
-const summary = { name: 'Summary', columns: ['Total'], rows: [[0]] };
 const formatting = [
   ['Rounded number', formatNumber(12.345, { maximumFractionDigits: 2 })],
   ['Negative zero', formatNumber(-0)],
@@ -65,101 +63,206 @@ const formatting = [
   ['Single day', formatDateRange({ start: '2026-09-28', end: '2026-09-28' })],
   ['Singular label', `1 ${pluralize(1, 'event')}`],
   ['Plural label', `0 ${pluralize(0, 'event')}`],
-].map(([sample, display]) => ({ sample: sample!, display: display! }));
-function App() {
-  const params = new URLSearchParams(location.search);
+].map(([sample, display]): { sample: string; display?: string } => ({
+  sample: sample!,
+  display: display!,
+}));
+// A column named after an optional field shows a missing value when a row omits it.
+formatting.push({ sample: 'Omitted optional field' });
+const params = new URLSearchParams(location.search);
+// Every result is literal: each operation returns it without querying.
+const { defineView } = createDataHooks(
+  createDataClient({
+    operations: {
+      activity: dataApp.defineOperation({
+        policy: { maxQueryRows: 1 },
+        async run() {
+          return { totalEvents: 12345, conversion: 0.116, noEvents: 0 };
+        },
+      }),
+      groups: dataApp.defineOperation({
+        policy: { maxQueryRows: 20 },
+        async run() {
+          if (params.has('loading-table'))
+            return new Promise<typeof rows>(() => {});
+          if (params.has('empty-table')) return [];
+          return params.has('few-rows') ? rows.slice(0, 2) : rows;
+        },
+      }),
+      formatting: dataApp.defineOperation({
+        policy: { maxQueryRows: 20 },
+        async run() {
+          return formatting;
+        },
+      }),
+      counts: dataApp.defineOperation({
+        policy: { maxQueryRows: 10 },
+        async run(): Promise<
+          { name: string; count?: number | boolean | null }[]
+        > {
+          return [
+            { name: 'München, "East"', count: 0 },
+            { name: 'Two\nlines', count: null },
+            { name: '=1+1', count: -10 },
+            { name: ' +SUM(A1)', count: false },
+            { name: '@SUM(A1)', count: true },
+            { name: 'Omitted' },
+          ];
+        },
+      }),
+      summary: dataApp.defineOperation({
+        policy: { maxQueryRows: 1 },
+        async run() {
+          return [{ total: 0 }];
+        },
+      }),
+    },
+    lakehouse: literalLakehouse,
+  })
+);
+const dataContext = createDataContext(dataApp.queryNames)({
+  description: 'Activity data',
+  glossary: {
+    groups: { term: 'Groups', definition: 'Sample group events.' },
+  },
+});
+const activityView = defineView({ dataContext, operation: 'activity' });
+const totalEvents = activityView.metric(
+  {
+    id: 'total-events',
+    glossaryId: 'groups',
+    label: 'Total events',
+    format: { kind: 'count' },
+  },
+  activity => ({ current: activity.totalEvents })
+);
+const conversion = activityView.metric(
+  {
+    id: 'conversion',
+    glossaryId: 'groups',
+    label: 'Conversion',
+    format: { kind: 'ratio' },
+  },
+  activity => ({ current: activity.conversion })
+);
+const noEvents = activityView.metric(
+  {
+    id: 'no-events',
+    glossaryId: 'groups',
+    label: 'No events',
+    format: { kind: 'count' },
+  },
+  activity => ({ current: activity.noEvents })
+);
+// The table renders its own empty state, with its heading and count.
+const groupsView = defineView({
+  dataContext,
+  operation: 'groups',
+  isEmpty: () => false,
+});
+const groups = groupsView.dataset({
+  name: 'Events by group',
+  rowKey: row => row.id,
+  columns: { name: {}, count: {} },
+  evidence: { id: 'groups', glossaryIds: ['groups'] },
+  emptyFallback: { title: 'No events yet' },
+});
+const formattingView = defineView({ dataContext, operation: 'formatting' });
+const formattingReference = formattingView.dataset({
+  name: 'Formatting reference',
+  rowKey: row => row.sample,
+  columns: { sample: {}, display: {} },
+  evidence: { id: 'formatting', glossaryIds: ['groups'] },
+  emptyFallback: { title: 'No formatting examples' },
+});
+const countsView = defineView({ dataContext, operation: 'counts' });
+const counts = countsView.dataset({
+  name: 'Counts',
+  rowKey: row => row.name,
+  columns: { name: {}, count: {} },
+  evidence: { id: 'counts', glossaryIds: ['groups'] },
+});
+const summaryView = defineView({ dataContext, operation: 'summary' });
+const summary = summaryView.dataset({
+  name: 'Summary',
+  rowKey: row => row.total,
+  columns: { total: {} },
+  evidence: { id: 'summary', glossaryIds: ['groups'] },
+});
+const activityContent = activityView.content(result => (
+  <>
+    <MetricWidget metric={totalEvents} source={result} />
+    <MetricWidget metric={conversion} source={result} />
+    <MetricWidget metric={noEvents} source={result} />
+  </>
+));
+const formattingContent = formattingView.content(result => (
+  <TableWidget
+    dataset={formattingReference}
+    source={result}
+    pagination={false}
+  />
+));
+
+function GroupsTable({
+  result,
+}: {
+  result: Parameters<Parameters<typeof groupsView.content>[0]>[0];
+}) {
   const [search, setSearch] = useState(params.get('initial-search') ?? '');
   return (
+    <TableWidget
+      dataset={groups}
+      source={result}
+      count={params.has('server-total') ? 123 : undefined}
+      showCount={!params.has('hide-count')}
+      {...(params.has('preview-table') ? { limit: 2 } : {})}
+      noMatchesFallback={
+        params.has('custom-empty-action')
+          ? {
+              title: 'No groups match',
+              description: 'Choose another group name.',
+              action: <a href="https://example.com/help">Read help</a>,
+            }
+          : undefined
+      }
+      search={{
+        label: 'Search groups',
+        value: search,
+        resetValue: params.has('search-default') ? 'missing' : undefined,
+        onChange: setSearch,
+        attributes: [{ name: 'name', getter: row => row.name }],
+      }}
+    />
+  );
+}
+const groupsContent = groupsView.content(result => (
+  <GroupsTable result={result} />
+));
+
+function App() {
+  const multiple = params.has('multiple-exports');
+  return (
     <DataApp
+      view={countsView}
+      // Summary views load with the page instead of waiting for the viewport.
+      summaryViews={[activityView, groupsView, formattingView, summaryView]}
+      datasets={multiple ? [counts, summary] : [counts]}
       description={
-        new URLSearchParams(location.search).has('override-description')
+        params.has('override-description')
           ? 'Custom activity subtitle.'
-          : new URLSearchParams(location.search).has('hide-description')
+          : params.has('hide-description')
             ? null
             : undefined
       }
-      dataContext={{
-        description: 'Activity data',
-        glossary: {
-          groups: { term: 'Groups', definition: 'Sample group events.' },
-        },
-      }}
-      csvExport={{
-        filename: 'gallery',
-        tables: new URLSearchParams(location.search).has('multiple-exports')
-          ? [counts, summary]
-          : [counts],
-      }}
     >
-      {new URLSearchParams(location.search).has('identity') && (
+      {params.has('identity') && (
         <output aria-label="Document title at render">{document.title}</output>
       )}
-      <MetricWidget
-        label="Total events"
-        value={12345}
-        format={{ kind: 'count' }}
-      />
-      <MetricWidget
-        label="Conversion"
-        value={0.116}
-        format={{ kind: 'ratio' }}
-      />
-      <MetricWidget label="No events" value={0} format={{ kind: 'count' }} />
-      <MetricWidget label="Unavailable" content={formatPercent(null)} />
-      <TableWidget
-        title="Events by group"
-        {...(params.has('loading-table')
-          ? {
-              reading: { loading: true as const },
-              evidence: { id: 'groups', glossaryIds: ['groups'] as [string] },
-            }
-          : {
-              rows: params.has('empty-table')
-                ? []
-                : params.has('few-rows')
-                  ? rows.slice(0, 2)
-                  : rows,
-              evidence: params.has('inspectable-table')
-                ? { id: 'groups', glossaryIds: ['groups'] as [string] }
-                : undefined,
-            })}
-        count={params.has('server-total') ? 123 : undefined}
-        showCount={!params.has('hide-count')}
-        limit={params.has('preview-table') ? 2 : undefined}
-        rowKey={row => row.id}
-        columns={[
-          { id: 'name', header: 'Name', cell: row => row.name },
-          { id: 'count', header: 'Count', cell: row => row.count },
-        ]}
-        emptyFallback={{ title: 'No events yet' }}
-        noMatchesFallback={
-          params.has('custom-empty-action')
-            ? {
-                title: 'No groups match',
-                description: 'Choose another group name.',
-                action: <a href="https://example.com/help">Read help</a>,
-              }
-            : undefined
-        }
-        search={{
-          label: 'Search groups',
-          value: search,
-          resetValue: params.has('search-default') ? 'missing' : undefined,
-          onChange: setSearch,
-          attributes: [{ name: 'name', getter: row => row.name }],
-        }}
-      />
-      <TableWidget
-        title="Formatting reference"
-        emptyFallback={{ title: 'No formatting examples' }}
-        rows={formatting}
-        rowKey={row => row.sample}
-        pagination={false}
-        columns={[
-          { id: 'sample', header: 'Sample', cell: row => row.sample },
-          { id: 'display', header: 'Display', cell: row => row.display },
-        ]}
-      />
+      <DataSection content={activityContent} />
+      <DataWidget title="Unavailable">{formatPercent(null)}</DataWidget>
+      <DataSection content={groupsContent} />
+      <DataSection content={formattingContent} />
       <LineChart
         ariaLabel="Event trend"
         items={[

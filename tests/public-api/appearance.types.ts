@@ -1,5 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import type { TableWidgetProps } from '@altertable/data-app-react/ui';
 import type { AppearanceOptions } from '@altertable/data-app/appearance';
 
 // Compile-only assertions; the hosted endpoint can enforce these through TypeScript.
@@ -20,18 +19,4 @@ export const invalidTheme: AppearanceOptions = {
 export const misspelledSetting: AppearanceOptions = {
   // @ts-expect-error Unknown authored appearance fields are rejected.
   densitty: 'compact',
-};
-
-const table = {
-  title: 'Example',
-  rows: [],
-  columns: [{ id: 'id', header: 'ID', cell: () => null }] as const,
-  rowKey: () => 'id',
-  emptyFallback: { title: 'Empty' },
-};
-export const conflictingTable: TableWidgetProps<{}> = {
-  ...table,
-  limit: 1,
-  // @ts-expect-error Preview limits and pagination cannot coexist.
-  pagination: false,
 };
