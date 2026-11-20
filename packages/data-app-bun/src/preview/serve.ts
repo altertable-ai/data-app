@@ -60,7 +60,13 @@ export async function serveAppFile({
     Bun.resolveSync('@altertable/data-app', import.meta.dir)
   );
   let stopped = false;
-  type Bundle = { javascript: string } | { error: string };
+  type BuildResult = {
+    inputFiles: ReadonlySet<string>;
+    directories: ReadonlySet<string>;
+  } & (
+    | { javascript: string; queries: Readonly<Record<string, string>> }
+    | { error: string }
+  );
 
   function isAppInput(path: string) {
     return (
@@ -70,12 +76,7 @@ export async function serveAppFile({
   }
 
   /** Bundle like the hosted runtime: one classic script with its styles injected. */
-  async function buildApp(): Promise<{
-    bundle: Bundle;
-    queries?: Readonly<Record<string, string>>;
-    inputFiles: string[];
-    directories: string[];
-  }> {
+  async function buildApp(): Promise<BuildResult> {
     const inputFiles = new Set([appFile]);
     const directories = new Set([dirname(appFile)]);
     const pathMatchers = new Map<string, PathsMatcher | null>();
@@ -157,7 +158,7 @@ export async function serveAppFile({
       });
       const script = result.outputs.find(output => output.path.endsWith('.js'));
       if (!script) throw new Error('App build did not produce JavaScript.');
-      const javascript = await script.text();
+      let javascript = await script.text();
       const extraction = extractDataAppManifest(await Bun.file(appFile).text());
       const declaredQueries = extraction.manifest?.queries ?? {};
       if (
@@ -169,7 +170,7 @@ export async function serveAppFile({
       const queries: Record<string, string> = {};
       for (const [id, definition] of Object.entries(declaredQueries)) {
         if (
-          !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(id) ||
+          !REGISTERED_QUERY_ID_PATTERN.test(id) ||
           !definition ||
           typeof definition !== 'object' ||
           Array.isArray(definition) ||
@@ -177,8 +178,6 @@ export async function serveAppFile({
           !definition.statement.trim()
         )
           throw new Error(`Invalid registered query: ${id}.`);
-        if (!REGISTERED_QUERY_ID_PATTERN.test(id))
-          throw new Error(`Invalid registered query name: ${id}.`);
         const unsupported = unsupportedParameterReference(definition.statement);
         if (unsupported)
           throw new Error(
@@ -189,30 +188,19 @@ export async function serveAppFile({
       const stylesheet = result.outputs.find(output =>
         output.path.endsWith('.css')
       );
-      if (!stylesheet)
-        return {
-          bundle: { javascript },
-          queries,
-          inputFiles: [...inputFiles],
-          directories: [...directories],
-        };
-      const css = await stylesheet.text();
-      // Append rather than prepend so source map line offsets stay aligned.
-      return {
-        inputFiles: [...inputFiles],
-        directories: [...directories],
-        bundle: {
-          javascript: `${javascript}\n{ const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style); }`,
-        },
-        queries,
-      };
+      if (stylesheet) {
+        const css = await stylesheet.text();
+        // Append so source map line offsets stay aligned.
+        javascript += `\n{ const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style); }`;
+      }
+      return { javascript, queries, inputFiles, directories };
     } catch (error) {
       const errors: unknown[] =
         error instanceof AggregateError ? error.errors : [error];
       return {
-        bundle: { error: errors.map(formatBuildError).join('\n\n') },
-        inputFiles: [...inputFiles],
-        directories: [...directories],
+        error: errors.map(formatBuildError).join('\n\n'),
+        inputFiles,
+        directories,
       };
     }
   }
@@ -225,11 +213,10 @@ export async function serveAppFile({
       : message;
   }
 
-  const initialBuild = await buildApp();
-  let currentBundle = initialBuild.bundle;
-  let currentQueries = initialBuild.queries ?? {};
-  let watchedFiles = new Set(initialBuild.inputFiles);
-  if ('error' in currentBundle) console.error(currentBundle.error);
+  let currentBuild = await buildApp();
+  let lastSuccessfulQueries =
+    'queries' in currentBuild ? currentBuild.queries : {};
+  if ('error' in currentBuild) console.error(currentBuild.error);
 
   const reload = createReloadChannel();
   let rebuildQueue = Promise.resolve();
@@ -241,14 +228,16 @@ export async function serveAppFile({
     rebuildTimer = setTimeout(() => {
       rebuildQueue = rebuildQueue
         .then(async () => {
+          if (stopped) return;
           const result = await buildApp();
           if (stopped) return;
-          currentBundle = result.bundle;
-          if (result.queries) currentQueries = result.queries;
-          watchedFiles = new Set(result.inputFiles);
-          if ('error' in currentBundle) console.error(currentBundle.error);
-          else console.log(`Rebuilt ${appFile}`);
-          updateWatchers(result.directories);
+          currentBuild = result;
+          if ('error' in result) console.error(result.error);
+          else {
+            lastSuccessfulQueries = result.queries;
+            console.log(`Rebuilt ${appFile}`);
+          }
+          updateWatchers();
           reload.notify();
         })
         .catch(error => console.error(error));
@@ -257,10 +246,10 @@ export async function serveAppFile({
 
   // Watch directories rather than files so editors that save by renaming still trigger rebuilds.
   const watchers = new Map<string, FSWatcher>();
-  function updateWatchers(inputDirectories: string[]) {
-    const directories = new Set(inputDirectories);
+  function updateWatchers() {
+    const directories = new Set(currentBuild.directories);
     // A failed build may stop before reaching dependencies from the last successful build.
-    if ('error' in currentBundle)
+    if ('error' in currentBuild)
       for (const directory of watchers.keys()) directories.add(directory);
     for (const [directory, watcher] of watchers)
       if (!directories.has(directory)) {
@@ -274,9 +263,9 @@ export async function serveAppFile({
           watch(directory, (_event, filename) => {
             // New files can repair unresolved imports after a failed build.
             if (
-              'error' in currentBundle ||
+              'error' in currentBuild ||
               !filename ||
-              watchedFiles.has(join(directory, filename))
+              currentBuild.inputFiles.has(join(directory, filename))
             )
               scheduleRebuild();
           })
@@ -304,9 +293,9 @@ export async function serveAppFile({
           headers: { 'content-type': 'text/html; charset=utf-8' },
         });
       if (path === '/bundle.js')
-        return 'error' in currentBundle
-          ? new Response(currentBundle.error, { status: 500 })
-          : new Response(currentBundle.javascript, {
+        return 'error' in currentBuild
+          ? new Response(currentBuild.error, { status: 500 })
+          : new Response(currentBuild.javascript, {
               headers: { 'content-type': 'text/javascript; charset=utf-8' },
             });
       if (path === '/reload') {
@@ -330,9 +319,9 @@ export async function serveAppFile({
             return Response.json({ reason: 'query_rejected' }, { status: 413 });
           return Response.json({ reason: 'query_rejected' }, { status: 400 });
         }
-        if (!Object.hasOwn(currentQueries, query.queryId))
+        if (!Object.hasOwn(lastSuccessfulQueries, query.queryId))
           return Response.json({ reason: 'query_rejected' }, { status: 404 });
-        const statement = currentQueries[query.queryId]!;
+        const statement = lastSuccessfulQueries[query.queryId]!;
         try {
           return Response.json(
             await lakehouse.queryAll(statement, {
@@ -368,7 +357,7 @@ export async function serveAppFile({
     })());
   }
   try {
-    updateWatchers(initialBuild.directories);
+    updateWatchers();
   } catch (error) {
     await stop();
     throw error;

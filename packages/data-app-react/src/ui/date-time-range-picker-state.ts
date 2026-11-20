@@ -1,36 +1,37 @@
-import type { DateTimeRange } from '@altertable/data-app/contract';
+import type { CalendarDate } from '@internationalized/date';
+import type { RangeValue } from 'react-aria-components';
 
 type PickerState = {
-  open: boolean;
-  mode: 'presets' | 'editing' | 'calendar';
+  status: 'closed' | 'presets' | 'editing' | 'calendar';
   draft: string;
   edited: boolean;
   highlight: number;
   error: string;
   help: boolean;
   helpSide: 'left' | 'right' | 'inline';
-  calendar: DateTimeRange | null;
+  calendarSelection: RangeValue<CalendarDate> | null;
   complete: boolean;
 };
 export const initialPickerState: PickerState = {
-  open: false,
-  mode: 'presets',
+  status: 'closed',
   draft: '',
   edited: false,
   highlight: -1,
   error: '',
   help: false,
   helpSide: 'left',
-  calendar: null,
+  calendarSelection: null,
   complete: false,
 };
 type PickerAction =
   | { type: 'open'; draft: string; helpSide: PickerState['helpSide'] }
   | { type: 'close' }
   | { type: 'edit'; draft: string }
-  | { type: 'calendar'; value: DateTimeRange | null }
+  | { type: 'edit-segment' }
+  | { type: 'highlight-preset'; index: number }
+  | { type: 'calendar'; selection: PickerState['calendarSelection'] }
   | { type: 'error'; error: string }
-  | { type: 'update'; value: Partial<PickerState> };
+  | { type: 'update'; value: Partial<Omit<PickerState, 'status'>> };
 
 export function dateTimeRangePickerReducer(
   state: PickerState,
@@ -39,32 +40,32 @@ export function dateTimeRangePickerReducer(
   switch (action.type) {
     case 'open':
       return {
-        ...state,
-        ...(!state.open
-          ? { draft: action.draft, edited: false, error: '', help: false }
-          : {}),
-        open: true,
-        mode: 'presets',
-        highlight: -1,
+        ...initialPickerState,
+        status: 'presets',
+        draft: action.draft,
         helpSide: action.helpSide,
       };
     case 'close':
-      return { ...state, open: false, help: false, error: '' };
+      return initialPickerState;
     case 'edit':
       return {
         ...state,
         draft: action.draft,
         edited: true,
-        mode: 'editing',
+        status: 'editing',
         highlight: -1,
         error: '',
       };
+    case 'edit-segment':
+      return { ...state, status: 'editing', highlight: -1 };
+    case 'highlight-preset':
+      return { ...state, status: 'presets', highlight: action.index };
     case 'calendar':
       return {
         ...state,
-        calendar: action.value,
+        calendarSelection: action.selection,
         complete: false,
-        mode: 'calendar',
+        status: 'calendar',
         help: false,
         error: '',
       };

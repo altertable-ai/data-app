@@ -1,10 +1,5 @@
-import {
-  resolveDateTimeRange,
-  type DateTimeRange,
-  type DateTimeRangePolicy,
-} from '@altertable/data-app/contract';
 import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
-import { parseDate, today, type CalendarDate } from '@internationalized/date';
+import { type CalendarDate } from '@internationalized/date';
 import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   RangeCalendar,
@@ -22,47 +17,27 @@ import { Button } from './Button.tsx';
 import { AppIcon } from './icons.ts';
 import { Select } from './Select.tsx';
 
-/** Calendar days map to UTC fields and a next-midnight exclusive end. */
 export function DateTimeRangeCalendar({
   value,
   maxRangeDays,
-  policy,
+  currentDay,
+  minDay,
   onChange,
   onCompleteChange,
 }: {
-  value: DateTimeRange | null;
+  value: RangeValue<CalendarDate> | null;
   maxRangeDays?: number;
-  policy?: DateTimeRangePolicy;
+  currentDay: CalendarDate;
+  minDay?: CalendarDate;
   onCompleteChange: (complete: boolean) => void;
-  onChange: (value: DateTimeRange | null) => void;
+  onChange: (value: RangeValue<CalendarDate> | null) => void;
 }) {
   const { locale } = useDateFormatting();
-  const limits = policy?.bounds();
-  const currentDay = limits ? parseDate(limits.maxDate) : today('UTC');
-  const [selection, setSelection] = useState<RangeValue<CalendarDate> | null>(
-    () => {
-      if (!value) return null;
-      try {
-        const resolved = policy
-          ? policy.resolve(value)
-          : resolveDateTimeRange(value);
-        if (
-          !resolved.from ||
-          resolved.from.toISOString().slice(0, 10) > currentDay.toString()
-        )
-          return null;
-        return {
-          start: parseDate(resolved.from.toISOString().slice(0, 10)),
-          end: parseDate(
-            new Date(resolved.to.getTime() - 1).toISOString().slice(0, 10)
-          ),
-        };
-      } catch {
-        return null;
-      }
-    }
-  );
-  const [focused, setFocused] = useState(selection?.start ?? currentDay);
+  const [focused, setFocused] = useState(value?.start ?? currentDay);
+  const monthFormat = new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    timeZone: 'UTC',
+  });
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Opening the calendar is an explicit action; focus its selected day, not its header.
@@ -77,11 +52,11 @@ export function DateTimeRangeCalendar({
       ref={ref}
       aria-label="Select date range"
       className="altertable-datetime-calendar"
-      value={selection}
+      value={value}
       focusedValue={focused}
       onFocusChange={setFocused}
       maxValue={currentDay}
-      minValue={limits?.minDate ? parseDate(limits.minDate) : undefined}
+      minValue={minDay}
       isDateUnavailable={(date, anchor) =>
         !!maxRangeDays &&
         !!anchor &&
@@ -90,17 +65,7 @@ export function DateTimeRangeCalendar({
         ) >=
           maxRangeDays * fixedUnitMilliseconds.DAY
       }
-      onChange={range => {
-        setSelection(range);
-        onChange(
-          range
-            ? {
-                from: range.start.toDate('UTC'),
-                to: range.end.add({ days: 1 }).toDate('UTC'),
-              }
-            : null
-        );
-      }}
+      onChange={onChange}
     >
       <CalendarCompleteness onChange={onCompleteChange} />
       <header>
@@ -117,10 +82,7 @@ export function DateTimeRangeCalendar({
           value={String(focused.month)}
           options={Array.from({ length: 12 }, (_, index) => ({
             id: String(index + 1),
-            label: new Intl.DateTimeFormat(locale, {
-              month: 'long',
-              timeZone: 'UTC',
-            }).format(new Date(Date.UTC(2000, index, 1))),
+            label: monthFormat.format(new Date(Date.UTC(2000, index, 1))),
           }))}
           onChange={month => setFocused(focused.set({ month: Number(month) }))}
         />

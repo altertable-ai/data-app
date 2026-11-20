@@ -5,7 +5,7 @@ import { createServer, type Socket } from 'node:net';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { open, protocol } from '@/scripts/dev-connection';
+import { probeWatcherPort, protocol } from '@/scripts/dev-connection';
 
 const root = await realpath(resolve(import.meta.dir, '..'));
 
@@ -25,15 +25,15 @@ async function serve() {
   let startup: ReturnType<typeof setTimeout> | undefined;
   let gatePort = 0;
 
-  function relay(status: boolean) {
+  function relay(retainStatus: boolean) {
     let output = '';
-    return (chunk: Buffer) => {
-      output += chunk.toString();
+    return (chunk: string) => {
+      output += chunk;
       let end: number;
       while ((end = output.indexOf('\n')) >= 0) {
         const line = output.slice(0, end + 1);
         output = output.slice(end + 1);
-        if (status && line.startsWith('DATA_APP_DEV ')) current = line;
+        if (retainStatus && line.startsWith('DATA_APP_DEV ')) current = line;
         for (const socket of clients) socket.write(line);
       }
     };
@@ -90,8 +90,8 @@ async function serve() {
               },
               stdio: ['pipe', 'pipe', 'pipe'],
             });
-            worker.stdout!.on('data', stdout);
-            worker.stderr!.on('data', stderr);
+            worker.stdout!.setEncoding('utf8').on('data', stdout);
+            worker.stderr!.setEncoding('utf8').on('data', stderr);
             workerExited = new Promise(done => {
               worker!.once('exit', () => {
                 if (!stopping)
@@ -101,7 +101,7 @@ async function serve() {
                 void stop();
               });
               worker!.once('error', error => {
-                stderr(Buffer.from(`${error.message}\n`));
+                stderr(`${error.message}\n`);
                 if (!stopping)
                   for (const client of clients)
                     client.write('DATA_APP_DEV_OWNER_FAILED\n');
@@ -120,16 +120,14 @@ async function serve() {
   });
 
   for (const port of ports) {
-    const held = await open(port + 1);
-    held?.socket.destroy();
-    // A suspended old worker cannot answer: an ambiguous occupied gate must
-    // still block replacement, rather than being mistaken for another service.
-    if (
-      held &&
-      !held.ambiguous &&
-      (held.owner?.root !== root || held.owner.role !== 'worker')
-    )
-      continue;
+    const gate = await probeWatcherPort(port + 1);
+    // An unresponsive gate may be a suspended worker. Reuse its port so
+    // the replacement worker waits for that gate before building.
+    if (gate.kind === 'other-service') continue;
+    if (gate.kind === 'watcher') {
+      gate.socket.destroy();
+      if (gate.peer.root !== root || gate.peer.role !== 'worker') continue;
+    }
     gatePort = port + 1;
     try {
       await new Promise<void>((done, reject) => {
@@ -146,10 +144,12 @@ async function serve() {
       return;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
-      const existing = await open(port);
-      existing?.socket.destroy();
-      if (existing?.owner?.root === root && existing.owner.role === 'owner')
-        return;
+      const existing = await probeWatcherPort(port);
+      if (existing.kind === 'watcher') {
+        existing.socket.destroy();
+        if (existing.peer.root === root && existing.peer.role === 'owner')
+          return;
+      }
     }
   }
   throw new Error(
@@ -174,20 +174,21 @@ async function attach() {
   const deadline = Date.now() + 15000;
   while (!socket && !stopping && Date.now() < deadline) {
     for (const port of ports) {
-      const found = await open(port);
+      const found = await probeWatcherPort(port);
+      if (found.kind !== 'watcher') continue;
       if (
-        found?.owner?.root === root &&
-        found.owner.role === 'owner' &&
-        !found.owner.stopping &&
+        found.peer.root === root &&
+        found.peer.role === 'owner' &&
+        !found.peer.stopping &&
         !stopping
       ) {
         socket = found.socket;
         console.log(
-          `[data-app] Shared watcher PID ${found.owner.pid} for ${root}`
+          `[data-app] Shared watcher PID ${found.peer.pid} for ${root}`
         );
         break;
       }
-      found?.socket.destroy();
+      found.socket.destroy();
     }
     if (!socket && !stopping) {
       if (Date.now() >= launchAt) {
@@ -209,8 +210,8 @@ async function attach() {
   }
   let output = '';
   const ended = new Promise<void>(done => socket!.once('close', () => done()));
-  socket.on('data', chunk => {
-    output += chunk.toString();
+  socket.on('data', (chunk: string) => {
+    output += chunk;
     let end: number;
     while ((end = output.indexOf('\n')) >= 0) {
       const line = output.slice(0, end);
