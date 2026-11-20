@@ -14,7 +14,7 @@ export async function open(port: number) {
   return new Promise<
     { socket: Socket; owner?: Owner; ambiguous?: boolean } | undefined
   >(done => {
-    const socket = connect({ host: '127.0.0.1', port });
+    const socket = connect({ host: '127.0.0.1', port }).setEncoding('utf8');
     let buffer = '';
     let occupied = false;
     let settled = false;
@@ -33,8 +33,8 @@ export async function open(port: number) {
         done(occupied ? { socket, ambiguous: !responsive } : undefined);
       }
     }
-    function read(chunk: Buffer) {
-      buffer += chunk.toString();
+    function read(chunk: string) {
+      buffer += chunk;
       if (buffer.length > 4096) {
         finish(undefined, true);
         return;

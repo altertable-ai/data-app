@@ -246,7 +246,7 @@ test('concurrent clients share one watcher and release it without stopping peers
     workerSource,
     (await readFile(workerSource, 'utf8')).replace(
       "report('building');",
-      "process.stderr.write('partial diagnostic'); setTimeout(() => process.stderr.write(' end\\n'), 500); report('building');"
+      "process.stderr.write(Buffer.from([0xc3])); report('building'); await new Promise(done => setTimeout(done, 100)); process.stderr.write(Buffer.from([0xa9, 0x0a]));"
     )
   );
   const clients: ReturnType<typeof start>[] = [];
@@ -291,6 +291,13 @@ test('concurrent clients share one watcher and release it without stopping peers
     clients.push(second);
     await Promise.all([first.wait('ready', 1), second.wait('ready', 1)]);
     expect(first.owner()).toBe(second.owner());
+    await expect
+      .poll(() =>
+        [first, second].some(client =>
+          client.output().split('\n').includes('é')
+        )
+      )
+      .toBe(true);
     expect(
       [first, second].some(client =>
         client

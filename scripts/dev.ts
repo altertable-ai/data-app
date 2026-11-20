@@ -25,15 +25,15 @@ async function serve() {
   let startup: ReturnType<typeof setTimeout> | undefined;
   let gatePort = 0;
 
-  function relay(status: boolean) {
+  function relay(retainStatus: boolean) {
     let output = '';
-    return (chunk: Buffer) => {
-      output += chunk.toString();
+    return (chunk: string) => {
+      output += chunk;
       let end: number;
       while ((end = output.indexOf('\n')) >= 0) {
         const line = output.slice(0, end + 1);
         output = output.slice(end + 1);
-        if (status && line.startsWith('DATA_APP_DEV ')) current = line;
+        if (retainStatus && line.startsWith('DATA_APP_DEV ')) current = line;
         for (const socket of clients) socket.write(line);
       }
     };
@@ -90,8 +90,8 @@ async function serve() {
               },
               stdio: ['pipe', 'pipe', 'pipe'],
             });
-            worker.stdout!.on('data', stdout);
-            worker.stderr!.on('data', stderr);
+            worker.stdout!.setEncoding('utf8').on('data', stdout);
+            worker.stderr!.setEncoding('utf8').on('data', stderr);
             workerExited = new Promise(done => {
               worker!.once('exit', () => {
                 if (!stopping)
@@ -101,7 +101,7 @@ async function serve() {
                 void stop();
               });
               worker!.once('error', error => {
-                stderr(Buffer.from(`${error.message}\n`));
+                stderr(`${error.message}\n`);
                 if (!stopping)
                   for (const client of clients)
                     client.write('DATA_APP_DEV_OWNER_FAILED\n');
@@ -209,8 +209,8 @@ async function attach() {
   }
   let output = '';
   const ended = new Promise<void>(done => socket!.once('close', () => done()));
-  socket.on('data', chunk => {
-    output += chunk.toString();
+  socket.on('data', (chunk: string) => {
+    output += chunk;
     let end: number;
     while ((end = output.indexOf('\n')) >= 0) {
       const line = output.slice(0, end);
