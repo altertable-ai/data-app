@@ -19,15 +19,12 @@ export function balanceSearchSuggestions(
     if (title.ranges.length) return 2;
     return matchSearchText(item.description ?? '', query).ranges.length ? 1 : 0;
   }
-  const rankedGroups = groups.map(items =>
-    [...items].sort((a, b) => score(b) - score(a))
-  );
-  const counts = rankedGroups.map(() => 0);
+  const counts = groups.map(() => 0);
   let remaining = 5;
   while (remaining > 0) {
     let added = false;
-    for (let index = 0; index < rankedGroups.length && remaining > 0; index++) {
-      if (counts[index]! < rankedGroups[index]!.length) {
+    for (let index = 0; index < groups.length && remaining > 0; index++) {
+      if (counts[index]! < groups[index]!.length) {
         counts[index]!++;
         remaining--;
         added = true;
@@ -35,7 +32,17 @@ export function balanceSearchSuggestions(
     }
     if (!added) break;
   }
-  return rankedGroups
-    .flatMap((items, index) => items.slice(0, counts[index]))
-    .sort((a, b) => score(b) - score(a));
+  if (!query.trim())
+    return groups.flatMap((items, index) => items.slice(0, counts[index]));
+  return groups
+    .flatMap((items, index) =>
+      counts[index]
+        ? items
+            .map(item => ({ item, score: score(item) }))
+            .sort((left, right) => right.score - left.score)
+            .slice(0, counts[index])
+        : []
+    )
+    .sort((left, right) => right.score - left.score)
+    .map(({ item }) => item);
 }
