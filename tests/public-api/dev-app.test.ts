@@ -877,6 +877,7 @@ const preview = await serveAppFile({
   port: 0,
   lakehouse: {
     async queryAll(statement, { limit, params }) {
+      if (params?.marker === 'over-limit') return { columns: [{ name: 'marker' }], rows: [['first'], ['second']] };
       return { columns: [{ name: 'statement', type: 'VARCHAR' }], rows: [[statement]], queryId: String(params?.marker ?? limit) };
     },
   },
@@ -904,6 +905,30 @@ process.on('SIGTERM', async () => { await preview.stop(); process.exit(0); });
     rows: [['SELECT $marker']],
     queryId: 'injected',
   });
+  const overLimit = await fetch(queryUrl, {
+    method: 'POST',
+    headers: { origin },
+    body: JSON.stringify({
+      queryId: 'marker',
+      limit: 1,
+      params: { marker: 'over-limit' },
+    }),
+  });
+  expect(overLimit.status).toBe(502);
+  expect(await overLimit.json()).toEqual({ reason: 'unavailable' });
+  for (const name of ['undeclared', 'constructor']) {
+    const rejected = await fetch(queryUrl, {
+      method: 'POST',
+      headers: { origin },
+      body: JSON.stringify({
+        queryId: 'marker',
+        limit: 1,
+        params: { marker: 'injected', [name]: 'unexpected' },
+      }),
+    });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toEqual({ reason: 'query_rejected' });
+  }
   for (const queryId of ['constructor', 'toString']) {
     const inherited = await fetch(queryUrl, {
       method: 'POST',

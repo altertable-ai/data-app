@@ -3,7 +3,6 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import {
-  DataSourceError,
   registeredQueryRoute,
   type SqlLakehouse,
 } from '@altertable/data-app/contract';
@@ -20,6 +19,7 @@ import {
   type PathsMatcher,
 } from 'get-tsconfig';
 
+import { queryResponse, type LocalQueryDefinition } from '../query-response.ts';
 import { createReloadChannel } from '../reload-channel.ts';
 
 declare const DATA_APP_PREVIEW_HTML: string;
@@ -64,7 +64,10 @@ export async function serveAppFile({
     inputFiles: ReadonlySet<string>;
     directories: ReadonlySet<string>;
   } & (
-    | { javascript: string; queries: Readonly<Record<string, string>> }
+    | {
+        javascript: string;
+        queries: Readonly<Record<string, LocalQueryDefinition>>;
+      }
     | { error: string }
   );
 
@@ -167,7 +170,7 @@ export async function serveAppFile({
         Array.isArray(declaredQueries)
       )
         throw new Error('App manifest must declare queries.');
-      const queries: Record<string, string> = {};
+      const queries: Record<string, LocalQueryDefinition> = {};
       for (const [id, definition] of Object.entries(declaredQueries)) {
         if (
           !REGISTERED_QUERY_ID_PATTERN.test(id) ||
@@ -175,7 +178,10 @@ export async function serveAppFile({
           typeof definition !== 'object' ||
           Array.isArray(definition) ||
           typeof definition.statement !== 'string' ||
-          !definition.statement.trim()
+          !definition.statement.trim() ||
+          !definition.params ||
+          typeof definition.params !== 'object' ||
+          Array.isArray(definition.params)
         )
           throw new Error(`Invalid registered query: ${id}.`);
         const unsupported = unsupportedParameterReference(definition.statement);
@@ -183,7 +189,10 @@ export async function serveAppFile({
           throw new Error(
             `Query ${id} uses SDK-only SQL syntax ${unsupported}. Write DuckDB SQL with bound parameters instead.`
           );
-        queries[id] = definition.statement;
+        queries[id] = {
+          statement: definition.statement,
+          params: definition.params,
+        };
       }
       const stylesheet = result.outputs.find(output =>
         output.path.endsWith('.css')
@@ -271,13 +280,6 @@ export async function serveAppFile({
           })
         );
   }
-  const statuses = {
-    unauthorized: 401,
-    forbidden: 403,
-    rate_limited: 429,
-    query_rejected: 400,
-    unavailable: 502,
-  } as const;
 
   const server = Bun.serve({
     hostname: '127.0.0.1',
@@ -321,24 +323,12 @@ export async function serveAppFile({
         }
         if (!Object.hasOwn(lastSuccessfulQueries, query.queryId))
           return Response.json({ reason: 'query_rejected' }, { status: 404 });
-        const statement = lastSuccessfulQueries[query.queryId]!;
-        try {
-          return Response.json(
-            await lakehouse.queryAll(statement, {
-              limit: query.limit,
-              params: query.params,
-              signal: request.signal,
-            })
-          );
-        } catch (error) {
-          if (error instanceof DataSourceError)
-            return Response.json(
-              { reason: error.reason },
-              { status: statuses[error.reason] }
-            );
-          console.error(error);
-          return Response.json({ reason: 'unavailable' }, { status: 502 });
-        }
+        return queryResponse(
+          lakehouse,
+          lastSuccessfulQueries[query.queryId]!,
+          query,
+          request.signal
+        );
       }
       return new Response('Not found', { status: 404 });
     },
