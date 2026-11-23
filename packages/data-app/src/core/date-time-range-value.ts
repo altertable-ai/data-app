@@ -10,7 +10,10 @@ import type {
 } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
 import { isRecord } from './record.ts';
-import { fixedUnitMilliseconds } from './time-units.ts';
+import {
+  fixedUnitMilliseconds,
+  maxRelativeOffsetMagnitude,
+} from './time-units.ts';
 
 const anchors: Record<RelativeAnchor, string> = {
   RELATIVE_ANCHOR_NOW: 'Now',
@@ -69,7 +72,7 @@ export function parseDateTimeRange(
         Object.keys(o).every(key => key === 'amount' || key === 'unit') &&
           typeof o.amount === 'number' &&
           Number.isSafeInteger(o.amount) &&
-          Math.abs(o.amount) <= 1_000_000 &&
+          Math.abs(o.amount) <= maxRelativeOffsetMagnitude &&
           typeof o.unit === 'string' &&
           Object.hasOwn(units, o.unit),
         'Invalid relative offset.'

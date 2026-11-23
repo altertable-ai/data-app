@@ -5,6 +5,31 @@ const parserOptions = { now: NOW };
 
 describe('parseDateTimeRangeInput', () => {
   it.each([
+    'last 1000001 days',
+    '1000001d',
+    '1000001 days ago',
+    'since 1000001 days ago',
+    '0 days ago',
+  ])('rejects unsupported relative windows: %s', input => {
+    expect(parseDateTimeRangeInput(input, parserOptions)).toMatchObject({
+      ok: false,
+      reason: 'unrecognized',
+    });
+  });
+
+  it('accepts the largest supported relative offset', () => {
+    expect(
+      parseDateTimeRangeInput('last 1000000 days', parserOptions)
+    ).toMatchObject({
+      ok: true,
+      range: {
+        from: { offset: [{ unit: 'DAY', amount: -1000000 }] },
+        to: null,
+      },
+    });
+  });
+
+  it.each([
     ['2022', '2022-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'],
     ['2021 to 2024', '2021-01-01T00:00:00.000Z', '2025-01-01T00:00:00.000Z'],
     ['2022–2022', '2022-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'],
