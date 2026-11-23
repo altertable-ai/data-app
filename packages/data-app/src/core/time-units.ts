@@ -1,5 +1,7 @@
 import type { RelativeUnit } from './date-time-range.ts';
 
+export const maxRelativeOffsetMagnitude = 1_000_000;
+
 const second = 1_000;
 const minute = 60 * second;
 const hour = 60 * minute;

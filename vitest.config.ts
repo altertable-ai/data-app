@@ -8,7 +8,16 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'public-api',
+          exclude: ['tests/public-api/apps-*.test.ts'],
           include: ['tests/public-api/**/*.test.{ts,tsx}'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          include: ['tests/public-api/apps-*.test.ts'],
+          globalSetup: ['tests/public-api/fixtures/setup.ts'],
         },
       },
       {

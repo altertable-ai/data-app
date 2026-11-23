@@ -47,6 +47,7 @@ export default {
         'tests/**/*.types.{ts,tsx}',
         'tests/fixtures/manifest-consumer.ts',
         'tests/public-api/fixtures/server.ts',
+        'tests/public-api/fixtures/bundles.ts',
         // Built through Bun.build() calls with runtime-generated options.
         'dev/fixtures/{bundle-app,annotation-state-app}.tsx',
         'dev/fixtures/bridge-frame.ts',

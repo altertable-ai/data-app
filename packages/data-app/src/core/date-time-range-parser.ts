@@ -1,10 +1,7 @@
 import * as chrono from 'chrono-node';
 
-import type {
-  DateTimeRange,
-  RelativeDateTime,
-  RelativeUnit,
-} from './date-time-range.ts';
+import type { DateTimeRange, RelativeUnit } from './date-time-range.ts';
+import { maxRelativeOffsetMagnitude } from './time-units.ts';
 
 // Adapted from the frontend parser. Absolute fields are encoded as UTC,
 // while relative anchors remain unevaluated for the backend.
@@ -140,16 +137,6 @@ function utcDate(
 
 function parseRelativeUnit(rawUnit: string): RelativeUnit | null {
   return RELATIVE_UNIT_BY_PATTERN.get(rawUnit.toLowerCase()) ?? null;
-}
-
-function relativeFromNowOffset(
-  amount: number,
-  unit: RelativeUnit
-): RelativeDateTime {
-  return {
-    anchor: 'RELATIVE_ANCHOR_NOW',
-    offset: [{ amount: -amount, unit }],
-  };
 }
 
 function success(
@@ -368,7 +355,7 @@ function tryParseCalendarRange(
 
 function tryParseUnixRange(
   normalized: string
-): ParseSuccess | ParseDateTimeRangeResult | null {
+): ParseDateTimeRangeResult | null {
   const parts = normalized.split(RANGE_SEPARATOR_PATTERN);
   if (parts.length !== 2) {
     return null;
@@ -397,27 +384,26 @@ function tryParseUnixRange(
   return success({ from, to }, normalized, 'unix');
 }
 
-function tryParseSlidingRelative(
-  normalized: string
-): ParseDateTimeRangeResult | null {
-  const match = normalized.match(SLIDING_RELATIVE_PATTERN);
-  if (!match) {
-    return null;
-  }
+function tryParseRelative(normalized: string): ParseDateTimeRangeResult | null {
+  const since = normalized.match(SINCE_PREFIX_PATTERN);
+  const match = since
+    ? since[1]!.match(AGO_RELATIVE_PATTERN)
+    : (normalized.match(SLIDING_RELATIVE_PATTERN) ??
+      normalized.match(AGO_RELATIVE_PATTERN) ??
+      normalized.match(BARE_RELATIVE_PATTERN));
+  if (!match) return null;
 
-  const amount = match[1] ? Number(match[1]) : 1;
-  // A zero-length window must not fall through to chrono, which reads it as today.
-  if (amount === 0) {
+  const amount = Number(match[1] ?? 1);
+  const unit = parseRelativeUnit(match[2]!);
+  if (amount <= 0 || amount > maxRelativeOffsetMagnitude || !unit)
     return failure('unrecognized', normalized);
-  }
-  const unit = parseRelativeUnit(match[2] ?? '');
-  if (!Number.isSafeInteger(amount) || amount < 0 || !unit) {
-    return null;
-  }
 
   return success(
     {
-      from: relativeFromNowOffset(amount, unit),
+      from: {
+        anchor: 'RELATIVE_ANCHOR_NOW',
+        offset: [{ amount: -amount, unit }],
+      },
       to: null,
     },
     normalized,
@@ -504,88 +490,10 @@ function tryParseCalendarPreset(normalized: string): ParseSuccess | null {
   return null;
 }
 
-function tryParseAgoRelative(normalized: string): ParseSuccess | null {
-  const match = normalized.match(AGO_RELATIVE_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  const amount = Number(match[1]);
-  const unit = parseRelativeUnit(match[2] ?? '');
-  if (!Number.isSafeInteger(amount) || amount <= 0 || !unit) {
-    return null;
-  }
-
-  return success(
-    {
-      from: relativeFromNowOffset(amount, unit),
-      to: null,
-    },
-    normalized,
-    'relative'
-  );
-}
-
-function tryParseBareRelative(normalized: string): ParseSuccess | null {
-  const match = normalized.match(BARE_RELATIVE_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  const amount = Number(match[1]);
-  const unit = parseRelativeUnit(match[2] ?? '');
-  if (!Number.isSafeInteger(amount) || amount <= 0 || !unit) {
-    return null;
-  }
-
-  return success(
-    {
-      from: relativeFromNowOffset(amount, unit),
-      to: null,
-    },
-    normalized,
-    'relative'
-  );
-}
-
-function tryParseSinceRelative(
-  normalized: string
-): ParseSuccess | ParseDateTimeRangeResult | null {
-  const match = normalized.match(SINCE_PREFIX_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  const remainder = match[1]?.trim();
-  if (!remainder) {
-    return failure('unrecognized', normalized);
-  }
-
-  const agoMatch = remainder.match(AGO_RELATIVE_PATTERN);
-  if (agoMatch) {
-    const amount = Number(agoMatch[1]);
-    const unit = parseRelativeUnit(agoMatch[2] ?? '');
-    if (!Number.isSafeInteger(amount) || amount <= 0 || !unit) {
-      return failure('unrecognized', normalized);
-    }
-
-    return success(
-      {
-        from: relativeFromNowOffset(amount, unit),
-        to: null,
-      },
-      normalized,
-      'relative'
-    );
-  }
-
-  return null;
-}
-
 function tryParseSinceAbsolute(
   normalized: string,
   reference: chrono.ParsingReference
-): ParseSuccess | ParseDateTimeRangeResult | null {
+): ParseDateTimeRangeResult | null {
   const match = normalized.match(SINCE_PREFIX_PATTERN);
   if (!match) {
     return null;
@@ -612,7 +520,7 @@ function tryParseSinceAbsolute(
 function tryParseAbsoluteRange(
   normalized: string,
   reference: chrono.ParsingReference
-): ParseSuccess | ParseDateTimeRangeResult | null {
+): ParseDateTimeRangeResult | null {
   const parts = normalized.split(RANGE_SEPARATOR_PATTERN);
   if (parts.length !== 2) {
     return null;
@@ -671,7 +579,7 @@ function tryParseAbsoluteRange(
 function tryParseAbsoluteDay(
   normalized: string,
   reference: chrono.ParsingReference
-): ParseSuccess | ParseDateTimeRangeResult | null {
+): ParseDateTimeRangeResult | null {
   const parsed = parseAbsoluteResult(normalized, reference);
   if (parsed === 'ambiguous') {
     return failure('ambiguous', normalized);
@@ -714,26 +622,14 @@ export function parseDateTimeRangeInput(
   if (!Number.isFinite(now.getTime()))
     return failure('invalid-range', normalizedInput);
 
-  const attempts: Array<() => ParseSuccess | ParseDateTimeRangeResult | null> =
-    [
-      () => tryParseCalendarRange(normalizedInput, now),
-      () => tryParseUnixRange(normalizedInput),
-      () => tryParseSlidingRelative(normalizedInput),
-      () => tryParseCalendarPreset(normalizedInput),
-      () => tryParseAgoRelative(normalizedInput),
-      () => tryParseBareRelative(normalizedInput),
-      () => tryParseSinceRelative(normalizedInput),
-      () => tryParseSinceAbsolute(normalizedInput, reference),
-      () => tryParseAbsoluteRange(normalizedInput, reference),
-      () => tryParseAbsoluteDay(normalizedInput, reference),
-    ];
-
-  for (const attempt of attempts) {
-    const result = attempt();
-    if (result) {
-      return result;
-    }
-  }
-
-  return failure('unrecognized', normalizedInput);
+  return (
+    tryParseCalendarRange(normalizedInput, now) ??
+    tryParseUnixRange(normalizedInput) ??
+    tryParseRelative(normalizedInput) ??
+    tryParseCalendarPreset(normalizedInput) ??
+    tryParseSinceAbsolute(normalizedInput, reference) ??
+    tryParseAbsoluteRange(normalizedInput, reference) ??
+    tryParseAbsoluteDay(normalizedInput, reference) ??
+    failure('unrecognized', normalizedInput)
+  );
 }

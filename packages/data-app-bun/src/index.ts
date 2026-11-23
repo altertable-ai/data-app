@@ -23,6 +23,8 @@ import {
   QueryError,
 } from '@altertable/lakehouse';
 
+import { queryResponse } from './query-response.ts';
+
 /** Serve one app and its registered queries on localhost through the CLI's lakehouse proxy. */
 export function serveLocalApp({
   page,
@@ -98,39 +100,13 @@ async function handleLocalQuery(
     )
       throw new Error('Invalid local query.');
     input = registeredQueryRoute.input({ ...raw, queryId });
-    const declaredParams = queries[queryId]!.params;
-    if (
-      input.params &&
-      Object.keys(input.params).some(key => !Object.hasOwn(declaredParams, key))
-    )
-      throw new Error('Unknown query parameter.');
   } catch (error) {
     return Response.json(
       { reason: 'query_rejected' },
       { status: error instanceof RequestBodyTooLargeError ? 413 : 400 }
     );
   }
-  try {
-    const result = await lakehouse.queryAll(queries[queryId]!.statement, {
-      limit: input.limit,
-      params: input.params,
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(30_000)]),
-    });
-    return Response.json(registeredQueryRoute.output(result, input));
-  } catch (error) {
-    if (error instanceof DataSourceError) {
-      const status = {
-        unauthorized: 401,
-        forbidden: 403,
-        rate_limited: 429,
-        query_rejected: 400,
-        unavailable: 502,
-      }[error.reason];
-      return Response.json({ reason: error.reason }, { status });
-    }
-    console.error(error);
-    return Response.json({ reason: 'unavailable' }, { status: 502 });
-  }
+  return queryResponse(lakehouse, queries[queryId]!, input, request.signal);
 }
 
 /** Throw an actionable startup error when the selected lakehouse credentials are missing. */
