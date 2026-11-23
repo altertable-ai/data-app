@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 
 import { chromium, firefox, webkit, type Browser, type Page } from 'playwright';
-import { afterAll, beforeAll, vi, test as vitestTest } from 'vitest';
+import { afterAll, beforeAll, inject, vi, test as vitestTest } from 'vitest';
 
 let browser: Browser;
 let baseURL: string;
@@ -9,9 +9,13 @@ export let localURL: string;
 let server: ReturnType<typeof spawn>;
 let output = '';
 beforeAll(async () => {
-  server = spawn('bun', ['tests/public-api/fixtures/server.ts'], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  server = spawn(
+    'bun',
+    ['tests/public-api/fixtures/server.ts', inject('fixtureBundles')],
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
   server.stdout?.on('data', chunk => {
     output += chunk;
   });

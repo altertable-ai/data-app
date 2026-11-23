@@ -1,4 +1,5 @@
 import { Database } from 'bun:sqlite';
+import { join } from 'node:path';
 
 import { serveLocalApp } from '@altertable/data-app-bun';
 
@@ -60,45 +61,8 @@ const registeredQueries: Readonly<Record<string, { statement: string }>> = {
 };
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
-async function bundle(entry: string, sourcemap = false) {
-  const result = await Bun.build({
-    entrypoints: [entry],
-    target: 'browser',
-    format: 'iife',
-    sourcemap: sourcemap ? 'inline' : 'none',
-    define: { 'import.meta.env': '{}' },
-  });
-  return result.outputs[0]!.text();
-}
-const [
-  findingStarter,
-  metricStarter,
-  app,
-  starter,
-  costDashboard,
-  authoringFeatures,
-  frame,
-  annotations,
-  annotationState,
-  contentSizing,
-  diagnostics,
-] = await Promise.all([
-  bundle(
-    'packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
-  ),
-  bundle(
-    'packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
-  ),
-  bundle('tests/public-api/fixtures/bundle-app.tsx'),
-  bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
-  bundle('tests/public-api/fixtures/cost-dashboard.tsx'),
-  bundle('tests/public-api/fixtures/authoring-features-app.tsx'),
-  bundle('tests/public-api/fixtures/bridge-frame.ts'),
-  bundle('tests/public-api/fixtures/annotations-app.tsx'),
-  bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
-  bundle('tests/public-api/fixtures/content-sizing-app.tsx'),
-  bundle('tests/public-api/fixtures/diagnostics-app.tsx', true),
-]);
+const directory = process.argv[2]!;
+const frame = await Bun.file(join(directory, 'frame.js')).text();
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app-worker')
 );
@@ -169,25 +133,11 @@ const server = Bun.serve({
         frameURL: frameServer.url.href,
         localURL: local.url.href,
       });
-    if (url.pathname === '/__test/annotations')
-      return new Response(annotations);
-    if (url.pathname === '/__test/annotation-state')
-      return new Response(annotationState);
-    if (url.pathname === '/__test/diagnostics')
-      return new Response(diagnostics);
-    if (url.pathname === '/__test/bundle') return new Response(app);
-    if (url.pathname === '/__test/content-sizing')
-      return new Response(contentSizing);
-    if (url.pathname === '/__test/starter-finding-data-app')
-      return new Response(findingStarter);
-    if (url.pathname === '/__test/starter-metric-data-app')
-      return new Response(metricStarter);
-    if (url.pathname === '/__test/starter-data-app')
-      return new Response(starter);
-    if (url.pathname === '/__test/cost-dashboard')
-      return new Response(costDashboard);
-    if (url.pathname === '/__test/starter-authoring-features')
-      return new Response(authoringFeatures);
+    const bundleName = url.pathname.slice('/__test/'.length);
+    if (url.pathname.startsWith('/__test/') && /^[a-z-]+$/.test(bundleName)) {
+      const file = Bun.file(join(directory, `${bundleName}.js`));
+      if (await file.exists()) return new Response(file);
+    }
     if (url.pathname === '/__test/silent')
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
