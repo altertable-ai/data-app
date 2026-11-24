@@ -321,6 +321,16 @@ class Reference {
     return imports;
   }
 
+  /** Parameter symbols never carry `SymbolFlags.Optional`; read the declaration. */
+  private async isOptionalParameter(symbol: Symbol) {
+    const node = await symbol.declarations[0]?.resolve(this.project);
+    return Boolean(
+      node &&
+      isParameterDeclaration(node) &&
+      (node.questionToken || node.initializer)
+    );
+  }
+
   /** Keep declared types, qualifying imported values whose local aliases are opaque. */
   private async declared(symbol: Symbol | undefined) {
     const declaration = symbol?.declarations[0];
@@ -371,7 +381,7 @@ class Reference {
           signature.hasRestParameter && index === parameters.length - 1
             ? '...'
             : '';
-        const optional = parameter.flags & SymbolFlags.Optional ? '?' : '';
+        const optional = (await this.isOptionalParameter(parameter)) ? '?' : '';
         let text =
           (await this.declared(parameter)) ??
           (type ? await this.text(type) : 'unknown');

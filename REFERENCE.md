@@ -622,7 +622,7 @@ dateTimeRangePresets.analytics: readonly DateTimeRangePreset[]
 DateTimeRangeSelection (type, @altertable/data-app/contract, @altertable/data-app-react/ui): The picker's URL state: the selected range, relative or absolute, and the comparison toggle.
 DateTimeRangeSelection.range: DateTimeRange
 DateTimeRangeSelection.comparison?: 'previous'
-dateTimeRangeSql (function, @altertable/data-app/contract): (range: DateTimeRange, parameter: string): { from: string; to: string; params: Record<string, string>; } — DuckDB timestamp expressions using the query session's timezone for relative anchors. Absolute fields remain UTC-rebased TIMESTAMP values. Start is inclusive, end exclusive.
+dateTimeRangeSql (function, @altertable/data-app/contract): (range: DateTimeRange, parameter?: string): { from: string; to: string; params: Record<string, string>; } — DuckDB timestamp expressions using the query session's timezone for relative anchors. Absolute fields remain UTC-rebased TIMESTAMP values. Start is inclusive, end exclusive.
 dateTimeRangeSql.range.from?: AbsoluteOrRelativeDateTime | null — Inclusive start; null or omitted means unbounded.
 dateTimeRangeSql.range.to?: AbsoluteOrRelativeDateTime | null — Exclusive end; null or omitted means now.
 DateTimeTooltip (component, @altertable/data-app-react): (props: DateTimeTooltipProps) — Exact-time disclosure uses the same reporting zone and locale as other date displays.
@@ -706,7 +706,7 @@ DimensionFilter.urlKeys: readonly string[]
 DimensionFilter.defaultValue: DimensionSelection<T>
 DimensionFilter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
 DimensionFilter.describe: (value: Value): string
-DimensionFilter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
+DimensionFilter.describe: (selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[]): string
 DimensionFilter.history: HistoryMode
 DimensionFilter.read: (params: URLSearchParams) => DimensionSelection<T>
 DimensionFilter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -806,7 +806,7 @@ FacetFilter.urlKeys: readonly string[]
 FacetFilter.defaultValue: DimensionSelection<Value>
 FacetFilter.clearValue?: DimensionSelection<Value> — Unrestricted value, when this filter can be cleared.
 FacetFilter.describe: (value: Value): string
-FacetFilter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
+FacetFilter.describe: (selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[]): string
 FacetFilter.history: HistoryMode
 FacetFilter.read: (params: URLSearchParams) => DimensionSelection<Value>
 FacetFilter.write: (value: DimensionSelection<Value>) => Record<string, string | null>
@@ -838,24 +838,24 @@ FilterPresentation (type, @altertable/data-app/contract): Where a filter's or di
 FilterPresentation.control?: 'toolbar' | 'widget' — Widget controls render beside their visualization instead of in the toolbar. Scope filters remain available in the Filters sheet and active summaries.
 FilterPresentation.prominence?: 'primary' | 'secondary' — Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary.
 FilterValues (type, @altertable/data-app/contract): <Collection> = { [Key in keyof Collection]: Collection[Key] extends DimensionSelectionFilter<infer Value extends DimensionValue> ? DimensionSelection<...> : ...; }
-formatCount (function, @altertable/data-app/format): (value: number | null | undefined, options: CommonOptions & { compact?: boolean; }): string — Negative and fractional counts render as missing. Compact notation is opt-in.
+formatCount (function, @altertable/data-app/format): (value: number | null | undefined, options?: CommonOptions & { compact?: boolean; }): string — Negative and fractional counts render as missing. Compact notation is opt-in.
 formatCount.options.locale?: string
 formatCount.options.missing?: string
 formatCount.options.compact?: boolean
-formatDate (function, @altertable/data-app/format): (value: string | null | undefined, options: DateFormatOptions): string — Format an ISO calendar date as a date, never as a browser-local instant.
+formatDate (function, @altertable/data-app/format): (value: string | null | undefined, options?: DateFormatOptions): string — Format an ISO calendar date as a date, never as a browser-local instant.
 formatDate.options.locale?: string
 formatDate.options.missing?: string
-formatDateRange (function, @altertable/data-app/format): (options: {…}, options: DateFormatOptions): string — Compact, unambiguous calendar dates for labels and request status.
+formatDateRange (function, @altertable/data-app/format): (options: {…}, options?: DateFormatOptions): string — Compact, unambiguous calendar dates for labels and request status.
 formatDateRange.options.start: string
 formatDateRange.options.end: string
 formatDateRange.options.locale?: string
 formatDateRange.options.missing?: string
-formatDateTime (function, @altertable/data-app/format): (value: DateTimeValue, options: DateTimeFormatOptions): string — Format an instant in an explicit reporting zone. Defaults use UTC and 24-hour minutes.
+formatDateTime (function, @altertable/data-app/format): (value: DateTimeValue, options?: DateTimeFormatOptions): string — Format an instant in an explicit reporting zone. Defaults use UTC and 24-hour minutes.
 formatDateTime.options.locale?: string
 formatDateTime.options.missing?: string
 formatDateTime.options.timeZone?: string
 formatDateTime.options.precision?: 'minute' | 'second'
-formatDateTimeBound (function, @altertable/data-app/contract): (value: AbsoluteOrRelativeDateTime | null | undefined, fallback: string): string
+formatDateTimeBound (function, @altertable/data-app/contract): (value: AbsoluteOrRelativeDateTime | null | undefined, fallback?: string): string
 formatDateTimeBound.value.anchor: RelativeAnchor [variant 2 of 2]
 formatDateTimeBound.value.offset: RelativeOffset[] [variant 2 of 2]
 formatDateTimeBound.value.…: plus props inherited from built-in
@@ -870,15 +870,15 @@ formatMetric.format.kind: 'ratio' [variant 2 of 3]
 formatMetric.format.maximumFractionDigits?: number [variant 2 of 3]
 formatMetric.format.kind: 'currency' [variant 3 of 3]
 formatMetric.format.currency: string [variant 3 of 3]
-formatNumber (function, @altertable/data-app/format): (value: number | null | undefined, options: CommonOptions & Intl.NumberFormatOptions): string — Missing and non-finite values use the `missing` label; negative zero renders as zero.
+formatNumber (function, @altertable/data-app/format): (value: number | null | undefined, options?: CommonOptions & Intl.NumberFormatOptions): string — Missing and non-finite values use the `missing` label; negative zero renders as zero.
 formatNumber.options.locale?: string
 formatNumber.options.missing?: string
 formatNumber.options.…: plus props inherited from built-in
-formatPercent (function, @altertable/data-app/format): (ratio: number | null | undefined, options: CommonOptions & { maximumFractionDigits?: number; }): string — Accepts a ratio (0.116), not a percentage (11.6).
+formatPercent (function, @altertable/data-app/format): (ratio: number | null | undefined, options?: CommonOptions & { maximumFractionDigits?: number; }): string — Accepts a ratio (0.116), not a percentage (11.6).
 formatPercent.options.locale?: string
 formatPercent.options.missing?: string
 formatPercent.options.maximumFractionDigits?: number
-formatTime (function, @altertable/data-app/format): (value: DateTimeValue, options: DateTimeFormatOptions): string — Format an instant's time for intraday chart axes using the same zone and precision policy.
+formatTime (function, @altertable/data-app/format): (value: DateTimeValue, options?: DateTimeFormatOptions): string — Format an instant's time for intraday chart axes using the same zone and precision policy.
 formatTime.options.locale?: string
 formatTime.options.missing?: string
 formatTime.options.timeZone?: string
@@ -963,7 +963,7 @@ IconButton.tooltipAlign?: 'center' | 'end' | 'start'
 IconButton.children?: ReactNode
 IconButton.…: plus props inherited from React
 IconButtonProps (type, @altertable/data-app-react): = props listed as IconButton.*
-injectDataAppStyles (function, @altertable/data-app-react, @altertable/data-app-react/ui): (options: DataAppStylesOptions): HTMLStyleElement — Install the complete UI stylesheet once per document, before mounting.
+injectDataAppStyles (function, @altertable/data-app-react, @altertable/data-app-react/ui): (options?: DataAppStylesOptions): HTMLStyleElement — Install the complete UI stylesheet once per document, before mounting.
 injectDataAppStyles.options.document?: Document — Defaults to the current browser document.
 injectDataAppStyles.options.nonce?: string — Nonce permitted by the document's style-src CSP.
 InputOf (type, @altertable/data-app/client): <T> = T extends { input: (value: unknown) => infer Input; } ? Input : never
@@ -973,7 +973,7 @@ InputOperationDefinition.input: (value: unknown) => Input — Parses the operati
 InputOperationDefinition.checks: readonly [Input, ...Input[]] — Representative valid own inputs; each must pass `input`.
 InputOperationDefinition.policy: OperationPolicy
 InputOperationDefinition.run: OperationRun<WithFilterInput<Filters, Input>, Output, Queries>
-isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
+isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options?: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
 isPlainKeyEvent.event.…: plus props inherited from built-in
 isPlainKeyEvent.options.allowShift?: boolean
 ItemActions (type, @altertable/data-app-react/ui): <Row> = (row: Row) => readonly ExplorationAction[] — Resolves the actions available for a displayed domain row.
@@ -1160,9 +1160,9 @@ parseBooleanSelection.filter.same: (left: BooleanSelection, right: BooleanSelect
 parseCount (function, @altertable/data-app/contract): (value: unknown): number — Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers.
 parseDateTime (function, @altertable/data-app/format): (value: DateTimeValue): Date | null — Parse only unambiguous instants. String values must include `Z` or an explicit offset.
 parseDateTimeBound (function, @altertable/data-app/contract): (text: string): AbsoluteOrRelativeDateTime | null — Parse one bound without resolving relative anchors or offsets.
-parseDateTimeRange (function, @altertable/data-app/contract): (value: unknown, options: {…}): DateTimeRange — Validate and restore UTC-rebased dates from JSON, without resolving relative bounds.
+parseDateTimeRange (function, @altertable/data-app/contract): (value: unknown, options?: {…}): DateTimeRange — Validate and restore UTC-rebased dates from JSON, without resolving relative bounds.
 parseDateTimeRange.options.maxRangeDays?: number
-parseDateTimeRangeInput (function, @altertable/data-app/format): (input: string, options: DateTimeRangeParserOptions): ParseDateTimeRangeResult
+parseDateTimeRangeInput (function, @altertable/data-app/format): (input: string, options?: DateTimeRangeParserOptions): ParseDateTimeRangeResult
 parseDateTimeRangeInput.options.now?: Date — UTC-encoded reference fields for omitted dates/years. Defaults to the current UTC date/time.
 ParseDateTimeRangeResult (type, @altertable/data-app/format)
 ParseDateTimeRangeResult.ok: true [variant 1 of 2]
@@ -1179,7 +1179,7 @@ parseDimensionSelection.filter.urlKeys: readonly string[]
 parseDimensionSelection.filter.defaultValue: DimensionSelection<T>
 parseDimensionSelection.filter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
 parseDimensionSelection.filter.describe: (value: Value): string
-parseDimensionSelection.filter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
+parseDimensionSelection.filter.describe: (selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[]): string
 parseDimensionSelection.filter.history: HistoryMode
 parseDimensionSelection.filter.read: (params: URLSearchParams) => DimensionSelection<T>
 parseDimensionSelection.filter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -1200,7 +1200,7 @@ parseFacetOptions.filter.urlKeys: readonly string[]
 parseFacetOptions.filter.defaultValue: DimensionSelection<T>
 parseFacetOptions.filter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
 parseFacetOptions.filter.describe: (value: Value): string
-parseFacetOptions.filter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
+parseFacetOptions.filter.describe: (selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[]): string
 parseFacetOptions.filter.history: HistoryMode
 parseFacetOptions.filter.read: (params: URLSearchParams) => DimensionSelection<T>
 parseFacetOptions.filter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -1213,7 +1213,7 @@ parseFacetOptions.filter.allowMissing: boolean
 parseFacetOptions.filter.allowExclusion: boolean
 parseFacetOptions.filter.maxSelected: number
 parseFacetOptions.filter.options: readonly DimensionOption<T>[]
-parseLabel (function, @altertable/data-app/contract): (value: unknown, maxLength: number): string
+parseLabel (function, @altertable/data-app/contract): (value: unknown, maxLength?: number): string
 parseNumberSelection (function, @altertable/data-app/contract): (value: unknown, filter: NumberFilter): NumberSelection
 parseNumberSelection.filter.kind: 'numberFilter'
 parseNumberSelection.filter.label: string
@@ -1251,7 +1251,7 @@ PieChartItem.id: string
 PieChartItem.label: string
 PieChartItem.value: number
 PieChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as PieChart.*
-pluralize (function, @altertable/data-app/format): (count: number, singular: string, plural: string): string
+pluralize (function, @altertable/data-app/format): (count: number, singular: string, plural?: string): string
 PresentStory (component, @altertable/data-app-react/ui): (props: PresentStoryProps) — Uses an already loaded snapshot. Navigation is stored in `?present=1&step=`, and step inspection uses `?about=`. The presentation owns its modal structure.
 PresentStory.title: string
 PresentStory.findings: readonly StoryFinding[]
@@ -1264,7 +1264,7 @@ PresentStory.footer?: ReactNode
 PresentStory.trigger?: boolean — False renders only the presentation, which `?present=1&step=` opens.
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
-queryDateTimeRangeParams (function, @altertable/data-app/contract): <const Prefix extends string>(filter: Pick<DateTimeRangeFilter, 'request'>, input: DateTimeRangeInput, prefix: Prefix, now: Date): { current: Record<`${Prefix}_from` | `${Prefix}_to`, string>; comparison: Record<`${Prefix}_from` | `${Prefix}_to`, string> | null; combined: Record<`${Prefix}_from` |… — Bind one date selection immediately before dispatching a query. Both periods share one clock.
+queryDateTimeRangeParams (function, @altertable/data-app/contract): <const Prefix extends string>(filter: Pick<DateTimeRangeFilter, 'request'>, input: DateTimeRangeInput, prefix: Prefix, now?: Date): { current: Record<`${Prefix}_from` | `${Prefix}_to`, string>; comparison: Record<`${Prefix}_from` | `${Prefix}_to`, string> | null; combined: Record<`${Prefix}_from` |… — Bind one date selection immediately before dispatching a query. Both periods share one clock.
 queryDateTimeRangeParams.filter.request: (selection: DateTimeRangeSelection, now?: Date | undefined) => DateTimeRangeRequest — Resolve a selection against one reference time.
 queryDateTimeRangeParams.input.range: ResolvedDateTimeRange
 queryDateTimeRangeParams.input.comparison: ResolvedDateTimeRange | null
@@ -1338,7 +1338,7 @@ ReportingPeriod.end: string
 ReportingPeriod.kind: 'calendar' [variant 2 of 2]
 ReportingPeriod.start: string [variant 2 of 2]
 ReportingPeriod.timeZone: string [variant 2 of 2]
-resolveDateTimeRange (function, @altertable/data-app/contract): (value: DateTimeRange, now: Date): { from: Date | null; to: Date; } — UTC preview only. Backend execution owns reporting-timezone interpretation. Null start is unbounded; null end is now.
+resolveDateTimeRange (function, @altertable/data-app/contract): (value: DateTimeRange, now?: Date): { from: Date | null; to: Date; } — UTC preview only. Backend execution owns reporting-timezone interpretation. Null start is unbounded; null end is now.
 resolveDateTimeRange.value.from?: AbsoluteOrRelativeDateTime | null — Inclusive start; null or omitted means unbounded.
 resolveDateTimeRange.value.to?: AbsoluteOrRelativeDateTime | null — Exclusive end; null or omitted means now.
 resolveDateTimeRange.now.…: plus props inherited from built-in
@@ -1631,7 +1631,7 @@ UpdatedAt.timeZone?: string
 UpdatedAtProps (type, @altertable/data-app-react): = props listed as UpdatedAt.*
 useAppFilters (hook, @altertable/data-app-react/ui): <const Collection extends FilterCollection>(definitions: Collection): { values: FilterValues<Collection>; calendarRevision: number; set: <Key extends keyof Collection & string>(name: Key, value: FilterValues<Collection>[Key]) => void; ... 4 more ...; bind: <Key extends keyof Collection & string>(na… — URL is the source of truth for app filters; one update can change dependent values atomically.
 useChartCursorGroup (hook, @altertable/data-app-react/ui): (): ChartCursorGroup — Creates a stable shared mouse-hover cursor handle. Pass it explicitly to each participating chart's cursorGroup prop. Peers indicate exact timestamp matches while tooltips remain local.
-useDateFormatting (hook, @altertable/data-app-react, @altertable/data-app-react/ui): (options: {…}): { locale: string; timeZone: string; } — Resolve date display defaults for custom charts and narrative. Explicit options override the view and app.
+useDateFormatting (hook, @altertable/data-app-react, @altertable/data-app-react/ui): (options?: {…}): { locale: string; timeZone: string; } — Resolve date display defaults for custom charts and narrative. Explicit options override the view and app.
 useDateFormatting.options.locale?: string
 useDateFormatting.options.timeZone?: string
 useDetailNavigation (hook, @altertable/data-app-react): (): DetailNavigation — Resolve a detail target from an interaction. The destination validates input before fetching.
