@@ -59,7 +59,7 @@ export function sectionContent<Data, Input>(content: ViewContent<Data, Input>) {
 }
 
 export type WidgetContentOptions = {
-  /** Stable ID for `?widget=<id>`. Use lowercase letters and digits separated by single hyphens. IDs must be unique within this `createDataHooks()` instance. */
+  /** Stable ID for `?_widget=<id>`. Use lowercase letters and digits separated by single hyphens. IDs must be unique within this `createDataHooks()` instance. */
   id: string;
   /** Wait for custom asynchronous drawing after the selected data commits. Return when ready, including if drawing already finished. Reject on render failure and stop observing when the signal aborts. */
   waitForReady?: (

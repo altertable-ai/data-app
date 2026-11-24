@@ -44,12 +44,30 @@ type ChartTooltipProps = TooltipProps & {
 export function ChartTooltip(props: ChartTooltipProps) {
   const focused = useContext(FocusedWidgetContext);
   if (!focused) return <InteractiveChartTooltip {...props} />;
-  const { children, className, ref, variant = 'chart', style } = props;
+  return <StaticTooltipTrigger variant="chart" {...props} />;
+}
+
+/** A focused capture keeps the trigger wrapper and its native props without tooltip behavior. */
+export function StaticTooltipTrigger({
+  content: _content,
+  children,
+  onOpenChange: _onOpenChange,
+  variant = 'hint',
+  align: _align,
+  placement: _placement,
+  followCursor: _followCursor,
+  anchorRect: _anchorRect,
+  boundaryRefs: _boundaryRefs,
+  mouseHover: _mouseHover,
+  touchInspection: _touchInspection,
+  portalRoot: _portalRoot,
+  className,
+  ...props
+}: ChartTooltipProps) {
   return (
     <span
-      ref={ref}
+      {...props}
       data-variant={variant}
-      style={style}
       className={classNames('altertable-tooltip-trigger', className)}
     >
       {children}

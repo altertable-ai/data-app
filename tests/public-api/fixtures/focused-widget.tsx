@@ -4,6 +4,8 @@ import {
   createDataContext,
   DataApp,
   DataSection,
+  DateDisplay,
+  ExternalLink,
   SectionHeading,
   TableWidget,
   TextWidget,
@@ -237,6 +239,32 @@ function ReloadedChart({ reload }: { reload: Promise<void> }) {
   use(reload);
   return <p>Chart reloaded</p>;
 }
+
+activity.content(
+  source => (
+    <TextWidget title="Fragile" dataset={eventLog} source={source}>
+      {() => {
+        if (source.input?.region === 'broken')
+          throw new Error('Region renderer failed');
+        return 'Rendered region';
+      }}
+    </TextWidget>
+  ),
+  { id: 'fragile' }
+);
+activity.content(
+  source => (
+    <TextWidget title="Annotated" dataset={eventLog} source={source}>
+      {() => (
+        <>
+          <DateDisplay value="2026-11-24T08:30:00Z" />{' '}
+          <ExternalLink href="https://example.com/acme">Acme Inc</ExternalLink>
+        </>
+      )}
+    </TextWidget>
+  ),
+  { id: 'annotated' }
+);
 
 function Dashboard() {
   useEffect(() => {

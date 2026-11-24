@@ -1,3 +1,4 @@
+import { appUrlKeys } from '@altertable/data-app/internal';
 import {
   type ComponentRef,
   createContext,
@@ -30,7 +31,7 @@ type Selection = {
 } | null;
 
 /** One selected subject and one sheet, even when several widgets reuse its evidence. */
-function createInspectionStore(syncLocation: boolean) {
+function createInspectionStore() {
   const subjects = new Map<string, Inspection>();
   const listeners = new Set<() => void>();
   let selection: Selection = null;
@@ -54,12 +55,12 @@ function createInspectionStore(syncLocation: boolean) {
   }
   function sync() {
     const params = searchParams();
-    const id = params.get('about');
+    const id = params.get(appUrlKeys.about);
     const inspection =
       selection && subjects.get(selection.inspection.key)?.id === id
         ? subjects.get(selection.inspection.key)
         : [...subjects.values()].find(subject => subject.id === id);
-    const tab = resolveAboutTab(params.get('tab'));
+    const tab = resolveAboutTab(params.get(appUrlKeys.tab));
     if (inspection?.props.open === false) inspection.props.onOpenChange?.(true);
     else if (inspection) publish({ inspection, open: true, tab });
     else if (selection?.open) {
@@ -73,17 +74,18 @@ function createInspectionStore(syncLocation: boolean) {
       inspection.props.tab ??
       (inspection.props.records ? 'records' : 'glossary');
     publish({ inspection, open: true, tab });
-    if (syncLocation)
-      writeSearch(
-        { about: inspection.id, tab },
-        searchParams().get('about') === inspection.id ? 'replace' : 'push'
-      );
+    writeSearch(
+      { [appUrlKeys.about]: inspection.id, [appUrlKeys.tab]: tab },
+      searchParams().get(appUrlKeys.about) === inspection.id
+        ? 'replace'
+        : 'push'
+    );
   }
   function dismiss(key: string) {
     if (!selection?.open || selection.inspection.key !== key) return;
     publish({ ...selection, open: false });
-    if (syncLocation && searchParams().get('about') === selection.inspection.id)
-      writeSearch({ about: null, tab: null });
+    if (searchParams().get(appUrlKeys.about) === selection.inspection.id)
+      writeSearch({ [appUrlKeys.about]: null, [appUrlKeys.tab]: null });
   }
   return {
     subscribe(this: void, listener: () => void) {
@@ -100,10 +102,9 @@ function createInspectionStore(syncLocation: boolean) {
       if (selection?.inspection.key === inspection.key)
         publish({ ...selection, inspection });
       else if (
-        syncLocation &&
         (!previous || previous.id !== inspection.id) &&
         !selection?.open &&
-        searchParams().get('about') === inspection.id
+        searchParams().get(appUrlKeys.about) === inspection.id
       )
         sync();
     },
@@ -130,8 +131,11 @@ function createInspectionStore(syncLocation: boolean) {
     selectTab(this: void, tab: AboutTab) {
       if (!selection) return;
       publish({ ...selection, tab });
-      if (syncLocation && selection.open)
-        writeSearch({ about: selection.inspection.id, tab });
+      if (selection.open)
+        writeSearch({
+          [appUrlKeys.about]: selection.inspection.id,
+          [appUrlKeys.tab]: tab,
+        });
     },
   };
 }
@@ -141,35 +145,26 @@ export const InspectionOwner = createContext<ReturnType<
 > | null>(null);
 export const InspectionVisual = createContext(false);
 
-export function InspectionProvider({
-  children,
-  syncLocation = true,
-}: {
-  children: ReactNode;
-  syncLocation?: boolean;
-}) {
+export function InspectionProvider({ children }: { children: ReactNode }) {
   const parent = useContext(InspectionOwner);
-  const [store] = useState(() => createInspectionStore(syncLocation));
-  if (parent && syncLocation) return children;
+  const [store] = useState(createInspectionStore);
+  if (parent) return children;
   return (
     <InspectionOwner value={store}>
       {children}
-      <InspectionHost syncLocation={syncLocation} />
+      <InspectionHost />
     </InspectionOwner>
   );
 }
 
-function InspectionHost({ syncLocation }: { syncLocation: boolean }) {
+function InspectionHost() {
   const store = useContext(InspectionOwner)!;
   const selection = useSyncExternalStore(
     store.subscribe,
     store.snapshot,
     () => null
   );
-  useEffect(
-    () => (syncLocation ? subscribeSearch(store.sync) : undefined),
-    [store, syncLocation]
-  );
+  useEffect(() => subscribeSearch(store.sync), [store]);
   if (!selection) return null;
   const { inspection, open, tab } = selection;
   return (

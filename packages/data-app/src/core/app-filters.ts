@@ -1,3 +1,4 @@
+import { isReservedUrlKey } from './app-url-keys.ts';
 import type { DateTimeRangeFilter } from './date-time-filter.ts';
 import type { SourceDimensionFilter } from './dimension-source.ts';
 import type {
@@ -97,8 +98,8 @@ export function defineAppFilters<const Collection extends FilterCollection>(
     );
     for (const key of filter.urlKeys) {
       invariant(
-        !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
-        `Filter ${name} uses reserved URL key: ${key}.`
+        !isReservedUrlKey(key),
+        `Filter ${name} uses reserved URL key: ${key}. Keys starting with “_” belong to the runtime.`
       );
       invariant(
         !!key && !owners.has(key),

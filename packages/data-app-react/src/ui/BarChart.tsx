@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
   type ComponentRef,
+  type CSSProperties,
   type Dispatch,
   type ReactNode,
   type RefObject,
@@ -536,9 +537,11 @@ export function BarChart<Row extends BarChartItem>({
       <div
         className="altertable-selectable-bars-scroll"
         data-time-axis={compactTimeAxis || undefined}
-        style={{
-          height: `calc(260px + 2 * var(--atbl-internal-focus-ring-space) + ${axisLabelSpace}px)`,
-        }}
+        style={
+          {
+            '--atbl-internal-bar-axis-space': `${axisLabelSpace}px`,
+          } as CSSProperties
+        }
         ref={scrollport}
       >
         <div

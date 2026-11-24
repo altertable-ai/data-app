@@ -150,7 +150,7 @@ function GlossaryDetail({ entry }: { entry: GlossaryEntry }) {
 }
 
 /**
- * Open state uses `?about=`; tab selection uses `?tab=`. Enable the global shortcut only on the
+ * Open state uses `?_about=`; tab selection uses `?_tab=`. Enable the global shortcut only on the
  * page-level trigger.
  */
 export function InspectionSheet({

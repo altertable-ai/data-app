@@ -2,6 +2,7 @@ import {
   invariant,
   resolveFilterInput,
   type FilterCollection,
+  appUrlKeys,
 } from '@altertable/data-app/internal';
 import {
   createContext,
@@ -152,7 +153,7 @@ type DetailEntry = {
 };
 
 type RoutedDetail = { id: string; input: unknown };
-const detailsParam = 'details';
+const detailsParam = appUrlKeys.details;
 const maxDetailRouteLength = 16_384;
 const maxDetailRouteDepth = 20;
 
@@ -209,7 +210,9 @@ function writeRoute(
   writeSearch(
     {
       [detailsParam]: entries.length ? serialized : null,
-      ...(entries.length ? { about: null, tab: null } : {}),
+      ...(entries.length
+        ? { [appUrlKeys.about]: null, [appUrlKeys.tab]: null }
+        : {}),
     },
     mode
   );
@@ -330,11 +333,9 @@ function DetailSheet({
 export function DetailRoutes({
   details,
   children,
-  syncLocation = true,
 }: {
   details: readonly DetailContent<any, any>[];
   children: ReactNode;
-  syncLocation?: boolean;
 }) {
   const [stack, setStack] = useState<readonly DetailEntry[]>([]);
   const stackRef = useRef(stack);
@@ -369,14 +370,13 @@ export function DetailRoutes({
             input: parsed,
           },
         ];
-        if (syncLocation) writeRoute(next);
+        writeRoute(next);
         setStack(next);
       },
     }),
-    [targets, syncLocation]
+    [targets]
   );
   useEffect(() => {
-    if (!syncLocation) return;
     function sync() {
       const route = readRoute(details);
       if (!route?.length && stackRef.current.length) {
@@ -390,11 +390,11 @@ export function DetailRoutes({
     }
     sync();
     return subscribeSearch(sync);
-  }, [details, syncLocation]);
+  }, [details]);
   const current = stack.at(-1);
   return (
     <DetailNavigationContext value={navigation}>
-      <InspectionProvider syncLocation={syncLocation}>
+      <InspectionProvider>
         {children}
         {current && (
           <DetailSheet
@@ -403,7 +403,7 @@ export function DetailRoutes({
             returnFocus={focusOrigin}
             onClose={() => {
               const trigger = focusOrigin.current;
-              if (syncLocation) writeRoute([], 'replace');
+              writeRoute([], 'replace');
               setStack([]);
               requestAnimationFrame(() => {
                 if (trigger?.isConnected && trigger.getClientRects().length)

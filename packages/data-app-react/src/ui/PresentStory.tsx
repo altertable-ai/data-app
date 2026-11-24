@@ -1,4 +1,5 @@
 import type { ThemeController } from '@altertable/data-app/appearance';
+import { appUrlKeys } from '@altertable/data-app/internal';
 import { useMergeRefs } from '@floating-ui/react';
 import {
   type ComponentRef,
@@ -44,7 +45,7 @@ export type PresentStoryProps = {
   theme?: ThemeController;
   headerActions?: ReactNode;
   footer?: ReactNode;
-  /** False renders only the presentation, which `?present=1&step=` opens. */
+  /** False renders only the presentation, which `?_present=1&_step=` opens. */
   trigger?: boolean;
 } & Omit<ComponentPropsWithRef<'button'>, 'title'>;
 
@@ -54,7 +55,11 @@ export function openStoryPresentation({
   dataContext,
 }: Pick<PresentStoryProps, 'findings' | 'dataContext'>) {
   const first = storySteps(findings, dataContext)[0];
-  if (first) writeSearch({ present: '1', step: first.id }, 'push');
+  if (first)
+    writeSearch(
+      { [appUrlKeys.present]: '1', [appUrlKeys.step]: first.id },
+      'push'
+    );
 }
 
 const stepKeys: Record<string, (index: number, last: number) => number> = {
@@ -79,8 +84,8 @@ const stepKeys: Record<string, (index: number, last: number) => number> = {
 };
 
 /**
- * Uses an already loaded snapshot. Navigation is stored in `?present=1&step=`, and step
- * inspection uses `?about=`. The presentation owns its modal structure.
+ * Uses an already loaded snapshot. Navigation is stored in `?_present=1&_step=`, and step
+ * inspection uses `?_about=`. The presentation owns its modal structure.
  */
 export function PresentStory({
   title,
@@ -122,8 +127,8 @@ export function PresentStory({
     function syncFromUrl() {
       const params = searchParams();
       const availableSteps = currentSteps();
-      if (params.get('present') === '1' && availableSteps.length) {
-        const requested = params.get('step');
+      if (params.get(appUrlKeys.present) === '1' && availableSteps.length) {
+        const requested = params.get(appUrlKeys.step);
         setStepId(
           availableSteps.find(item => item.id === requested)?.id ??
             availableSteps[0]!.id
@@ -179,7 +184,10 @@ export function PresentStory({
     id?: string,
     mode: 'replace' | 'push' = 'replace'
   ) {
-    writeSearch({ present: id ? '1' : null, step: id ?? null }, mode);
+    writeSearch(
+      { [appUrlKeys.present]: id ? '1' : null, [appUrlKeys.step]: id ?? null },
+      mode
+    );
   }
 
   async function openPresentation() {
@@ -273,7 +281,8 @@ export function PresentStory({
         onClose={event => {
           if (event.target !== event.currentTarget) return;
           exitPresentationFullscreen();
-          if (searchParams().get('present') === '1') writePresentation();
+          if (searchParams().get(appUrlKeys.present) === '1')
+            writePresentation();
           trigger.current?.focus({ preventScroll: true });
         }}
         onKeyDown={event => {

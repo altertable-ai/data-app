@@ -188,7 +188,7 @@ type BoundView<
       : { current: number; previous?: never }
   ): Metric<Data, FilterInput<Filters>>;
   scope(snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string;
-  /** Options are optional. For a read-only `?widget=<id>` link, declare content at module scope with a stable `id`. Use `waitForReady` for custom asynchronous drawing. */
+  /** Options are optional. For a read-only `?_widget=<id>` link, declare content at module scope with a stable `id`. Use `waitForReady` for custom asynchronous drawing. */
   content(
     render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode,
     options?: WidgetContentOptions

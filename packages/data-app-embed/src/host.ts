@@ -40,6 +40,10 @@ export type DataAppHost = {
   dispose: () => void;
   setPresentation: (presentation?: DataAppPresentation) => void;
   setLogger: (logger?: DataAppLogger) => void;
+  /** Replaces the focused capture listener; `undefined` stops capture reporting. */
+  setWidgetCaptureListener: (
+    listener?: (capture: DataAppWidgetCaptureState | undefined) => void
+  ) => void;
   /** Runs an action the app offered through `onActionsChange`; ignored while disconnected.
    * Call it from a user gesture so `presentStory` can show the frame fullscreen. */
   runAction: (action: DataAppAction) => void;
@@ -85,7 +89,7 @@ export function attachDataAppConnection({
   onStatusChange,
   onDiagnostic,
   onActionsChange,
-  onWidgetCaptureChange,
+  onWidgetCaptureChange: initialCaptureListener,
   onMessage,
   repair,
   window: host = window,
@@ -148,6 +152,7 @@ export function attachDataAppConnection({
     onDiagnostic(event);
   }
 
+  let captureListener = initialCaptureListener;
   let captureRequest:
     | { search: string; id: string; widgetId: string | null }
     | undefined;
@@ -162,7 +167,7 @@ export function attachDataAppConnection({
     )
       return;
     publishedCapture = capture;
-    onWidgetCaptureChange?.(capture);
+    captureListener?.(capture);
   }
 
   function resetCapture() {
@@ -171,7 +176,7 @@ export function attachDataAppConnection({
   }
 
   function updateCaptureRequest(search: string) {
-    if (!onWidgetCaptureChange || captureRequest?.search === search) return;
+    if (!captureListener || captureRequest?.search === search) return;
     resetCapture();
     const widgetId = readWidgetId(new URLSearchParams(search));
     if (widgetId !== undefined)
@@ -208,6 +213,18 @@ export function attachDataAppConnection({
     const wasEnabled = logger !== undefined;
     logger = value;
     if (wasEnabled !== (logger !== undefined)) publishState();
+  }
+
+  function setWidgetCaptureListener(
+    value:
+      | ((capture: DataAppWidgetCaptureState | undefined) => void)
+      | undefined
+  ) {
+    if (disposed || value === captureListener) return;
+    const wasEnabled = captureListener !== undefined;
+    if (!value) resetCapture();
+    captureListener = value;
+    if (wasEnabled !== (value !== undefined)) publishState();
   }
 
   function setPresentation(value: DataAppPresentation | undefined) {
@@ -490,7 +507,7 @@ export function attachDataAppConnection({
       if (
         message.route === 'navigation:update' &&
         captureRequest?.search !== host.location.search &&
-        onWidgetCaptureChange
+        captureListener
       )
         publishState();
       if (pending.get(id) === controller) send('result', { id, response });
@@ -575,5 +592,11 @@ export function attachDataAppConnection({
   onStatusChange?.('connecting');
   send('connect', {});
 
-  return { dispose, setPresentation, setLogger, runAction };
+  return {
+    dispose,
+    setPresentation,
+    setLogger,
+    setWidgetCaptureListener,
+    runAction,
+  };
 }

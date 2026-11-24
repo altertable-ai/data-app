@@ -135,6 +135,10 @@ function HostActionBar({
 function Host() {
   const bridge = useRef<DataAppBridgeHandle>(null);
   const [capture, setCapture] = useState<DataAppWidgetCaptureState>();
+  const [captureEnabled, setCaptureEnabled] = useState(true);
+  const [captureHistory, setCaptureHistory] = useState<
+    (DataAppWidgetCaptureState | null)[]
+  >([]);
   const [actions, setActions] = useState<DataAppActions>({});
   const [externalNavigation, setExternalNavigation] = useState('');
   function navigateNewWindowOrTab(
@@ -332,9 +336,20 @@ function Host() {
         run={action => bridge.current?.runAction(action)}
       />
       {params.has('capture-state') && (
-        <output hidden data-testid="widget-capture-state">
-          {JSON.stringify(capture) ?? ''}
-        </output>
+        <>
+          <output hidden data-testid="widget-capture-state">
+            {JSON.stringify(capture) ?? ''}
+          </output>
+          <output hidden data-testid="widget-capture-history">
+            {JSON.stringify(captureHistory)}
+          </output>
+          <button
+            type="button"
+            onClick={() => setCaptureEnabled(enabled => !enabled)}
+          >
+            {captureEnabled ? 'Stop capture' : 'Start capture'}
+          </button>
+        </>
       )}
       <section
         aria-label="Embed panel"
@@ -382,7 +397,12 @@ function Host() {
           onStatusChange={setStatus}
           onActionsChange={setActions}
           onWidgetCaptureChange={
-            params.has('capture-state') ? setCapture : undefined
+            params.has('capture-state') && captureEnabled
+              ? next => {
+                  setCapture(next);
+                  setCaptureHistory(history => [...history, next ?? null]);
+                }
+              : undefined
           }
           onMessage={router.dispatch}
           logger={logger}

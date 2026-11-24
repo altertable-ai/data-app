@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from 'react';
 
-import { ChartTooltip } from './ChartTooltip.tsx';
+import { ChartTooltip, StaticTooltipTrigger } from './ChartTooltip.tsx';
 import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { HintTooltip } from './HintTooltip.tsx';
 
@@ -68,7 +68,7 @@ export function Tooltip(props: TooltipProps) {
   const timing = useContext(TooltipContext);
   const focused = useContext(FocusedWidgetContext);
   if (props.variant === 'chart') return <ChartTooltip {...props} />;
-  if (focused) return <>{props.children}</>;
+  if (focused) return <StaticTooltipTrigger {...props} />;
   return timing ? (
     <HintTooltip {...props} timing={timing} />
   ) : (

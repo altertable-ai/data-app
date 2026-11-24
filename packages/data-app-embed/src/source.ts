@@ -111,6 +111,7 @@ export function attachDataAppSource({
     dispose,
     setPresentation: bridge.setPresentation,
     setLogger: bridge.setLogger,
+    setWidgetCaptureListener: bridge.setWidgetCaptureListener,
     runAction: bridge.runAction,
   };
 }

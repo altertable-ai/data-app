@@ -36,7 +36,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
       .toBe(true);
     await expect
       .poll(() => page.url())
-      .toMatch(/present=1.*step=total-samples/);
+      .toMatch(/_present=1.*_step=total-samples/);
     await story.getByRole('button', { name: 'Next step', exact: true }).click();
     await expect
       .poll(() =>
@@ -48,7 +48,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
       .getByRole('button', { name: 'Exit presentation', exact: true })
       .click();
     await expect.poll(() => story.count()).toBe(0);
-    await expect.poll(() => page.url()).not.toMatch(/present=1/);
+    await expect.poll(() => page.url()).not.toMatch(/_present=1/);
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
 
     // Leaving fullscreen, as Escape does, also ends the presentation.
@@ -59,7 +59,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
       .toBe(true);
     await page.evaluate(() => document.exitFullscreen());
     await expect.poll(() => story.count()).toBe(0);
-    await expect.poll(() => page.url()).not.toMatch(/present=1/);
+    await expect.poll(() => page.url()).not.toMatch(/_present=1/);
   });
 
   test('closing a story run from the keyboard returns focus to its host launcher', async ({
@@ -129,7 +129,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
     page,
   }) => {
     await page.goto(
-      `/starter-authoring-features?${search}present=1&step=counts-by-group`
+      `/starter-authoring-features?${search}_present=1&_step=counts-by-group`
     );
     const app = page.frameLocator('iframe');
     await expect
@@ -144,7 +144,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
     await app.getByRole('dialog').press('Escape');
     await expect.poll(() => app.getByRole('dialog').count()).toBe(0);
-    await expect.poll(() => page.url()).not.toMatch(/present=1/);
+    await expect.poll(() => page.url()).not.toMatch(/_present=1/);
     // Only a host-run presentation returns focus to the host launcher.
     expect(
       await isFocused(

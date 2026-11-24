@@ -60,4 +60,12 @@ export const migrationsByVersion: Readonly<
         "Review views that return rows without `isEmpty`: a result with no rows now shows the view's empty state.",
     },
   ],
+  '0.80.0': [
+    {
+      id: 'prefixed-runtime-url-keys',
+      pattern: /\bkey:\s*['"]_|[?&](?:view|about|tab|present|step|details)=/,
+      message:
+        'Rename filter keys that start with `_`, and write runtime link keys with the `_` prefix (for example `?_present=1&_step=`).',
+    },
+  ],
 };

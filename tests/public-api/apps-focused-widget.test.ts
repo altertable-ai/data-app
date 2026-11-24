@@ -50,7 +50,7 @@ describe('widget URL', () => {
       const main = page.getByRole('main');
       try {
         await page.setViewportSize({ width: 1280, height: 900 });
-        await page.goto(`/focused-widget?widget=${widget}`);
+        await page.goto(`/focused-widget?_widget=${widget}`);
         await expect.poll(() => widgetState(page)).toBe(state);
         if (state === 'loading')
           await main.getByText('Loading widget').waitFor();
@@ -76,7 +76,7 @@ describe('widget URL', () => {
   }) => {
     const { requests, release } = await serveData(page, { hold: true });
     const params = new URLSearchParams({
-      widget: 'busiest-day',
+      _widget: 'busiest-day',
       region: 'West',
       about: 'event-data',
       tab: 'records',
@@ -111,7 +111,7 @@ describe('widget URL', () => {
   }) => {
     await serveData(page);
     await page.goto(
-      '/focused-widget?widget=event-log&about=event-data&tab=glossary'
+      '/focused-widget?_widget=event-log&_about=event-data&_tab=glossary'
     );
     await expect.poll(() => widgetState(page)).toBe('ready');
     const main = page.getByRole('main');
@@ -122,6 +122,18 @@ describe('widget URL', () => {
     expect(await page.getByRole('dialog').count()).toBe(0);
   });
 
+  test('keeps dates and links as text without their controls', async ({
+    page,
+  }) => {
+    await serveData(page);
+    await page.goto('/focused-widget?_widget=annotated');
+    await expect.poll(() => widgetState(page)).toBe('ready');
+    const main = page.getByRole('main');
+    await expect.poll(() => main.innerText()).toMatch(/2026.*Acme Inc/s);
+    expect(await main.getByRole('button').count()).toBe(0);
+    expect(await main.getByRole('link').count()).toBe(0);
+  });
+
   test('rejects unknown, empty, repeated, and evidence IDs before requesting data', async ({
     page,
   }) => {
@@ -129,11 +141,11 @@ describe('widget URL', () => {
     for (const target of [
       'missing-chart',
       '',
-      'event-log&widget=event-log',
+      'event-log&_widget=event-log',
       'event-data',
       'different-annotation',
     ]) {
-      await page.goto(`/focused-widget?widget=${target}`);
+      await page.goto(`/focused-widget?_widget=${target}`);
       await expect.poll(() => widgetState(page)).toBe('invalid-target');
       expect(
         await page
@@ -149,7 +161,7 @@ describe('widget URL', () => {
     page,
   }) => {
     const { requests } = await serveData(page);
-    for (const query of ['duplicate', 'duplicate&widget=event-log']) {
+    for (const query of ['duplicate', 'duplicate&_widget=event-log']) {
       const error = page.waitForEvent('console', {
         predicate: message =>
           message.type() === 'error' &&
@@ -167,7 +179,7 @@ describe('widget URL', () => {
     page,
   }) => {
     const { requests } = await serveData(page, { activity: [] });
-    await page.goto('/focused-widget?widget=event-log');
+    await page.goto('/focused-widget?_widget=event-log');
     await expect.poll(() => widgetState(page)).toBe('empty');
     expect(await page.getByText('No activity').isVisible()).toBe(true);
     expect(
@@ -180,7 +192,7 @@ describe('widget URL', () => {
     page,
   }) => {
     const { requests } = await serveData(page, { status: 503 });
-    await page.goto('/focused-widget?widget=event-log');
+    await page.goto('/focused-widget?_widget=event-log');
     await expect.poll(() => widgetState(page)).toBe('error');
     expect(
       await page
@@ -194,7 +206,7 @@ describe('widget URL', () => {
 
   test('reports a failing chart renderer', async ({ page }) => {
     await serveData(page);
-    await page.goto('/focused-widget?widget=broken');
+    await page.goto('/focused-widget?_widget=broken');
     await expect.poll(() => widgetState(page)).toBe('error');
     expect(
       await page
@@ -204,9 +216,25 @@ describe('widget URL', () => {
     ).toBe(true);
   });
 
+  test('retries a failed render when the URL filters change', async ({
+    page,
+  }) => {
+    await serveData(page);
+    await page.goto('/focused-widget?_widget=fragile&region=broken');
+    await expect.poll(() => widgetState(page)).toBe('error');
+    await page.evaluate(() => {
+      const url = new URL(location.href);
+      url.searchParams.set('region', 'West');
+      history.pushState(null, '', url);
+      dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect.poll(() => widgetState(page)).toBe('ready');
+    await page.getByText('Rendered region').waitFor();
+  });
+
   test('waits for custom rendering after data has loaded', async ({ page }) => {
     await serveData(page);
-    await page.goto('/focused-widget?widget=custom');
+    await page.goto('/focused-widget?_widget=custom');
     await page.locator('#chart-drawing').waitFor({ state: 'attached' });
     expect(
       await page.getByRole('button', { name: 'Finish drawing' }).count()
@@ -223,7 +251,7 @@ describe('widget URL', () => {
     page,
   }) => {
     await serveData(page);
-    await page.goto('/focused-widget?widget=suspending');
+    await page.goto('/focused-widget?_widget=suspending');
     await expect.poll(() => widgetState(page)).toBe('ready');
     await page.evaluate(() =>
       window.dispatchEvent(new Event('fixture-reload-chart'))
@@ -241,7 +269,7 @@ describe('widget URL', () => {
 
   test('reports an asynchronous drawing failure', async ({ page }) => {
     await serveData(page);
-    await page.goto('/focused-widget?widget=custom');
+    await page.goto('/focused-widget?_widget=custom');
     await page.locator('#chart-drawing').waitFor({ state: 'attached' });
     await page.evaluate(() =>
       window.dispatchEvent(new Event('fixture-fail-drawing'))
@@ -281,11 +309,13 @@ describe('widget URL', () => {
     function theme() {
       return page.locator('html').getAttribute('data-atbl-theme');
     }
-    await page.goto('/focused-widget?widget=event-log&theme=dark');
+    await page.goto('/focused-widget?_widget=event-log&_theme=dark');
     await expect.poll(theme).toBe('dark');
-    await page.goto('/focused-widget?widget=event-log&theme=dark&theme=light');
+    await page.goto(
+      '/focused-widget?_widget=event-log&_theme=dark&_theme=light'
+    );
     await expect.poll(theme).toBe('light');
-    await page.goto('/focused-widget?theme=dark');
+    await page.goto('/focused-widget?_theme=dark');
     await expect.poll(theme).toBe('light');
   });
 
@@ -293,7 +323,7 @@ describe('widget URL', () => {
     page,
   }) => {
     await page.goto(
-      '/starter-data-app?widget=samples-by-group&content-sizing&capture-state'
+      '/starter-data-app?_widget=samples-by-group&content-sizing&capture-state'
     );
     const capture = page.getByTestId('widget-capture-state');
     await expect
@@ -306,7 +336,7 @@ describe('widget URL', () => {
 
     await page.evaluate(() => {
       const url = new URL(location.href);
-      url.searchParams.set('widget', 'missing-widget');
+      url.searchParams.set('_widget', 'missing-widget');
       history.pushState(null, '', url);
       dispatchEvent(new PopStateEvent('popstate'));
     });
@@ -317,6 +347,83 @@ describe('widget URL', () => {
     await expect
       .poll(() => capture.textContent())
       .toMatch(/"state":"ready","widgetId":"samples-by-group"/);
+  });
+
+  test('ignores capture reports for another request, widget, or frame size', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.addEventListener('message', event => {
+        if (event.data?.type === 'widget:capture')
+          Object.assign(window, { capturePacket: event.data });
+      });
+    });
+    await page.goto(
+      '/starter-data-app?_widget=samples-by-group&content-sizing&capture-state'
+    );
+    const capture = page.getByTestId('widget-capture-state');
+    await expect
+      .poll(() => capture.textContent())
+      .toMatch(/"state":"ready","widgetId":"samples-by-group"/);
+    const { height } = JSON.parse((await capture.textContent())!);
+    const history = page.getByTestId('widget-capture-history');
+    const before = JSON.parse((await history.textContent())!).length;
+    const packet = await page.evaluate(() =>
+      Reflect.get(window, 'capturePacket')
+    );
+    const frame = page.frames().find(frame => frame !== page.mainFrame())!;
+    await frame.evaluate(
+      ({ packet, height }) => {
+        const widgetId = 'samples-by-group';
+        function send(fields: object) {
+          parent.postMessage({ ...packet, ...fields }, '*');
+        }
+        send({
+          captureRequest: crypto.randomUUID(),
+          capture: { state: 'empty', widgetId },
+        });
+        send({ capture: { state: 'empty', widgetId: 'another-widget' } });
+        send({ capture: { state: 'empty', widgetId: 'Not An ID' } });
+        send({ capture: { state: 'unknown', widgetId } });
+        send({ capture: { state: 'ready', widgetId, height: height + 50 } });
+        send({ capture: { state: 'ready', widgetId, height: 0 } });
+        send({ capture: { state: 'ready', widgetId, height: height + 0.5 } });
+        // A valid report after the rejected ones proves delivery has drained.
+        send({ capture: { state: 'error', widgetId } });
+      },
+      { packet, height }
+    );
+    await expect
+      .poll(() => capture.textContent())
+      .toBe('{"state":"error","widgetId":"samples-by-group"}');
+    expect(JSON.parse((await history.textContent())!).slice(before)).toEqual([
+      { state: 'error', widgetId: 'samples-by-group' },
+    ]);
+  });
+
+  test('starts and stops capture reporting without reloading the app', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/starter-data-app?_widget=samples-by-group&content-sizing&capture-state'
+    );
+    const capture = page.getByTestId('widget-capture-state');
+    const ready = /"state":"ready","widgetId":"samples-by-group"/;
+    await expect.poll(() => capture.textContent()).toMatch(ready);
+    const app = page.frameLocator('iframe').locator('html');
+    await app.evaluate(() => {
+      (window as unknown as { marker: string }).marker = 'kept';
+    });
+
+    await page.getByRole('button', { name: 'Stop capture' }).click();
+    await expect.poll(() => capture.textContent()).toBe('');
+    await page.getByRole('button', { name: 'Start capture' }).click();
+    await expect.poll(() => capture.textContent()).toMatch(ready);
+    expect(
+      await app.evaluate(
+        () => (window as unknown as { marker?: string }).marker
+      )
+    ).toBe('kept');
   });
 
   test('clears ready while a filter change reloads the same widget', async ({
@@ -334,7 +441,7 @@ describe('widget URL', () => {
     const capture = page.getByTestId('widget-capture-state');
     try {
       await page.goto(
-        '/starter-data-app?widget=samples-by-group&content-sizing&capture-state'
+        '/starter-data-app?_widget=samples-by-group&content-sizing&capture-state'
       );
       await expect
         .poll(() => capture.textContent())
@@ -360,7 +467,7 @@ describe('widget URL', () => {
   test('keeps capture pending when the frame cannot apply content sizing', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?widget=samples-by-group&capture-state');
+    await page.goto('/starter-data-app?_widget=samples-by-group&capture-state');
     const main = page.frameLocator('iframe').getByRole('main');
     await expect
       .poll(() => main.getAttribute('data-widget-state'))
@@ -374,7 +481,7 @@ describe('widget URL', () => {
     page,
   }) => {
     await page.goto(
-      '/starter-data-app?widget=samples-by-group&theme=light&content-sizing'
+      '/starter-data-app?_widget=samples-by-group&_theme=light&content-sizing'
     );
     const app = page.frameLocator('iframe');
     await expect

@@ -4,6 +4,7 @@ import {
   type IframeTransport,
 } from '@altertable/data-app/client';
 import { type DisclosedQuery } from '@altertable/data-app/contract';
+import { appUrlKeys } from '@altertable/data-app/internal';
 import {
   useEffect,
   useEffectEvent,
@@ -23,7 +24,7 @@ import {
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 
 function isPresenting() {
-  return searchParams().get('present') === '1';
+  return searchParams().get(appUrlKeys.present) === '1';
 }
 
 export type HostActionsProps = {
@@ -102,7 +103,8 @@ export function HostActions({
         if (story && !presenting) openStoryPresentation(story);
         break;
       case 'closeStory':
-        if (presenting) writeSearch({ present: null, step: null });
+        if (presenting)
+          writeSearch({ [appUrlKeys.present]: null, [appUrlKeys.step]: null });
         break;
       case 'aboutData':
         setAboutOpen(true);

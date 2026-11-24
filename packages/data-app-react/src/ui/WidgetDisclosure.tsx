@@ -1,6 +1,7 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
+import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 
 export type WidgetDisclosureProps = {
@@ -14,9 +15,12 @@ export function WidgetDisclosure({
   className,
   ...props
 }: WidgetDisclosureProps) {
+  const focused = useContext(FocusedWidgetContext);
   return (
     <details
       {...props}
+      // A capture shows the disclosed content; the focused surface blocks toggling.
+      {...(focused ? { open: true } : {})}
       className={classNames('altertable-widget-disclosure', className)}
     >
       <summary data-atbl-focus="ring" data-atbl-control="action">

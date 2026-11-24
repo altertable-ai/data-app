@@ -94,17 +94,15 @@
   overflow-wrap: anywhere;
 }
 
-/* Custom visuals can include their own controls. Keep those out of the capture. */
+/* Custom visuals can include their own controls. Keep those out of the capture.
+ * Links and disclosure labels stay visible because they carry content. */
 .altertable-focused-widget
   :is(
     button,
     input,
     select,
     textarea,
-    a[href],
-    summary,
     [role='button'],
-    [role='link'],
     [contenteditable='true']
   ) {
   display: none !important;

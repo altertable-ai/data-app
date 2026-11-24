@@ -1,9 +1,11 @@
 import { getDataAppNavigation } from '@altertable/data-app/client';
+import { migrateAppUrlKeys } from '@altertable/data-app/internal';
 
 const SEARCH_CHANGE = 'altertable:searchchange';
 
+/** Current search with legacy runtime keys read as their `_`-prefixed keys. */
 export function searchParams(): URLSearchParams {
-  return new URLSearchParams(
+  return migrateAppUrlKeys(
     typeof window === 'undefined'
       ? ''
       : (getDataAppNavigation()?.snapshot().search ?? window.location.search)
@@ -31,14 +33,14 @@ export function writeSearch(
   const location = getDataAppNavigation();
   const currentState = location?.snapshot();
   const url = new URL(window.location.href);
-  if (currentState) {
-    url.search = currentState.search;
-    url.hash = currentState.hash;
-  }
+  if (currentState) url.hash = currentState.hash;
+  // Writing rewrites legacy runtime keys, so a removed key cannot reappear from its old name.
+  const params = searchParams();
   for (const [key, value] of Object.entries(update)) {
-    if (value == null || value === '') url.searchParams.delete(key);
-    else url.searchParams.set(key, value);
+    if (value == null || value === '') params.delete(key);
+    else params.set(key, value);
   }
+  url.search = params.toString();
   if (location) {
     location.update({ search: url.search, hash: url.hash }, mode);
 

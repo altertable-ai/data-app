@@ -4,8 +4,12 @@
 .altertable-selectable-bars-scroll {
   min-width: 0;
   width: auto;
-  /* Ring room inside the scrollport, cancelled by the margin. */
-
+  /* Ring room inside the scrollport, cancelled by the margin, plus the
+   * y-axis tick space BarChart sets when it shows that axis. */
+  height: calc(
+    260px + 2 * var(--atbl-internal-focus-ring-space) +
+      var(--atbl-internal-bar-axis-space, 0px)
+  );
   margin: calc(12px - var(--atbl-internal-focus-ring-space))
     calc(2px - var(--atbl-internal-focus-ring-space))
     calc(14px - var(--atbl-internal-focus-ring-space));

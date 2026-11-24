@@ -1,3 +1,4 @@
+import { appUrlKeys, migrateAppUrlKeys } from './app-url-keys.ts';
 import { isRecord } from './record.ts';
 
 /** The focused widget's state. Ready includes its fitted content height in CSS pixels. */
@@ -18,7 +19,7 @@ export function isWidgetId(id: string) {
 export function readWidgetId(
   search: URLSearchParams
 ): string | null | undefined {
-  const [id, ...duplicates] = search.getAll('widget');
+  const [id, ...duplicates] = search.getAll(appUrlKeys.widget);
   if (id === undefined) return undefined;
   return duplicates.length === 0 && isWidgetId(id) ? id : null;
 }
@@ -29,7 +30,7 @@ export function widgetCaptureRequest(state: unknown, search: string) {
   if (
     isRecord(state) &&
     typeof state.search === 'string' &&
-    new URLSearchParams(state.search).toString() === search &&
+    migrateAppUrlKeys(state.search).toString() === search &&
     typeof state.widgetCaptureRequest === 'string'
   )
     return state.widgetCaptureRequest;

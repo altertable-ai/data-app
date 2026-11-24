@@ -88,10 +88,10 @@ opaque apps keep that state in memory rather than modifying their document URL.
 
 ## Focused widget states
 
-Open `?widget=event-log` to render the visualization declared with
+Open `?_widget=event-log` to render the visualization declared with
 `view.content(..., { id: 'event-log' })`. For hosted bundles, pass the query
 through the navigation adapter. The query also accepts the selected view’s
-filters and a theme override (`theme=light` or `theme=dark`).
+filters and a theme override (`_theme=light` or `_theme=dark`).
 
 Use a borderless, full-width, [content-sized iframe](#content-sizing) and
 set the capture viewport to the desired layout width. Subscribe to

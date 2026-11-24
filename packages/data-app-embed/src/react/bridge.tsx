@@ -100,9 +100,9 @@ function useBridgeState(props: DataAppBridgeProps) {
   useEffect(() => {
     hostRef.current?.setPresentation(props.presentation);
     hostRef.current?.setLogger(props.logger);
+    hostRef.current?.setWidgetCaptureListener(props.onWidgetCaptureChange);
   });
 
-  const captureEnabled = props.onWidgetCaptureChange !== undefined;
   const bridgeOptions = useCallback(
     (): Omit<DataAppHostOptions, 'iframe'> => ({
       repair: handlers.current.repair,
@@ -120,11 +120,9 @@ function useBridgeState(props: DataAppBridgeProps) {
       onActionsChange(actions) {
         return handlers.current.onActionsChange?.(actions);
       },
-      onWidgetCaptureChange: captureEnabled
-        ? capture => handlers.current.onWidgetCaptureChange?.(capture)
-        : undefined,
+      onWidgetCaptureChange: handlers.current.onWidgetCaptureChange,
     }),
-    [captureEnabled]
+    []
   );
 
   return { hostRef, bridgeOptions };

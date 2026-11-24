@@ -265,5 +265,6 @@ Clear removes filter predicates and returns dates to defaults, preserving search
 and display choices. `resetAll()` restores all defaults. Filters apply immediately;
 use app-owned drafts only when the task needs Apply/Cancel.
 
-The keys `view`, `about`, `tab`, `present`, `step`, and `details` are reserved
-for inspection, presentation, and navigation.
+Filter keys cannot start with `_`: the runtime owns those keys for inspection,
+presentation, navigation, and focused widgets. The legacy keys `view`, `about`,
+`tab`, `present`, `step`, and `details` also stay reserved.

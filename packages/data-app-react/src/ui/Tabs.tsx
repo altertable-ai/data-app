@@ -1,3 +1,4 @@
+import { appUrlKeys } from '@altertable/data-app/internal';
 import { useMergeRefs } from '@floating-ui/react';
 import {
   useCallback,
@@ -100,13 +101,13 @@ export function Tabs({
   );
 }
 
-/** Keep a page-level tab in `?view=`; reserve `?tab=` for the inspect sheet. */
+/** Keep a page-level tab in `?_view=`; reserve `?_tab=` for the inspect sheet. */
 export function useViewTab<View extends string>(
   views: readonly View[],
   fallback: View
 ): [View, (key: string | number) => void] {
   const currentView = useCallback((): View => {
-    const requested = searchParams().get('view') as View;
+    const requested = searchParams().get(appUrlKeys.view) as View;
 
     return views.includes(requested) ? requested : fallback;
   }, [views, fallback]);
@@ -117,7 +118,8 @@ export function useViewTab<View extends string>(
     function sync() {
       const view = currentView();
       setSelected(view);
-      if (searchParams().get('view') !== view) writeSearch({ view });
+      if (searchParams().get(appUrlKeys.view) !== view)
+        writeSearch({ [appUrlKeys.view]: view });
     }
 
     sync();
@@ -129,7 +131,7 @@ export function useViewTab<View extends string>(
     const view = String(key) as View;
     if (!views.includes(view)) return;
     setSelected(view);
-    writeSearch({ view }, 'push');
+    writeSearch({ [appUrlKeys.view]: view }, 'push');
   }
 
   return [selected, select];

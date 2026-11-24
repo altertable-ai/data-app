@@ -4,6 +4,7 @@ import {
   reportWidgetCapture,
   widgetCaptureRequest,
   type WidgetCaptureRenderState,
+  appUrlKeys,
 } from '@altertable/data-app/internal';
 import {
   Component,
@@ -48,7 +49,7 @@ type Readiness = {
 type Settled = { readiness: Readiness; state: 'ready' | 'error' };
 
 function widgetTheme() {
-  const [theme, ...rest] = searchParams().getAll('theme');
+  const [theme, ...rest] = searchParams().getAll(appUrlKeys.theme);
   if (rest.length === 0 && (theme === 'light' || theme === 'dark'))
     return theme;
   return undefined;
@@ -75,9 +76,14 @@ function FocusedWidgetSurface({
   );
   const { state } = capture;
   const widgetId = 'widgetId' in capture ? capture.widgetId : undefined;
+  // Frame sizing re-measures a ready widget when its content resizes.
   useLayoutEffect(() => {
-    if (request) transport?.[reportWidgetCapture]?.(request, capture);
-  });
+    if (!request) return;
+    transport?.[reportWidgetCapture]?.(
+      request,
+      widgetId === undefined ? { state: 'invalid-target' } : { state, widgetId }
+    );
+  }, [transport, request, state, widgetId]);
 
   return (
     <main
@@ -97,9 +103,10 @@ export function useWidgetTarget(
     () => readWidgetId(searchParams()),
     () => undefined
   );
-  if (id === undefined) return null;
+  // Screens without a view cannot register widgets, so their URLs stay theirs.
+  if (!registry || id === undefined) return null;
   if (id === null) return { reason: 'Provide one valid widget ID in the URL.' };
-  const widget = registry?.get(id);
+  const widget = registry.get(id);
   return widget
     ? { widget }
     : { reason: `No widget is registered as “${id}”.` };
@@ -115,6 +122,7 @@ export function FocusedWidget({ target }: { target: Target }) {
     widgetTheme,
     () => undefined
   );
+  const search = useSyncExternalStore(subscribeSearch, currentSearch, () => '');
   useAppAppearance(app.appearance, theme ?? presentation?.theme);
   if (!target.widget)
     return (
@@ -129,18 +137,39 @@ export function FocusedWidget({ target }: { target: Target }) {
   const { widget } = target;
   return (
     <FocusedWidgetContext value={true}>
-      <FocusedRenderBoundary id={widget.id} identity={identity}>
+      <FocusedRenderBoundary
+        id={widget.id}
+        identity={identity}
+        resetKey={search}
+      >
         <FocusedWidgetResult widget={widget} />
       </FocusedRenderBoundary>
     </FocusedWidgetContext>
   );
 }
 
+type BoundaryProps = {
+  id: string;
+  identity: string;
+  /** A new URL retries a render that failed for the previous filters. */
+  resetKey: string;
+  children: ReactNode;
+};
+
 class FocusedRenderBoundary extends Component<
-  { id: string; identity: string; children: ReactNode },
-  { failed: boolean }
+  BoundaryProps,
+  { failed: boolean; resetKey: string }
 > {
-  override state = { failed: false };
+  override state = { failed: false, resetKey: this.props.resetKey };
+
+  static getDerivedStateFromProps(
+    props: BoundaryProps,
+    state: { failed: boolean; resetKey: string }
+  ) {
+    return props.resetKey === state.resetKey
+      ? null
+      : { failed: false, resetKey: props.resetKey };
+  }
 
   static getDerivedStateFromError() {
     return { failed: true };
@@ -148,6 +177,11 @@ class FocusedRenderBoundary extends Component<
 
   override componentDidCatch(error: unknown) {
     appDiagnostics.record('render', this.props.id, error, this.props.identity);
+  }
+
+  override componentDidUpdate(_: BoundaryProps, previous: { failed: boolean }) {
+    if (previous.failed && !this.state.failed)
+      appDiagnostics.clear('render', this.props.id, this.props.identity);
   }
 
   override componentWillUnmount() {

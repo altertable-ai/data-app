@@ -16,6 +16,7 @@ import {
   type Placement,
 } from '@floating-ui/react';
 import {
+  useContext,
   useState,
   type ComponentPropsWithRef,
   type ReactNode,
@@ -24,6 +25,7 @@ import {
 
 import { type DataAppStyleHooks } from '../style-contract.ts';
 import { classNames } from './classNames.ts';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 
 type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
@@ -51,7 +53,14 @@ export type HelpPopoverProps = {
 /** A supplemental explanation that opens on click, Enter, or a deliberate mouse hover. Tabbing
  * past the trigger does not open it, and a click keeps a hover-opened panel in place.
  * triggerProps and panelProps target its two surfaces. */
-export function HelpPopover({
+export function HelpPopover(props: HelpPopoverProps) {
+  const focused = useContext(FocusedWidgetContext);
+  if (!focused) return <InteractiveHelpPopover {...props} />;
+  // A capture keeps the trigger's text without the disclosure control.
+  return <span className={props.triggerProps?.className}>{props.trigger}</span>;
+}
+
+function InteractiveHelpPopover({
   trigger,
   triggerLabel,
   label,
