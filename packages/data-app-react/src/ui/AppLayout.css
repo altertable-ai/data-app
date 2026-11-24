@@ -67,3 +67,8 @@
 .altertable-app-layout:has(.altertable-active-filters) {
   padding-block-end: var(--atbl-active-filters-clearance);
 }
+
+.altertable-focused-widget {
+  display: grid;
+  min-width: 0;
+}

@@ -27,7 +27,7 @@ import {
   type Dataset,
   type Metric,
 } from './bindings.ts';
-import { ViewContent, type DataContentState } from './content.ts';
+import { ViewContent, ViewWidget, type DataContentState } from './content.ts';
 import { DetailView, type DetailViewDefinition } from './details.tsx';
 import {
   createFilterTarget,
@@ -183,6 +183,18 @@ type BoundView<
   content(
     render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode
   ): ViewContent<Data, FilterInput<Filters>>;
+  /** Declare one stable widget target. Reuse it as a DataSection's content. */
+  widget(
+    id: string,
+    render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode,
+    options?: {
+      /** Wait for custom asynchronous rendering after the selected data commits. Throw or reject on failure. */
+      waitForReady?: (
+        element: HTMLElement,
+        signal: AbortSignal
+      ) => void | Promise<void>;
+    }
+  ): ViewWidget<Data, FilterInput<Filters>>;
 };
 
 type BoundDetailView<
@@ -400,6 +412,19 @@ export function createDataHooks<Operations extends DataOperations>(
           render: (state: DataContentState<Data, Input>) => ReactNode
         ): ViewContent<Data, Input> {
           return new ViewContent(view, render, resolved.describeInput);
+        },
+        widget(
+          id: string,
+          render: (state: DataContentState<Data, Input>) => ReactNode,
+          options?: { waitForReady?: ViewWidget<Data, Input>['waitForReady'] }
+        ) {
+          return new ViewWidget(
+            id,
+            view,
+            render,
+            resolved.describeInput,
+            options?.waitForReady
+          );
         },
       }
     );

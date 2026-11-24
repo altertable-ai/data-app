@@ -23,6 +23,7 @@ import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { InspectionVisual } from './InspectionProvider.tsx';
 import { LoadingStatus } from './LoadingStatus.tsx';
@@ -393,12 +394,13 @@ function WidgetBoundary({
   mode?: 'widget' | 'body';
   shell?: DataWidgetBaseProps;
 }) {
+  const focused = useContext(FocusedWidgetContext);
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
   const dimensions = useRef({ height: 0, width: 0 });
   useLayoutEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || focused) return;
     const frame =
       mode === 'body'
         ? element.parentElement!
@@ -419,8 +421,10 @@ function WidgetBoundary({
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [mode]);
+  }, [mode, focused]);
 
+  if (focused)
+    return <div className="altertable-widget-boundary">{children}</div>;
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary

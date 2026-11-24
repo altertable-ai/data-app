@@ -19,6 +19,38 @@ Use `<Stack>` for reading order and `<Grid>` for peers. Read [layout](layout.md)
 only when changing spans or shell composition.
 `<Skeleton>` supports custom fallback content.
 
+## Link to one widget
+
+Declare the widget on its view and register it in `<DataApp widgets={…}>`.
+Use the same declaration as your dashboard section content.
+
+```tsx
+const eventLogWidget = activityView.widget('event-log', source => (
+  <TableWidget title="Event log" dataset={eventLog} source={source} />
+));
+
+function App() {
+  return (
+    <DataApp view={activityView} widgets={[eventLogWidget]}>
+      <DataSection content={eventLogWidget} />
+    </DataApp>
+  );
+}
+```
+
+Open `?widget=event-log` to render the registered widget with its owning view
+and that view's URL filters. Register each ID once per app. Use lowercase letters
+and digits separated by single hyphens, and keep IDs stable across releases to
+preserve existing links. A registered widget may also live outside the dashboard
+layout.
+
+For a chart that draws asynchronously after React commits, pass
+`{ waitForReady: (element, signal) => … }` as the third argument to `view.widget()`.
+Resolve the promise when the widget is ready to capture, including when drawing
+has already completed. Reject it to report a rendering error. Use the signal to
+stop observing when the widget unmounts or its result changes. See
+[focused widget states](embed.md#focused-widget-states) for the capture contract.
+
 ## Choose a visualization
 
 Choose the component by the user's question. Compose dataset visuals inside

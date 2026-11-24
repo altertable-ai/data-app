@@ -100,7 +100,7 @@ const sampleCounts = sampleCountsView.dataset({
   },
   evidence: { id: 'counts-by-group', glossaryIds: ['sampleCount'] },
 });
-const countsContent = sampleCountsView.content(result => (
+const countsContent = sampleCountsView.widget('samples-by-group', result => (
   <VisualizationWidget
     dataset={sampleCounts}
     source={result}
@@ -125,7 +125,11 @@ const countsContent = sampleCountsView.content(result => (
 
 function App() {
   return (
-    <DataApp view={sampleCountsView} datasets={[sampleCounts]}>
+    <DataApp
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      widgets={[countsContent]}
+    >
       <DataSection content={countsContent} />
     </DataApp>
   );

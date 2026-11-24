@@ -330,9 +330,11 @@ function DetailSheet({
 export function DetailRoutes({
   details,
   children,
+  syncLocation = true,
 }: {
   details: readonly DetailContent<any, any>[];
   children: ReactNode;
+  syncLocation?: boolean;
 }) {
   const [stack, setStack] = useState<readonly DetailEntry[]>([]);
   const stackRef = useRef(stack);
@@ -367,13 +369,14 @@ export function DetailRoutes({
             input: parsed,
           },
         ];
-        writeRoute(next);
+        if (syncLocation) writeRoute(next);
         setStack(next);
       },
     }),
-    [targets]
+    [targets, syncLocation]
   );
   useEffect(() => {
+    if (!syncLocation) return;
     function sync() {
       const route = readRoute(details);
       if (!route?.length && stackRef.current.length) {
@@ -387,11 +390,11 @@ export function DetailRoutes({
     }
     sync();
     return subscribeSearch(sync);
-  }, [details]);
+  }, [details, syncLocation]);
   const current = stack.at(-1);
   return (
     <DetailNavigationContext value={navigation}>
-      <InspectionProvider>
+      <InspectionProvider syncLocation={syncLocation}>
         {children}
         {current && (
           <DetailSheet
@@ -400,7 +403,7 @@ export function DetailRoutes({
             returnFocus={focusOrigin}
             onClose={() => {
               const trigger = focusOrigin.current;
-              writeRoute([], 'replace');
+              if (syncLocation) writeRoute([], 'replace');
               setStack([]);
               requestAnimationFrame(() => {
                 if (trigger?.isConnected && trigger.getClientRects().length)
