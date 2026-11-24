@@ -90,7 +90,9 @@ opaque apps keep that state in memory rather than modifying their document URL.
 
 Use `?widget=event-log` on an app URL to open a [linkable visualization](widgets.md#link-to-one-widget).
 For hosted bundles, pass `widget` in the search state shared through the navigation
-adapter. Other query parameters can supply filters for the selected view.
+adapter. Add `theme=light` or `theme=dark` to set the focused view’s palette, including
+its background, for capture. A single valid value overrides the host or app theme
+for that view. Other query parameters can supply filters for the selected view.
 
 Inside the app document, read `data-widget-state` on the focused `<main>`.
 Valid targets also expose their ID as `data-focused-widget`.

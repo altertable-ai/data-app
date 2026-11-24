@@ -43,6 +43,13 @@ type Readiness = {
 };
 type Settled = { readiness: Readiness; state: 'ready' | 'error' };
 
+function widgetTheme() {
+  const [theme, ...rest] = searchParams().getAll('theme');
+  if (rest.length === 0 && (theme === 'light' || theme === 'dark'))
+    return theme;
+  return undefined;
+}
+
 function widgetSearch() {
   const ids = searchParams().getAll('widget');
   if (ids.length > 1) return false;
@@ -67,7 +74,12 @@ export function FocusedWidgetFrame({ target }: { target: Target }) {
   const app = useDataApp();
   const transport = useDataAppTransport();
   const presentation = useDataAppPresentation(transport);
-  useAppAppearance(app.appearance, presentation?.theme);
+  const theme = useSyncExternalStore(
+    subscribeSearch,
+    widgetTheme,
+    () => undefined
+  );
+  useAppAppearance(app.appearance, theme ?? presentation?.theme);
   if (!target.widget)
     return (
       <main

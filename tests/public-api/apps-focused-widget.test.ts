@@ -239,10 +239,26 @@ describe('widget URL', () => {
     expect(await widgetState(page)).toBeNull();
   });
 
+  test('applies a focused theme override without changing the dashboard theme', async ({
+    page,
+  }) => {
+    await serveData(page);
+    await page.emulateMedia({ colorScheme: 'light' });
+    function theme() {
+      return page.locator('html').getAttribute('data-atbl-theme');
+    }
+    await page.goto('/focused-widget?widget=event-log&theme=dark');
+    await expect.poll(theme).toBe('dark');
+    await page.goto('/focused-widget?widget=event-log&theme=dark&theme=light');
+    await expect.poll(theme).toBe('light');
+    await page.goto('/focused-widget?theme=dark');
+    await expect.poll(theme).toBe('light');
+  });
+
   test('receives a focused widget ID from the hosted app URL', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?widget=samples-by-group');
+    await page.goto('/starter-data-app?widget=samples-by-group&theme=light');
     const app = page.frameLocator('iframe');
     await expect
       .poll(() => app.getByRole('main').getAttribute('data-widget-state'))
@@ -252,6 +268,19 @@ describe('widget URL', () => {
         .getByRole('region', { name: 'Sample counts by group' })
         .isVisible()
     ).toBe(true);
+    expect(await app.locator('html').getAttribute('data-atbl-theme')).toBe(
+      'light'
+    );
+    const topTick = app.getByText('2k', { exact: true });
+    function tickIsInsidePlotSvg() {
+      return topTick.evaluate(tick => {
+        const svg = tick.closest('svg')!;
+        return (
+          tick.getBoundingClientRect().top >= svg.getBoundingClientRect().top
+        );
+      });
+    }
+    await expect.poll(tickIsInsidePlotSvg).toBe(true);
     expect(await app.getByRole('img', { name: /^Alpha:/ }).isVisible()).toBe(
       true
     );
