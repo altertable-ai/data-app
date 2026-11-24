@@ -46,7 +46,7 @@ test('filter collections reject malformed presentation metadata from JavaScript 
 });
 
 test('runtime URL keys are reserved', () => {
-  for (const key of ['_widget', '_region', 'about', 'details']) {
+  for (const key of ['_widget', '_region']) {
     function App() {
       useAppFilters({ value: searchFilter({ key }) });
       return null;
@@ -58,7 +58,7 @@ test('runtime URL keys are reserved', () => {
   function App() {
     useAppFilters({
       widget: searchFilter({ key: 'widget' }),
-      theme: searchFilter({ key: 'theme' }),
+      about: searchFilter({ key: 'about' }),
     });
     return null;
   }

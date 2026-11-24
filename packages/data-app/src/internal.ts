@@ -121,8 +121,4 @@ export {
   type WidgetCaptureRenderState,
 } from './core/widget-capture.ts';
 
-export {
-  APP_URL_KEY_PREFIX,
-  appUrlKeys,
-  migrateAppUrlKeys,
-} from './core/app-url-keys.ts';
+export { appUrlKeys } from './core/app-url-keys.ts';

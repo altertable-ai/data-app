@@ -266,5 +266,4 @@ and display choices. `resetAll()` restores all defaults. Filters apply immediate
 use app-owned drafts only when the task needs Apply/Cancel.
 
 Filter keys cannot start with `_`: the runtime owns those keys for inspection,
-presentation, navigation, and focused widgets. The legacy keys `view`, `about`,
-`tab`, `present`, `step`, and `details` also stay reserved.
+presentation, navigation, and focused widgets.

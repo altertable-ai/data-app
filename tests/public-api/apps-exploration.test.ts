@@ -245,25 +245,6 @@ test('country filters apply independently and survive changing or clearing regio
     .toBe(1);
 });
 
-test('links with unprefixed runtime keys open and close like prefixed links', async ({
-  page,
-}) => {
-  await page.goto('/exploration?about=total&tab=queries');
-  const inspection = page.getByRole('dialog', {
-    name: 'Order count',
-    exact: true,
-  });
-  await inspection
-    .getByRole('tab', { name: 'Queries', exact: true, selected: true })
-    .waitFor();
-  await inspection.press('Escape');
-  await inspection.waitFor({ state: 'hidden' });
-  const params = new URL(page.url()).searchParams;
-  expect(
-    ['about', 'tab', '_about', '_tab'].filter(key => params.has(key))
-  ).toEqual([]);
-});
-
 test('metric records use the existing inspection tabs and load only on Records', async ({
   page,
 }) => {

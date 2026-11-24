@@ -1,4 +1,4 @@
-import { appUrlKeys, migrateAppUrlKeys } from './app-url-keys.ts';
+import { appUrlKeys } from './app-url-keys.ts';
 import { isRecord } from './record.ts';
 
 /** The focused widget's state. Ready includes its fitted content height in CSS pixels. */
@@ -31,7 +31,7 @@ export function readWidgetCaptureRequest(state: unknown, search: string) {
   if (
     isRecord(state) &&
     typeof state.search === 'string' &&
-    migrateAppUrlKeys(state.search).toString() === search &&
+    new URLSearchParams(state.search).toString() === search &&
     typeof state.widgetCaptureRequest === 'string'
   )
     return state.widgetCaptureRequest;
