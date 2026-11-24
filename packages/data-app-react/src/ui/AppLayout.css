@@ -71,6 +71,8 @@
 .altertable-focused-widget {
   display: grid;
   min-width: 0;
+  padding: var(--atbl-space-md);
+  background: var(--atbl-background);
 }
 
 /* Custom visuals can include their own controls. Keep those out of the capture. */

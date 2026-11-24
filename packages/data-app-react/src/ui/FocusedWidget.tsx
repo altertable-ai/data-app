@@ -70,7 +70,10 @@ export function FocusedWidgetFrame({ target }: { target: Target }) {
   useAppAppearance(app.appearance, presentation?.theme);
   if (!target.widget)
     return (
-      <main data-widget-state="invalid-target">
+      <main
+        className="altertable-focused-widget"
+        data-widget-state="invalid-target"
+      >
         <StatusPanel
           status="error"
           title="Widget unavailable"
@@ -108,7 +111,11 @@ class FocusedRenderBoundary extends Component<
 
   override render() {
     return this.state.failed ? (
-      <main data-widget-state="error" data-focused-widget={this.props.id}>
+      <main
+        className="altertable-focused-widget"
+        data-widget-state="error"
+        data-focused-widget={this.props.id}
+      >
         <StatusPanel status="error" title="This widget couldn’t render" />
       </main>
     ) : (
