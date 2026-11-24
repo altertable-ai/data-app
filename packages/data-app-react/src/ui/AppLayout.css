@@ -68,13 +68,15 @@
   padding-block-end: var(--atbl-active-filters-clearance);
 }
 
+:root[data-atbl-appearance]:has(.altertable-focused-widget) {
+  scrollbar-gutter: auto;
+}
+
 .altertable-focused-widget {
   position: relative;
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  width: min(100%, 640px);
-  margin-inline: auto;
   padding: var(--atbl-space-md);
   background: var(--atbl-background);
 }

@@ -55,7 +55,9 @@ describe('widget URL', () => {
         if (state === 'loading')
           await main.getByText('Loading widget').waitFor();
         expect(await main.boundingBox()).toMatchObject({
-          width: 640,
+          x: 0,
+          y: 0,
+          width: 1280,
           height: 240,
         });
         await page.setViewportSize({ width: 375, height: 700 });
@@ -290,7 +292,9 @@ describe('widget URL', () => {
   test('receives a focused widget ID from the hosted app URL', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?widget=samples-by-group&theme=light');
+    await page.goto(
+      '/starter-data-app?widget=samples-by-group&theme=light&content-sizing'
+    );
     const app = page.frameLocator('iframe');
     await expect
       .poll(() => app.getByRole('main').getAttribute('data-widget-state'))
@@ -303,6 +307,19 @@ describe('widget URL', () => {
     expect(await app.locator('html').getAttribute('data-atbl-theme')).toBe(
       'light'
     );
+    function captureFitsFrame() {
+      return app.getByRole('main').evaluate(main => {
+        const { x, y, width, height } = main.getBoundingClientRect();
+        return (
+          x === 0 &&
+          y === 0 &&
+          width === window.innerWidth &&
+          height <= window.innerHeight &&
+          window.innerHeight - height < 2
+        );
+      });
+    }
+    await expect.poll(captureFitsFrame).toBe(true);
     const topTick = app.getByText('2k', { exact: true });
     function tickIsInsidePlotSvg() {
       return topTick.evaluate(tick => {

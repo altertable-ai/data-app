@@ -105,13 +105,23 @@ Valid targets also expose their ID as `data-focused-widget`.
 | `error`          | The view request or widget rendering failed.                                                                                                             |
 | `invalid-target` | The widget parameter is empty, malformed, repeated, or unknown.                                                                                          |
 
-For a visualization screenshot, wait for and capture the element
-`[data-focused-widget="event-log"][data-widget-state="ready"]` inside the app
-frame. Its width is 640 CSS pixels when the app viewport allows it, and its
-height follows the visualization. Loading, empty, error, and invalid-target
-states use the same width and are at least 240 CSS pixels tall. Handle `empty`,
-`error`, and `invalid-target` as terminal outcomes. The bridge's connection
-status describes the iframe session.
+The focused `<main>` fills the iframe width from its top-left corner. Ready
+content determines its height. Loading, empty, error, and invalid-target states
+have a minimum height of 240 CSS pixels.
+
+For a Gotenberg capture, use a host page with a borderless, full-width,
+[content-sized iframe](#content-sizing) and no surrounding UI in the capture
+area. Set Gotenberg's `width` form field to the desired layout width, such as
+`640`. Leave `clip` off so tall widgets can extend below the initial viewport.
+When using an element selector for the screenshot, target the iframe or its
+wrapper in the host document.
+
+For a visualization image, have the host expose a readiness signal that reflects
+both the exact widget's `ready` state and the resized frame. Pass that signal to
+Gotenberg's `waitForExpression`. For sandboxed or cross-origin iframes, relay
+widget readiness through messaging because the host cannot inspect the app DOM.
+The bridge's connection status describes the iframe session. Handle `empty`,
+`error`, and `invalid-target` as terminal outcomes.
 
 ## External links
 
