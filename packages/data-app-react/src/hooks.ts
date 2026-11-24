@@ -4,6 +4,7 @@ import type { DataOperations } from '@altertable/data-app/contract';
 import {
   combineOperationFilters,
   displayedSnapshot,
+  invariant,
   randomUuid,
   resolveDataView,
   type ChoiceFilter,
@@ -27,7 +28,13 @@ import {
   type Dataset,
   type Metric,
 } from './bindings.ts';
-import { ViewContent, ViewWidget, type DataContentState } from './content.ts';
+import {
+  addressableContent,
+  validWidgetId,
+  ViewContent,
+  type DataContentState,
+  type WidgetTarget,
+} from './content.ts';
 import { DetailView, type DetailViewDefinition } from './details.tsx';
 import {
   createFilterTarget,
@@ -181,20 +188,14 @@ type BoundView<
   ): Metric<Data, FilterInput<Filters>>;
   scope(snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string;
   content(
-    render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode
-  ): ViewContent<Data, FilterInput<Filters>>;
-  /** Declare one stable widget target. Reuse it as a DataSection's content. */
-  widget(
-    id: string,
     render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode,
     options?: {
-      /** Wait for custom asynchronous rendering after the selected data commits. Throw or reject on failure. */
-      waitForReady?: (
-        element: HTMLElement,
-        signal: AbortSignal
-      ) => void | Promise<void>;
+      /** Stable ID for a read-only widget link, unique within this createDataHooks() client. */
+      id: string;
+      /** Wait for custom asynchronous drawing after the selected data commits. */
+      waitForReady?: WidgetTarget['waitForReady'];
     }
-  ): ViewWidget<Data, FilterInput<Filters>>;
+  ): ViewContent<Data, FilterInput<Filters>>;
 };
 
 type BoundDetailView<
@@ -223,8 +224,10 @@ export function createDataHooks<Operations extends DataOperations>(
   const clientScope = getClientScope(client);
   const operationFilters = client.filters;
   const appFilters = combineOperationFilters(operationFilters);
+  const widgets = new Map<string, WidgetTarget>();
   const clientFilters: ClientFilters = {
     filters: appFilters,
+    widgets,
     useControls() {
       return useFilterControls(
         appFilters,
@@ -409,22 +412,24 @@ export function createDataHooks<Operations extends DataOperations>(
           return resolved.describeInput(snapshot.input);
         },
         content(
-          render: (state: DataContentState<Data, Input>) => ReactNode
-        ): ViewContent<Data, Input> {
-          return new ViewContent(view, render, resolved.describeInput);
-        },
-        widget(
-          id: string,
           render: (state: DataContentState<Data, Input>) => ReactNode,
-          options?: { waitForReady?: ViewWidget<Data, Input>['waitForReady'] }
-        ) {
-          return new ViewWidget(
-            id,
+          options?: { id: string; waitForReady?: WidgetTarget['waitForReady'] }
+        ): ViewContent<Data, Input> {
+          if (!options)
+            return new ViewContent(view, render, resolved.describeInput);
+          const { id, waitForReady } = options;
+          invariant(
+            validWidgetId(id),
+            'Widget IDs must use lowercase letters, digits, and single hyphens.'
+          );
+          invariant(!widgets.has(id), `Duplicate widget ID “${id}”.`);
+          const content = addressableContent(
             view,
             render,
-            resolved.describeInput,
-            options?.waitForReady
+            resolved.describeInput
           );
+          widgets.set(id, { id, content, waitForReady });
+          return content;
         },
       }
     );

@@ -1,7 +1,7 @@
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useContext, Fragment, useEffect, useRef, useState } from 'react';
 
 import {
   type CountChartProps,
@@ -12,6 +12,7 @@ import { ChartTooltipContent } from './chart-primitives.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { useSvgId } from './useSvgId.ts';
 
 /** Ordered step with a unique, nonblank ID. */
@@ -135,8 +136,10 @@ export function FunnelChart({
   className,
   formatValue = formatNumber,
   horizontalGrid = true,
-  interactiveLegend = true,
+  interactiveLegend: interactive = true,
 }: FunnelChartProps) {
+  const focused = useContext(FocusedWidgetContext);
+  const interactiveLegend = interactive && !focused;
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
   const chartId = useSvgId();
   const [highlighted, setHighlighted] = useState<{

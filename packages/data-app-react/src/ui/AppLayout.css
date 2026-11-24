@@ -72,3 +72,19 @@
   display: grid;
   min-width: 0;
 }
+
+/* Custom visuals can include their own controls. Keep those out of the capture. */
+.altertable-focused-widget
+  :is(
+    button,
+    input,
+    select,
+    textarea,
+    a[href],
+    summary,
+    [role='button'],
+    [role='link'],
+    [contenteditable='true']
+  ) {
+  display: none !important;
+}

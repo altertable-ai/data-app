@@ -1,10 +1,11 @@
 import { formatDateTime, parseDateTime } from '@altertable/data-app/format';
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
+import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { classNames } from './classNames.ts';
 import { DateTimeTooltip } from './DateTimeTooltip.tsx';
 import { EmptyState } from './EmptyState.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { type EmptyContent } from './presentation.ts';
 import { SearchField, type SearchFieldProps } from './SearchField.tsx';
 
@@ -27,9 +28,11 @@ export function DataTable({
   searchable,
   ...props
 }: DataTableProps) {
+  const focused = useContext(FocusedWidgetContext);
   return (
     <>
-      {searchable &&
+      {!focused &&
+        searchable &&
         (searchable.itemCount > 5 ||
           searchable.value !== (searchable.resetValue ?? '')) && (
           <SearchField

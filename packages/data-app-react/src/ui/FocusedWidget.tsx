@@ -10,31 +10,34 @@ import {
   useSyncExternalStore,
   type ReactNode,
   type RefObject,
+  type SyntheticEvent,
 } from 'react';
 
 import { useDataApp } from '../app-context.ts';
-import { sectionContent, validWidgetId, type ViewWidget } from '../content.ts';
-import { DetailRoutes, type DetailContent } from '../details.tsx';
+import {
+  sectionContent,
+  validWidgetId,
+  type WidgetTarget,
+} from '../content.ts';
+import { DateFormattingContext } from '../date-formatting.ts';
 import { useDeclaredResult } from '../view-runtime.tsx';
-import { StandaloneSection } from './DataSection.tsx';
+import { errorPresentation } from './DataSectionBoundary.tsx';
+import { EmptyState } from './EmptyState.tsx';
 import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { LoadingStatus } from './LoadingStatus.tsx';
 import { searchParams, subscribeSearch } from './search.ts';
 import { StatusPanel } from './StatusPanel.tsx';
-import { TooltipProvider } from './Tooltip.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
 import { useDataAppTransport } from './useDataAppTransport.ts';
 
 type Target =
-  | { widget: ViewWidget<unknown, unknown>; reason?: never }
+  | { widget: WidgetTarget; reason?: never }
   | { widget?: never; reason: string };
-
-const noDetails: readonly DetailContent<any, any>[] = [];
 
 type WidgetState = 'loading' | 'ready' | 'empty' | 'error';
 type Readiness = {
-  widget: ViewWidget<unknown, unknown>;
+  widget: WidgetTarget;
   data: unknown;
   input: unknown;
 };
@@ -47,25 +50,19 @@ function widgetSearch() {
 }
 
 export function useWidgetTarget(
-  registry: ReadonlyMap<string, ViewWidget<unknown, unknown>>
+  registry?: ReadonlyMap<string, WidgetTarget>
 ): Target | null {
   const id = useSyncExternalStore(subscribeSearch, widgetSearch, () => null);
   if (id === null) return null;
   if (id === false || !validWidgetId(id))
     return { reason: 'Provide one valid widget ID in the URL.' };
-  const widget = registry.get(id);
+  const widget = registry?.get(id);
   return widget
     ? { widget }
     : { reason: `No widget is registered as “${id}”.` };
 }
 
-export function FocusedWidgetFrame({
-  target,
-  details,
-}: {
-  target: Target;
-  details?: readonly DetailContent<any, any>[];
-}) {
+export function FocusedWidgetFrame({ target }: { target: Target }) {
   const identity = useId();
   const app = useDataApp();
   const transport = useDataAppTransport();
@@ -83,15 +80,11 @@ export function FocusedWidgetFrame({
     );
   const { widget } = target;
   return (
-    <TooltipProvider>
-      <DetailRoutes details={details ?? noDetails} syncLocation={false}>
-        <FocusedWidgetContext value={true}>
-          <FocusedRenderBoundary id={widget.id} identity={identity}>
-            <FocusedWidgetResult widget={widget} />
-          </FocusedRenderBoundary>
-        </FocusedWidgetContext>
-      </DetailRoutes>
-    </TooltipProvider>
+    <FocusedWidgetContext value={true}>
+      <FocusedRenderBoundary id={widget.id} identity={identity}>
+        <FocusedWidgetResult widget={widget} />
+      </FocusedRenderBoundary>
+    </FocusedWidgetContext>
   );
 }
 
@@ -124,14 +117,15 @@ class FocusedRenderBoundary extends Component<
   }
 }
 
-function FocusedWidgetResult({
-  widget,
-}: {
-  widget: ViewWidget<unknown, unknown>;
-}) {
-  const { view, ...section } = sectionContent(widget);
-  const result = useDeclaredResult(view);
-  const { kind } = result.view;
+function stopInteraction(event: SyntheticEvent) {
+  event.stopPropagation();
+}
+
+function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
+  const section = sectionContent(widget.content);
+  const result = useDeclaredResult(section.view);
+  const view = result.view;
+  const { kind } = view;
   const data = result.snapshot?.data;
   const input = result.snapshot?.input;
   const element = useRef<HTMLElement>(null);
@@ -141,8 +135,12 @@ function FocusedWidgetResult({
   );
   const [settled, setSettled] = useState<Settled>();
 
+  const requestError =
+    kind === 'error' || kind === 'stale-error'
+      ? errorPresentation(view.error)
+      : undefined;
   let state: WidgetState = 'loading';
-  if (kind === 'error' || kind === 'stale-error') state = 'error';
+  if (requestError) state = 'error';
   else if (kind === 'empty') state = 'empty';
   else if (readiness && settled?.readiness === readiness) state = settled.state;
 
@@ -153,17 +151,46 @@ function FocusedWidgetResult({
       data-widget-state={state}
       data-focused-widget={widget.id}
       aria-busy={state === 'loading'}
+      onPointerDownCapture={stopInteraction}
+      onPointerOverCapture={stopInteraction}
+      onPointerOutCapture={stopInteraction}
+      onPointerMoveCapture={stopInteraction}
+      onMouseOverCapture={stopInteraction}
+      onMouseOutCapture={stopInteraction}
+      onMouseMoveCapture={stopInteraction}
+      onTouchStartCapture={stopInteraction}
+      onKeyDownCapture={stopInteraction}
+      onContextMenuCapture={stopInteraction}
+      onClickCapture={event => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
-      {readiness &&
-      settled?.readiness === readiness &&
-      settled.state === 'error' ? (
+      {requestError ? (
+        <StatusPanel
+          status="error"
+          title={requestError.title}
+          description={requestError.description}
+        />
+      ) : kind === 'empty' ? (
+        <EmptyState {...result.emptyFallback} />
+      ) : readiness &&
+        settled?.readiness === readiness &&
+        settled.state === 'error' ? (
         <StatusPanel
           status="error"
           title="This widget couldn’t finish rendering"
         />
       ) : (
         <Suspense fallback={<WidgetLoading reset={setSettled} />}>
-          <StandaloneSection {...section} result={result} />
+          <DateFormattingContext value={{ timeZone: result.timeZone }}>
+            {kind === 'ready'
+              ? section.children(view.data, view.input)
+              : section.loadingFallback}
+          </DateFormattingContext>
+          {state === 'loading' && readiness?.widget.waitForReady && (
+            <LoadingStatus label="Loading widget" />
+          )}
           {readiness && (
             <WidgetReadiness
               element={element}

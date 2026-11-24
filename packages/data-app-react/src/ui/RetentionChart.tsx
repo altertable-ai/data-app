@@ -1,6 +1,6 @@
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
-import { Fragment } from 'react';
+import { useContext, Fragment } from 'react';
 
 import {
   type CountChartProps,
@@ -10,6 +10,7 @@ import { useChartLegendFocus } from './chart-legend-interaction.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
 export type RetentionChartPoint = {
@@ -151,8 +152,10 @@ export function RetentionChart({
   className,
   formatValue = formatNumber,
   horizontalGrid = true,
-  interactiveLegend = true,
+  interactiveLegend: interactive = true,
 }: RetentionChartProps) {
+  const focused = useContext(FocusedWidgetContext);
+  const interactiveLegend = interactive && !focused;
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,

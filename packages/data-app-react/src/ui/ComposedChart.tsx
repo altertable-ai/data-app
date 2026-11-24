@@ -7,6 +7,7 @@ import {
   memo,
   useState,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -24,7 +25,7 @@ import {
   ReferenceLine,
   ReferenceArea,
   ReferenceDot,
-  Brush,
+  Brush as RechartsBrush,
   Cell,
   Line as NativeLine,
   Bar as NativeBar,
@@ -71,11 +72,17 @@ import {
 import { ChartValueFormat } from './chart-value-format.ts';
 import { classNames } from './classNames.ts';
 import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import {
   type ChartCursorGroup,
   ChartCursorChartContext,
   useLinkedChartCursor,
 } from './use-chart-cursor-group.tsx';
+
+function Brush(props: ComponentProps<typeof RechartsBrush>) {
+  const focused = useContext(FocusedWidgetContext);
+  return focused ? null : <RechartsBrush {...props} />;
+}
 
 function findNearestSeriesId(
   hoveredSeriesId: string | null,
@@ -499,6 +506,7 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
   fullAxisSpace,
   trackPlotOffsets,
 }: ComposedChartPlotProps<Row>) {
+  const focused = useContext(FocusedWidgetContext);
   const {
     data,
     ariaLabel,
@@ -533,6 +541,9 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
           <RechartsComposedChart
             data-atbl-focus="inset"
             {...rechartsProps}
+            accessibilityLayer={
+              focused ? false : rechartsProps.accessibilityLayer
+            }
             data={data}
             width={width}
             height={height}

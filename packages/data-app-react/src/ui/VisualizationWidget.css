@@ -15,3 +15,7 @@
   > .altertable-visualization-widget-content {
   padding: 0;
 }
+
+:where(.altertable-focused-widget) .altertable-visualization-widget-content {
+  padding: 0;
+}

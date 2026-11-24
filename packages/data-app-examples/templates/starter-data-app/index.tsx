@@ -100,36 +100,35 @@ const sampleCounts = sampleCountsView.dataset({
   },
   evidence: { id: 'counts-by-group', glossaryIds: ['sampleCount'] },
 });
-const countsContent = sampleCountsView.widget('samples-by-group', result => (
-  <VisualizationWidget
-    dataset={sampleCounts}
-    source={result}
-    title="Samples by group"
-  >
-    {rows => (
-      <BarChart
-        ariaLabel="Sample counts by group"
-        unit="samples"
-        valueFormat={{ kind: 'count' }}
-        showYAxis
-        scrollToEnd={false}
-        items={rows.map(row => ({
-          id: row.groupName,
-          label: row.groupName,
-          value: row.sampleCount,
-        }))}
-      />
-    )}
-  </VisualizationWidget>
-));
+const countsContent = sampleCountsView.content(
+  result => (
+    <VisualizationWidget
+      dataset={sampleCounts}
+      source={result}
+      title="Samples by group"
+    >
+      {rows => (
+        <BarChart
+          ariaLabel="Sample counts by group"
+          unit="samples"
+          valueFormat={{ kind: 'count' }}
+          showYAxis
+          scrollToEnd={false}
+          items={rows.map(row => ({
+            id: row.groupName,
+            label: row.groupName,
+            value: row.sampleCount,
+          }))}
+        />
+      )}
+    </VisualizationWidget>
+  ),
+  { id: 'samples-by-group' }
+);
 
 function App() {
   return (
-    <DataApp
-      view={sampleCountsView}
-      datasets={[sampleCounts]}
-      widgets={[countsContent]}
-    >
+    <DataApp view={sampleCountsView} datasets={[sampleCounts]}>
       <DataSection content={countsContent} />
     </DataApp>
   );

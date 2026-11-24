@@ -279,7 +279,7 @@ ComposedChart.Legend: (props: ComposedChartLegendProps)
 ComposedChart.ReferenceLine: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceArea: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceDot: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
-ComposedChart.Brush: (outsideProps: Props)
+ComposedChart.Brush: (props: ComponentProps<typeof import('recharts').Brush>)
 ComposedChart.Cell: (props: P): Promise<ReactNode> | ReactNode
 ComposedChart.Label: (outerProps: Props)
 ComposedChart.LabelList: (props: Props)
@@ -320,8 +320,7 @@ createDataHooks().defineView().breakdown: <Key extends DisplayChoiceName<Filters
 createDataHooks().defineView().dataset: <Row = DatasetRows<Data>, const Columns extends Record<string, object> = Record<string, object>>(definition: BoundDatasetDefinition<Data, FilterInput<Filters>, Row, Columns, Context>): Dataset<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>, Row>
 createDataHooks().defineView().metric: (definition: Parameters<Context['metric']>[0], select: (data: Data, input: FilterInput<Filters>) => HasPeriod<Filters> extends true ? MetricValues : { current: number; previous?: never; }): Metric<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
 createDataHooks().defineView().scope: (snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string
-createDataHooks().defineView().content: (render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode): ViewContent<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
-createDataHooks().defineView().widget: (id: string, render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode, options: {…}): ViewWidget<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>> — Declare one stable widget target. Reuse it as a DataSection's content.
+createDataHooks().defineView().content: (render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode, options: {…}): ViewContent<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
 createDataHooks().defineDetailView: <Name extends keyof Operations & string, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: DetailViewDefinition<OutputOf<Operations[Name]>, InputOf<Operations[Name]>> & { operation: Name; dataContext: Context; }): BoundDetailView<OutputOf<Operations[Name]>, InputOf<Oper…
 createDataHooks().defineDetailView.definition.id: string
 createDataHooks().defineDetailView.definition.title: ReactNode
@@ -351,7 +350,6 @@ DataApp.props.showToolbar?: boolean — Show page actions. Defaults to true; doe
 DataApp.props.toolbarActions?: ReactNode — Standalone toolbar controls; embedded surfaces omit them.
 DataApp.props.footerActions?: ReactNode — Standalone footer controls; embedded surfaces omit them.
 DataApp.props.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
-DataApp.props.widgets?: readonly ViewWidget<unknown, unknown>[] — Addressable widgets for this app. Register each stable ID once.
 DataApp.props.showSearch?: boolean — Show declared search controls. Defaults to true; hiding preserves their values.
 DataApp.props.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
 DataApp.props.view: DataAppView<Data, Input> — The headline view. `<DataApp>` renders the controls for every filter its client's operations read and owns their URL state.

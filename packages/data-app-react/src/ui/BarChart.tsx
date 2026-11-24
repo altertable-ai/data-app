@@ -48,6 +48,7 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
 import {
@@ -236,10 +237,11 @@ const BarChartItems = memo(function BarChartItems<Row extends BarChartItem>({
   canvasRef,
   scrollport,
 }: BarChartItemsProps<Row>) {
+  const focused = useContext(FocusedWidgetContext);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   return items.map((item, index) => {
     const actions = chartActions(
-      itemActions?.(item) ?? [],
+      focused ? [] : (itemActions?.(item) ?? []),
       item.label,
       `${formatValue(item.value)} ${unit}`
     );
@@ -287,7 +289,14 @@ const BarChartItems = memo(function BarChartItems<Row extends BarChartItem>({
             }
             className="altertable-chart-column"
           >
-            {action ? (
+            {focused ? (
+              <span
+                className="altertable-selectable-bars-area"
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This label describes the chart mark.
+                role="img"
+                aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
+              />
+            ) : action ? (
               <button
                 data-atbl-focus="ring"
                 data-atbl-control="action"

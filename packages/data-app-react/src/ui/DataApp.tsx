@@ -13,7 +13,6 @@ import {
   RegisteredBinding,
   type ExportDataset,
 } from '../bindings.ts';
-import { sectionContent, type ViewWidget } from '../content.ts';
 import { DateFormattingContext } from '../date-formatting.ts';
 import { DetailRoutes, type DetailContent } from '../details.tsx';
 import { SearchSuggestionsContext } from '../search-suggestions.ts';
@@ -56,28 +55,21 @@ type StoryFindings = readonly (Omit<StoryFinding, 'evidence'> & {
   evidence: RegisteredBinding;
 })[];
 
-type WidgetRegistry = {
-  /** Addressable widgets for this app. Register each stable ID once. */
-  widgets?: readonly ViewWidget<unknown, unknown>[];
-};
-
 /** A setup or static screen: the page shell without a view, filters, story, or export. */
-type DataAppScreenProps = DataAppBaseProps &
-  WidgetRegistry & {
-    view?: never;
-    summaryViews?: never;
-    story?: never;
-    datasets?: never;
-    details?: never;
-  };
+type DataAppScreenProps = DataAppBaseProps & {
+  view?: never;
+  summaryViews?: never;
+  story?: never;
+  datasets?: never;
+  details?: never;
+};
 
 export type DataAppProps<
   Data,
   Input = unknown,
   SummaryViews extends readonly AnyView[] = [],
 > = Omit<DataAppBaseProps, 'dataContext'> &
-  DataAppControlProps &
-  WidgetRegistry & {
+  DataAppControlProps & {
     /** The headline view. `<DataApp>` renders the controls for every filter its
      * client's operations read and owns their URL state. */
     view: DataAppView<Data, Input>;
@@ -111,30 +103,16 @@ export function DataApp<
   Input,
   const SummaryViews extends readonly AnyView[] = [],
 >(props: DataAppProps<Data, Input, SummaryViews>): ReactNode;
-export function DataApp({
-  widgets,
-  ...props
-}: DataAppScreenProps | DataAppProps<unknown, unknown, readonly AnyView[]>) {
-  const registry = new Map<string, ViewWidget<unknown, unknown>>();
+export function DataApp(
+  props: DataAppScreenProps | DataAppProps<unknown, unknown, readonly AnyView[]>
+) {
   const clientFilters =
     props.view &&
     (getViewDefinition(props.view) as { clientFilters: ClientFilters })
       .clientFilters;
-  for (const widget of widgets ?? []) {
-    invariant(!registry.has(widget.id), `Duplicate widget ID “${widget.id}”.`);
-    if (clientFilters)
-      assertAppFilters(sectionContent(widget).view, clientFilters);
-    registry.set(widget.id, widget);
-  }
-  const target = useWidgetTarget(registry);
+  const target = useWidgetTarget(clientFilters?.widgets);
   if (target)
-    return (
-      <FocusedWidgetFrame
-        key={target.widget?.id}
-        target={target}
-        details={props.details}
-      />
-    );
+    return <FocusedWidgetFrame key={target.widget?.id} target={target} />;
   if (!props.view) return <DataAppFrame {...props} />;
   return <ViewDataApp {...props} />;
 }

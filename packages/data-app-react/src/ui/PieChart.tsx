@@ -1,5 +1,11 @@
 import { formatNumber } from '@altertable/data-app/format';
-import { useRef, useState, type ComponentRef, type RefObject } from 'react';
+import {
+  useContext,
+  useRef,
+  useState,
+  type ComponentRef,
+  type RefObject,
+} from 'react';
 
 import type { ChartItem, ValueChartProps } from './chart-data.ts';
 import { validateValueChartItems } from './chart-data.ts';
@@ -11,6 +17,7 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
 import { Tooltip } from './Tooltip.tsx';
@@ -34,6 +41,7 @@ export function PieChart<Row extends PieChartItem>({
   formatValue = formatNumber,
   itemActions,
 }: PieChartProps<Row>) {
+  const focused = useContext(FocusedWidgetContext);
   validateValueChartItems('pie', items);
   const chartActions = useChartActions();
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -85,6 +93,7 @@ export function PieChart<Row extends PieChartItem>({
     );
   }
   function actionsFor(slice: (typeof slices)[number]) {
+    if (focused) return [];
     const item = slice.row;
     return chartActions.actions(
       itemActions?.(item) ?? [],
@@ -137,7 +146,9 @@ export function PieChart<Row extends PieChartItem>({
                         actionsFor(slice)
                       );
                       const opensMenu =
-                        !action && (itemActions?.(item).length ?? 0) > 1;
+                        !focused &&
+                        !action &&
+                        (itemActions?.(item).length ?? 0) > 1;
                       return (
                         <path
                           key={item.id}
@@ -274,7 +285,11 @@ export function PieChart<Row extends PieChartItem>({
                         )
                       }
                     >
-                      {actions.length ? (
+                      {focused ? (
+                        <span className="altertable-pie-legend-value">
+                          {contents}
+                        </span>
+                      ) : actions.length ? (
                         <MenuTrigger>
                           <MenuButton
                             {...explorationMenuEvents(menuTrigger)}

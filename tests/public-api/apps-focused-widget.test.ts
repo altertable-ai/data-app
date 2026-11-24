@@ -56,11 +56,8 @@ describe('widget URL', () => {
     expect(await main.getAttribute('aria-busy')).toBe('true');
     release();
     await expect.poll(() => widgetState(page)).toBe('ready');
-    const widget = main.getByRole('region', {
-      name: 'Busiest day',
-      exact: true,
-    });
-    expect(await widget.getByText('Day 2 in West').isVisible()).toBe(true);
+    expect(await main.getByText('Day 2 in West').isVisible()).toBe(true);
+    expect(await main.getByText('Busiest day').count()).toBe(0);
     expect(await page.getByRole('dialog').count()).toBe(0);
     expect(await page.getByText('Activity overview').count()).toBe(0);
     expect(
@@ -75,7 +72,7 @@ describe('widget URL', () => {
     ]);
   });
 
-  test('opens and closes widget inspection without restoring or rewriting the incoming URL', async ({
+  test('shows every table row without a frame, inspection, or pagination', async ({
     page,
   }) => {
     await serveData(page);
@@ -83,13 +80,12 @@ describe('widget URL', () => {
       '/focused-widget?widget=event-log&about=event-data&tab=glossary'
     );
     await expect.poll(() => widgetState(page)).toBe('ready');
-    const originalUrl = page.url();
+    const main = page.getByRole('main');
+    expect(await main.getByRole('row').count()).toBe(3);
+    expect(await main.getByRole('button').count()).toBe(0);
+    expect(await main.getByRole('searchbox').count()).toBe(0);
+    expect(await main.getByText('Event log').count()).toBe(0);
     expect(await page.getByRole('dialog').count()).toBe(0);
-    await page.getByRole('button', { name: 'Explore Event log' }).click();
-    await page.getByRole('dialog').waitFor();
-    await page.getByRole('button', { name: 'Close panel' }).click();
-    await page.getByRole('dialog').waitFor({ state: 'hidden' });
-    expect(page.url()).toBe(originalUrl);
   });
 
   test('rejects unknown, empty, repeated, and evidence IDs before requesting data', async ({
@@ -146,7 +142,7 @@ describe('widget URL', () => {
     expect(requests.map(request => request.operation)).toEqual(['activity']);
   });
 
-  test('reports a failed data request and retries only the selected view', async ({
+  test('reports a failed data request without exposing a retry control', async ({
     page,
   }) => {
     const { requests } = await serveData(page, { status: 503 });
@@ -158,10 +154,8 @@ describe('widget URL', () => {
         .getByText('Couldn’t load results')
         .isVisible()
     ).toBe(true);
-    await page.getByRole('button', { name: 'Retry' }).click();
-    await expect
-      .poll(() => requests.map(request => request.operation))
-      .toEqual(['activity', 'activity']);
+    expect(await page.getByRole('button', { name: 'Retry' }).count()).toBe(0);
+    expect(requests.map(request => request.operation)).toEqual(['activity']);
   });
 
   test('reports a failing chart renderer', async ({ page }) => {
@@ -179,10 +173,14 @@ describe('widget URL', () => {
   test('waits for custom rendering after data has loaded', async ({ page }) => {
     await serveData(page);
     await page.goto('/focused-widget?widget=custom');
-    const finish = page.getByRole('button', { name: 'Finish drawing' });
-    await finish.waitFor();
+    await page.locator('#chart-drawing').waitFor({ state: 'attached' });
+    expect(
+      await page.getByRole('button', { name: 'Finish drawing' }).count()
+    ).toBe(0);
     expect(await widgetState(page)).toBe('loading');
-    await finish.click();
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('fixture-finish-drawing'))
+    );
     await expect.poll(() => widgetState(page)).toBe('ready');
     expect(await page.getByText('Chart total 7').isVisible()).toBe(true);
   });
@@ -193,12 +191,16 @@ describe('widget URL', () => {
     await serveData(page);
     await page.goto('/focused-widget?widget=suspending');
     await expect.poll(() => widgetState(page)).toBe('ready');
-    await page.getByRole('button', { name: 'Reload chart' }).click();
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('fixture-reload-chart'))
+    );
     await expect.poll(() => widgetState(page)).toBe('loading');
     expect(
       await page.locator('[data-focused-widget="suspending"]').count()
     ).toBe(1);
-    await page.keyboard.press('Escape');
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('fixture-resume-chart'))
+    );
     await expect.poll(() => widgetState(page)).toBe('ready');
     expect(await page.getByText('Chart reloaded').isVisible()).toBe(true);
   });
@@ -206,7 +208,10 @@ describe('widget URL', () => {
   test('reports an asynchronous drawing failure', async ({ page }) => {
     await serveData(page);
     await page.goto('/focused-widget?widget=custom');
-    await page.getByRole('button', { name: 'Fail drawing' }).click();
+    await page.locator('#chart-drawing').waitFor({ state: 'attached' });
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('fixture-fail-drawing'))
+    );
     await expect.poll(() => widgetState(page)).toBe('error');
     expect(
       await page
@@ -243,7 +248,16 @@ describe('widget URL', () => {
       .poll(() => app.getByRole('main').getAttribute('data-widget-state'))
       .toBe('ready');
     expect(
-      await app.getByRole('region', { name: 'Samples by group' }).isVisible()
+      await app
+        .getByRole('region', { name: 'Sample counts by group' })
+        .isVisible()
     ).toBe(true);
+    expect(await app.getByRole('img', { name: /^Alpha:/ }).isVisible()).toBe(
+      true
+    );
+    expect(await app.getByRole('button').count()).toBe(0);
+    expect(
+      await app.getByText('Samples by group', { exact: true }).count()
+    ).toBe(0);
   });
 });

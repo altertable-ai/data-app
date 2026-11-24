@@ -8,6 +8,7 @@ import {
   useMergeRefs,
 } from '@floating-ui/react';
 import {
+  useContext,
   Children,
   cloneElement,
   isValidElement,
@@ -20,6 +21,7 @@ import {
 } from 'react';
 
 import { classNames } from './classNames.ts';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { type TooltipProps } from './Tooltip.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
@@ -31,7 +33,31 @@ function chartPointerMoved(document: Document, x: number, y: number) {
   return !previous || previous.x !== x || previous.y !== y;
 }
 
-export function ChartTooltip({
+type ChartTooltipProps = TooltipProps & {
+  /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
+  anchorRect?: (trigger: Element | null) => DOMRect | null;
+  boundaryRefs?: readonly RefObject<Element | null>[];
+  mouseHover?: boolean;
+  touchInspection?: boolean;
+};
+
+export function ChartTooltip(props: ChartTooltipProps) {
+  const focused = useContext(FocusedWidgetContext);
+  if (!focused) return <InteractiveChartTooltip {...props} />;
+  const { children, className, ref, variant = 'chart', style } = props;
+  return (
+    <span
+      ref={ref}
+      data-variant={variant}
+      style={style}
+      className={classNames('altertable-tooltip-trigger', className)}
+    >
+      {children}
+    </span>
+  );
+}
+
+function InteractiveChartTooltip({
   content,
   children,
   onOpenChange,
@@ -51,13 +77,7 @@ export function ChartTooltip({
   onPointerLeave,
   onPointerDown,
   ...props
-}: TooltipProps & {
-  /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
-  anchorRect?: (trigger: Element | null) => DOMRect | null;
-  boundaryRefs?: readonly RefObject<Element | null>[];
-  mouseHover?: boolean;
-  touchInspection?: boolean;
-}) {
+}: ChartTooltipProps) {
   const tooltipId = useId();
   const describedBy = tooltipId;
   const [open, setOpen] = useState(false);

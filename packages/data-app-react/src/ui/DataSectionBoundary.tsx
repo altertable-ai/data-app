@@ -8,7 +8,7 @@ import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';
 import { StatusPanel } from './StatusPanel.tsx';
 
-function errorPresentation(cause: Error) {
+export function errorPresentation(cause: Error) {
   const code = cause instanceof DataAppError ? cause.code : 'request_failed';
   switch (code) {
     case 'source_unauthorized':

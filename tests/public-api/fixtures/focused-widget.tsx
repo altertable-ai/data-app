@@ -98,39 +98,55 @@ const detail = defineDetailView({
 const detailContent = detail.content(source => (
   <p>{source.loading ? 'Loading detail' : `Region total ${source.data}`}</p>
 ));
-const events = activity.widget('event-log', source => (
-  <TableWidget
-    dataset={eventLog}
-    source={source}
-    annotationId="table-annotation"
-  />
-));
-const busiest = activity.widget('busiest-day', source => (
-  <TextWidget
-    title="Busiest day"
-    dataset={eventLog}
-    source={source}
-    annotationId="different-annotation"
-  >
-    {rows =>
-      `Day ${rows.toSorted((a, b) => b.count - a.count)[0]?.day} in ${source.input?.region || 'all regions'}`
-    }
-  </TextWidget>
-));
-const revenue = revenueView.widget('revenue', source => (
-  <TextWidget title="Revenue" metric={revenueMetric} source={source}>
-    {metric => `${metric.current}`}
-  </TextWidget>
-));
-const broken = activity.widget('broken', source => (
-  <VisualizationWidget title="Broken chart" dataset={eventLog} source={source}>
-    {() => {
-      throw new Error('Chart renderer failed');
-    }}
-  </VisualizationWidget>
-));
-const custom = activity.widget(
-  'custom',
+const events = activity.content(
+  source => (
+    <TableWidget
+      dataset={eventLog}
+      source={source}
+      annotationId="table-annotation"
+      pagination={{ pageSize: 1 }}
+    />
+  ),
+  { id: 'event-log' }
+);
+activity.content(
+  source => (
+    <TextWidget
+      title="Busiest day"
+      dataset={eventLog}
+      source={source}
+      annotationId="different-annotation"
+    >
+      {rows =>
+        `Day ${rows.toSorted((a, b) => b.count - a.count)[0]?.day} in ${source.input?.region || 'all regions'}`
+      }
+    </TextWidget>
+  ),
+  { id: 'busiest-day' }
+);
+const revenue = revenueView.content(
+  source => (
+    <TextWidget title="Revenue" metric={revenueMetric} source={source}>
+      {metric => `${metric.current}`}
+    </TextWidget>
+  ),
+  { id: 'revenue' }
+);
+activity.content(
+  source => (
+    <VisualizationWidget
+      title="Broken chart"
+      dataset={eventLog}
+      source={source}
+    >
+      {() => {
+        throw new Error('Chart renderer failed');
+      }}
+    </VisualizationWidget>
+  ),
+  { id: 'broken' }
+);
+activity.content(
   source => (
     <VisualizationWidget
       title="Deferred chart"
@@ -143,7 +159,9 @@ const custom = activity.widget(
     </VisualizationWidget>
   ),
   {
+    id: 'custom',
     waitForReady(element, signal) {
+      if (element.querySelector('#chart-result')) return;
       return new Promise<void>((resolve, reject) => {
         element.addEventListener('chart-ready', () => resolve(), {
           once: true,
@@ -162,46 +180,57 @@ const custom = activity.widget(
 function DeferredChart({ total }: { total: number }) {
   const [drawn, setDrawn] = useState(false);
   useEffect(() => {
+    function finish() {
+      setDrawn(true);
+    }
+    function fail() {
+      document
+        .getElementById('chart-drawing')
+        ?.dispatchEvent(new Event('chart-error', { bubbles: true }));
+    }
+    window.addEventListener('fixture-finish-drawing', finish);
+    window.addEventListener('fixture-fail-drawing', fail);
+    return () => {
+      window.removeEventListener('fixture-finish-drawing', finish);
+      window.removeEventListener('fixture-fail-drawing', fail);
+    };
+  }, []);
+  useEffect(() => {
     if (drawn)
       document
         .getElementById('chart-result')
         ?.dispatchEvent(new Event('chart-ready', { bubbles: true }));
   }, [drawn]);
   return (
-    <div>
-      <button onClick={() => setDrawn(true)}>Finish drawing</button>
-      <button
-        onClick={event =>
-          event.currentTarget.dispatchEvent(
-            new Event('chart-error', { bubbles: true })
-          )
-        }
-      >
-        Fail drawing
+    <div id="chart-drawing">
+      <button type="button" onClick={() => setDrawn(true)}>
+        Finish drawing
       </button>
       {drawn && <output id="chart-result">Chart total {total}</output>}
     </div>
   );
 }
 
-const suspending = activity.widget('suspending', () => <SuspendingChart />);
+activity.content(() => <SuspendingChart />, { id: 'suspending' });
 
 function SuspendingChart() {
   const [reload, setReload] = useState<Promise<void>>();
-  return (
-    <>
-      <button
-        onClick={() => {
-          const { promise, resolve } = Promise.withResolvers<void>();
-          document.addEventListener('keydown', () => resolve(), { once: true });
-          setReload(promise);
-        }}
-      >
-        Reload chart
-      </button>
-      {reload && <ReloadedChart reload={reload} />}
-    </>
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+    function start() {
+      const { promise, resolve } = Promise.withResolvers<void>();
+      window.addEventListener('fixture-resume-chart', () => resolve(), {
+        once: true,
+        signal: controller.signal,
+      });
+      setReload(promise);
+    }
+    window.addEventListener('fixture-reload-chart', start, {
+      signal: controller.signal,
+    });
+    return () => controller.abort();
+  }, []);
+  return reload ? <ReloadedChart reload={reload} /> : <p>Chart drawn</p>;
 }
 
 function ReloadedChart({ reload }: { reload: Promise<void> }) {
@@ -225,20 +254,9 @@ function Dashboard() {
 
 function App() {
   const duplicate = new URLSearchParams(location.search).has('duplicate');
+  if (duplicate) activity.content(() => null, { id: 'event-log' });
   return (
-    <DataApp
-      view={revenueView}
-      details={[detailContent]}
-      widgets={[
-        events,
-        busiest,
-        revenue,
-        broken,
-        custom,
-        suspending,
-        ...(duplicate ? [events] : []),
-      ]}
-    >
+    <DataApp view={revenueView} details={[detailContent]}>
       <Dashboard />
     </DataApp>
   );

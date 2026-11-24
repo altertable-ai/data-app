@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { ChartTooltip } from './ChartTooltip.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { HintTooltip } from './HintTooltip.tsx';
 
 export type TooltipTiming = { delay: number; skipDelayDuration: number };
@@ -65,7 +66,9 @@ export type TooltipProps = {
  * and does not open on keyboard focus. Native span props and ref target the wrapper. */
 export function Tooltip(props: TooltipProps) {
   const timing = useContext(TooltipContext);
+  const focused = useContext(FocusedWidgetContext);
   if (props.variant === 'chart') return <ChartTooltip {...props} />;
+  if (focused) return <>{props.children}</>;
   return timing ? (
     <HintTooltip {...props} timing={timing} />
   ) : (

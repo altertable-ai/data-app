@@ -1,7 +1,8 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
+import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
 import { EmptyState } from './EmptyState.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { type EmptyContent } from './presentation.ts';
 import {
   SegmentedTab,
@@ -36,7 +37,16 @@ export function WidgetViewTabs<const Views extends readonly WidgetView[]>({
   className,
   ...props
 }: WidgetViewTabsProps<Views>) {
+  const focused = useContext(FocusedWidgetContext);
   validateWidgetViews(views, selectedKey);
+  if (focused) {
+    const selected = views.find(view => view.id === selectedKey)!;
+    return selected.isEmpty ? (
+      <EmptyState {...selected.emptyFallback} />
+    ) : (
+      selected.content
+    );
+  }
 
   return (
     <div

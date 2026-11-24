@@ -91,7 +91,7 @@ function LazySection<Data, Input>({
 }
 
 /** Reports its own request state inline and inspects its own queries. */
-export function StandaloneSection<Data, Input>({
+function StandaloneSection<Data, Input>({
   result,
   ...props
 }: SectionProps<Data, Input> & { result: ViewResult<Data, Input> }) {

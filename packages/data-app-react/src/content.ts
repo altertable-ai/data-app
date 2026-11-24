@@ -1,4 +1,4 @@
-import { invariant, type DataReading } from '@altertable/data-app/internal';
+import { type DataReading } from '@altertable/data-app/internal';
 import { createElement, type ReactNode } from 'react';
 
 import { ownedSource } from './source-owner.ts';
@@ -58,27 +58,29 @@ export function sectionContent<Data, Input>(content: ViewContent<Data, Input>) {
   return ViewContent.section(content);
 }
 
-/** One addressable widget and the view that supplies its data. */
-export class ViewWidget<Data, Input> extends ViewContent<Data, Input> {
-  constructor(
-    readonly id: string,
-    view: DeclaredView<Data, Input>,
-    render: (source: DataContentState<Data, Input>) => ReactNode,
-    describeInput: (input: Input) => string,
-    readonly waitForReady?: (
-      element: HTMLElement,
-      signal: AbortSignal
-    ) => void | Promise<void>
-  ) {
-    invariant(
-      validWidgetId(id),
-      'Widget IDs must use lowercase letters, digits, and single hyphens.'
-    );
-    function Widget({ source }: { source: DataContentState<Data, Input> }) {
-      return render(source);
-    }
-    super(view, source => createElement(Widget, { source }), describeInput);
+/** An addressable section and its optional custom rendering readiness check. */
+export type WidgetTarget<Data = unknown, Input = unknown> = {
+  id: string;
+  content: ViewContent<Data, Input>;
+  waitForReady?: (
+    element: HTMLElement,
+    signal: AbortSignal
+  ) => void | Promise<void>;
+};
+
+export function addressableContent<Data, Input>(
+  view: DeclaredView<Data, Input>,
+  render: (source: DataContentState<Data, Input>) => ReactNode,
+  describeInput: (input: Input) => string
+) {
+  function Widget({ source }: { source: DataContentState<Data, Input> }) {
+    return render(source);
   }
+  return new ViewContent(
+    view,
+    source => createElement(Widget, { source }),
+    describeInput
+  );
 }
 
 export function validWidgetId(id: string) {

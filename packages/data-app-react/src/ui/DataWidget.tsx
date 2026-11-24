@@ -118,6 +118,7 @@ function DataWidgetContent({
   emptyFallback?: EmptyContent;
   children: ReactNode;
 }) {
+  const focused = useContext(FocusedWidgetContext);
   const titleId = useId();
   const sectionStatus = useContext(WidgetStatusContext);
   const status =
@@ -132,6 +133,7 @@ function DataWidgetContent({
     !loading &&
     (suppliedStatus?.kind === 'updating' || sectionStatus?.updating === true);
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
+  if (focused) return content;
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
@@ -423,8 +425,7 @@ function WidgetBoundary({
     return () => observer.disconnect();
   }, [mode, focused]);
 
-  if (focused)
-    return <div className="altertable-widget-boundary">{children}</div>;
+  if (focused) return children;
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary

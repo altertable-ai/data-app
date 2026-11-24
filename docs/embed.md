@@ -88,7 +88,7 @@ opaque apps keep that state in memory rather than modifying their document URL.
 
 ## Focused widget states
 
-Use `?widget=event-log` on an app URL to open a [registered widget](widgets.md#link-to-one-widget).
+Use `?widget=event-log` on an app URL to open a [linkable visualization](widgets.md#link-to-one-widget).
 For hosted bundles, pass `widget` in the search state shared through the navigation
 adapter. Other query parameters can supply filters for the selected view.
 
@@ -101,7 +101,7 @@ Valid targets also expose their ID as `data-focused-widget`.
 | `ready`          | The view has data, the widget has committed, its readiness callback (if supplied) has resolved, and the SDK has waited for fonts and an animation frame. |
 | `empty`          | The owning view returned an empty result.                                                                                                                |
 | `error`          | The view request or widget rendering failed.                                                                                                             |
-| `invalid-target` | The widget parameter is empty, malformed, repeated, or unregistered.                                                                                     |
+| `invalid-target` | The widget parameter is empty, malformed, repeated, or unknown.                                                                                          |
 
 For capture, wait for `[data-focused-widget="event-log"][data-widget-state="ready"]`.
 Handle `empty`, `error`, and `invalid-target` as separate outcomes. The bridge's

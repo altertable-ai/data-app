@@ -55,6 +55,7 @@ import {
 import { ChartValueFormat, axisValueFormatter } from './chart-value-format.ts';
 import { chartBarFill } from './chartColor.ts';
 import { ChartLegend } from './ChartLegend.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { TooltipSurface } from './TooltipSurface.tsx';
 const seriesColor = 'var(--atbl-chart-1)';
 /** Hollow sample marker shared by standalone and composed series. */
@@ -568,6 +569,11 @@ function barTooltipPosition(
 
 /** Uses the same surface as single-series inspection; Recharts owns interaction. */
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
+  const focused = useContext(FocusedWidgetContext);
+  return focused ? null : <ComposedTooltip {...props} />;
+}
+
+function ComposedTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
   const sample = useContext(ChartActiveSampleContext);

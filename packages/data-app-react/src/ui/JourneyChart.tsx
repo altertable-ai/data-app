@@ -1,10 +1,17 @@
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
-import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type ComponentRef,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from './Button.tsx';
 import type { CountChartProps } from './chart-data.ts';
 import { classNames } from './classNames.ts';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import {
   buildJourneyFlow,
   limitJourneyFlow,
@@ -77,6 +84,7 @@ function JourneyFlow({
 }: Pick<JourneyChartProps, 'paths' | 'unit'> & {
   formatValue: (value: number) => string;
 }) {
+  const focused = useContext(FocusedWidgetContext);
   const [expandedBranch, setExpandedBranch] = useState<string[]>([]);
   const [visibleEventsByDepth, setVisibleEventsByDepth] = useState<
     Record<number, number>
@@ -268,7 +276,7 @@ function JourneyFlow({
                 </span>
               ) : null}
             </section>
-            {node.expandable && (
+            {!focused && node.expandable && (
               <Button
                 variant="outline"
                 size="icon-compact"
@@ -294,7 +302,7 @@ function JourneyFlow({
                 {node.expanded ? '−' : '›'}
               </Button>
             )}
-            {node.outcome === 'other' && (
+            {!focused && node.outcome === 'other' && (
               <Button
                 size="compact"
                 variant="ghost"

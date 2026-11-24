@@ -7,6 +7,7 @@ import {
 } from '@altertable/data-app/internal';
 import { createContext, type ReactNode } from 'react';
 
+import { type WidgetTarget } from './content.ts';
 import { type DataContext } from './ui/data-context.ts';
 import { type EmptyContent } from './ui/presentation.ts';
 
@@ -72,6 +73,7 @@ export type FilterControls = {
 /** Every filter one client's operations read, and the hook rendering their controls. */
 export type ClientFilters = {
   filters: FilterCollection;
+  widgets: ReadonlyMap<string, WidgetTarget>;
   useControls: () => FilterControls;
 };
 

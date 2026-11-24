@@ -2,6 +2,7 @@ import { formatCount, pluralize } from '@altertable/data-app/format';
 import { invariant, type DataReading } from '@altertable/data-app/internal';
 import { useMergeRefs } from '@floating-ui/react';
 import {
+  useContext,
   useRef,
   useState,
   type ComponentRef,
@@ -16,6 +17,7 @@ import {
   DataTableEmptyRow,
   type DataTableSearch,
 } from './DataTable.tsx';
+import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { type EmptyContent } from './presentation.ts';
 import { type WidgetStatus } from './RequestHint.tsx';
@@ -152,6 +154,7 @@ function TableWidgetContent<Row>({
   loading?: boolean;
   skeletonRows?: number;
 }) {
+  const focused = useContext(FocusedWidgetContext);
   const keys = rows.map(rowKey);
   invariant(
     keys.every(key =>
@@ -162,7 +165,7 @@ function TableWidgetContent<Row>({
   const rowKeys = JSON.stringify(keys);
 
   const pageSize =
-    pagination === false || limit !== undefined
+    focused || pagination === false || limit !== undefined
       ? null
       : (pagination?.pageSize ?? 10);
   const [pageState, setPageState] = useState({
@@ -261,10 +264,10 @@ function TableWidgetContent<Row>({
             rowKey={rowKey}
             rowCount={rows.length}
             matchCount={hits.length}
-            search={search}
+            search={focused ? undefined : search}
             emptyFallback={emptyFallback}
             noMatchesFallback={noMatchesFallback}
-            onClearFilters={onClearFilters}
+            onClearFilters={focused ? undefined : onClearFilters}
             loading={loading}
             skeletonRows={
               skeletonRows ??
