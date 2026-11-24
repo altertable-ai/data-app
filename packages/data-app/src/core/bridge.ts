@@ -1,7 +1,10 @@
 import { parseDataAppAction, parseDataAppActions } from './actions.ts';
 import { isLogEntry } from './logger.ts';
 import { isRecord } from './record.ts';
-import { type DataAppWidgetCaptureState } from './widget-capture.ts';
+import {
+  isWidgetId,
+  type DataAppWidgetCaptureState,
+} from './widget-capture.ts';
 
 /** Data app delivery protocol. IDs identify a document, a shell session, and an individual call. */
 const BRIDGE = 'altertable:data-app';
@@ -194,8 +197,7 @@ export const bridgeProtocol = {
         if (state === 'invalid-target')
           return { captureRequest, capture: { state } };
         const widgetId = string(capture, 'widgetId');
-        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(widgetId))
-          throw new Error('Invalid widget ID.');
+        if (!isWidgetId(widgetId)) throw new Error('Invalid widget ID.');
         if (state === 'ready') {
           const height = length(capture, 'height');
           if (height === 0 || !Number.isSafeInteger(height))

@@ -5,6 +5,7 @@ import {
   combineOperationFilters,
   displayedSnapshot,
   invariant,
+  isWidgetId,
   randomUuid,
   resolveDataView,
   type ChoiceFilter,
@@ -30,9 +31,9 @@ import {
 } from './bindings.ts';
 import {
   addressableContent,
-  validWidgetId,
   ViewContent,
   type DataContentState,
+  type WidgetContentOptions,
   type WidgetTarget,
 } from './content.ts';
 import { DetailView, type DetailViewDefinition } from './details.tsx';
@@ -187,14 +188,10 @@ type BoundView<
       : { current: number; previous?: never }
   ): Metric<Data, FilterInput<Filters>>;
   scope(snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string;
+  /** Options are optional. For a read-only `?widget=<id>` link, declare content at module scope with a stable `id`. Use `waitForReady` for custom asynchronous drawing. */
   content(
     render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode,
-    options?: {
-      /** Stable ID for a read-only widget link, unique within this createDataHooks() client. */
-      id: string;
-      /** Wait for custom asynchronous drawing after the selected data commits. */
-      waitForReady?: WidgetTarget['waitForReady'];
-    }
+    options?: WidgetContentOptions
   ): ViewContent<Data, FilterInput<Filters>>;
 };
 
@@ -413,13 +410,13 @@ export function createDataHooks<Operations extends DataOperations>(
         },
         content(
           render: (state: DataContentState<Data, Input>) => ReactNode,
-          options?: { id: string; waitForReady?: WidgetTarget['waitForReady'] }
+          options?: WidgetContentOptions
         ): ViewContent<Data, Input> {
           if (!options)
             return new ViewContent(view, render, resolved.describeInput);
           const { id, waitForReady } = options;
           invariant(
-            validWidgetId(id),
+            isWidgetId(id),
             'Widget IDs must use lowercase letters, digits, and single hyphens.'
           );
           invariant(!widgets.has(id), `Duplicate widget ID “${id}”.`);

@@ -1,5 +1,6 @@
 import { appDiagnostics } from '@altertable/data-app/client';
 import {
+  readWidgetId,
   reportWidgetCapture,
   widgetCaptureRequest,
   type WidgetCaptureRenderState,
@@ -21,11 +22,7 @@ import {
 } from 'react';
 
 import { useDataApp } from '../app-context.ts';
-import {
-  sectionContent,
-  validWidgetId,
-  type WidgetTarget,
-} from '../content.ts';
+import { sectionContent, type WidgetTarget } from '../content.ts';
 import { DateFormattingContext } from '../date-formatting.ts';
 import { useDeclaredResult } from '../view-runtime.tsx';
 import { errorPresentation } from './DataSectionBoundary.tsx';
@@ -42,7 +39,7 @@ type Target =
   | { widget: WidgetTarget; reason?: never }
   | { widget?: never; reason: string };
 
-type WidgetState = 'loading' | 'ready' | 'empty' | 'error';
+type WidgetState = Exclude<WidgetCaptureRenderState['state'], 'invalid-target'>;
 type Readiness = {
   widget: WidgetTarget;
   data: unknown;
@@ -61,7 +58,7 @@ function currentSearch() {
   return searchParams().toString();
 }
 
-function CaptureMain({
+function FocusedWidgetSurface({
   capture,
   ...props
 }: ComponentPropsWithRef<'main'> & { capture: WidgetCaptureRenderState }) {
@@ -92,26 +89,23 @@ function CaptureMain({
   );
 }
 
-function widgetSearch() {
-  const ids = searchParams().getAll('widget');
-  if (ids.length > 1) return false;
-  return ids[0] ?? null;
-}
-
 export function useWidgetTarget(
   registry?: ReadonlyMap<string, WidgetTarget>
 ): Target | null {
-  const id = useSyncExternalStore(subscribeSearch, widgetSearch, () => null);
-  if (id === null) return null;
-  if (id === false || !validWidgetId(id))
-    return { reason: 'Provide one valid widget ID in the URL.' };
+  const id = useSyncExternalStore(
+    subscribeSearch,
+    () => readWidgetId(searchParams()),
+    () => undefined
+  );
+  if (id === undefined) return null;
+  if (id === null) return { reason: 'Provide one valid widget ID in the URL.' };
   const widget = registry?.get(id);
   return widget
     ? { widget }
     : { reason: `No widget is registered as “${id}”.` };
 }
 
-export function FocusedWidgetFrame({ target }: { target: Target }) {
+export function FocusedWidget({ target }: { target: Target }) {
   const identity = useId();
   const app = useDataApp();
   const transport = useDataAppTransport();
@@ -124,13 +118,13 @@ export function FocusedWidgetFrame({ target }: { target: Target }) {
   useAppAppearance(app.appearance, theme ?? presentation?.theme);
   if (!target.widget)
     return (
-      <CaptureMain capture={{ state: 'invalid-target' }}>
+      <FocusedWidgetSurface capture={{ state: 'invalid-target' }}>
         <StatusPanel
           status="error"
           title="Widget unavailable"
           description={target.reason}
         />
-      </CaptureMain>
+      </FocusedWidgetSurface>
     );
   const { widget } = target;
   return (
@@ -162,9 +156,11 @@ class FocusedRenderBoundary extends Component<
 
   override render() {
     return this.state.failed ? (
-      <CaptureMain capture={{ state: 'error', widgetId: this.props.id }}>
+      <FocusedWidgetSurface
+        capture={{ state: 'error', widgetId: this.props.id }}
+      >
         <StatusPanel status="error" title="This widget couldn’t render" />
-      </CaptureMain>
+      </FocusedWidgetSurface>
     ) : (
       this.props.children
     );
@@ -199,7 +195,7 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   else if (readiness && settled?.readiness === readiness) state = settled.state;
 
   return (
-    <CaptureMain
+    <FocusedWidgetSurface
       ref={element}
       capture={{ state, widgetId: widget.id }}
       aria-busy={state === 'loading'}
@@ -250,7 +246,7 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
           )}
         </Suspense>
       )}
-    </CaptureMain>
+    </FocusedWidgetSurface>
   );
 }
 

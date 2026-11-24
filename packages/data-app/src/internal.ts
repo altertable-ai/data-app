@@ -113,6 +113,8 @@ export type {
 export { fixedUnitMilliseconds } from './core/time-units.ts';
 
 export {
+  isWidgetId,
+  readWidgetId,
   reportWidgetCapture,
   widgetCaptureRequest,
   type DataAppWidgetCaptureState,

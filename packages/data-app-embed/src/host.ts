@@ -10,6 +10,7 @@ import {
 } from '@altertable/data-app/contract';
 import {
   randomUuid,
+  readWidgetId,
   createBridgeEndpoint,
   type DataAppPresentation,
   type DataAppWidgetCaptureState,
@@ -147,21 +148,34 @@ export function attachDataAppConnection({
     onDiagnostic(event);
   }
 
-  let captureRequest: { search: string; id: string } | undefined;
+  let captureRequest:
+    | { search: string; id: string; widgetId: string | null }
+    | undefined;
   let publishedCapture: DataAppWidgetCaptureState | undefined;
+
+  function publishCapture(capture: DataAppWidgetCaptureState | undefined) {
+    if (capture === publishedCapture) return;
+    if (
+      capture?.state === 'loading' &&
+      publishedCapture?.state === 'loading' &&
+      capture.widgetId === publishedCapture.widgetId
+    )
+      return;
+    publishedCapture = capture;
+    onWidgetCaptureChange?.(capture);
+  }
 
   function resetCapture() {
     captureRequest = undefined;
-    if (!publishedCapture) return;
-    publishedCapture = undefined;
-    onWidgetCaptureChange?.(undefined);
+    publishCapture(undefined);
   }
 
   function updateCaptureRequest(search: string) {
     if (!onWidgetCaptureChange || captureRequest?.search === search) return;
     resetCapture();
-    if (new URLSearchParams(search).has('widget'))
-      captureRequest = { search, id: randomUuid() };
+    const widgetId = readWidgetId(new URLSearchParams(search));
+    if (widgetId !== undefined)
+      captureRequest = { search, id: randomUuid(), widgetId };
   }
 
   function hostState() {
@@ -360,11 +374,10 @@ export function attachDataAppConnection({
           publishedCapture?.state === 'ready' &&
           !contentSizing.fits(publishedCapture.height)
         ) {
-          publishedCapture = {
+          publishCapture({
             state: 'loading',
             widgetId: publishedCapture.widgetId,
-          };
-          onWidgetCaptureChange?.(publishedCapture);
+          });
         }
       },
       widgetCapture({ captureRequest: requestId, capture }) {
@@ -373,22 +386,14 @@ export function attachDataAppConnection({
           captureRequest.search !== host.location.search
         )
           return;
-        const ids = new URLSearchParams(captureRequest.search).getAll('widget');
         if (
           'widgetId' in capture &&
-          (ids.length !== 1 || ids[0] !== capture.widgetId)
+          capture.widgetId !== captureRequest.widgetId
         )
           return;
         if (capture.state === 'ready' && !contentSizing.fits(capture.height))
           return;
-        if (
-          capture.state === 'loading' &&
-          publishedCapture?.state === 'loading' &&
-          capture.widgetId === publishedCapture.widgetId
-        )
-          return;
-        publishedCapture = capture;
-        onWidgetCaptureChange?.(capture);
+        publishCapture(capture);
       },
       request(message) {
         void request(message);

@@ -58,14 +58,18 @@ export function sectionContent<Data, Input>(content: ViewContent<Data, Input>) {
   return ViewContent.section(content);
 }
 
-/** An addressable section and its optional custom rendering readiness check. */
-export type WidgetTarget<Data = unknown, Input = unknown> = {
+export type WidgetContentOptions = {
+  /** Stable ID for `?widget=<id>`. Use lowercase letters and digits separated by single hyphens. IDs must be unique within this `createDataHooks()` instance. */
   id: string;
-  content: ViewContent<Data, Input>;
+  /** Wait for custom asynchronous drawing after the selected data commits. Return when ready, including if drawing already finished. Reject on render failure and stop observing when the signal aborts. */
   waitForReady?: (
     element: HTMLElement,
     signal: AbortSignal
   ) => void | Promise<void>;
+};
+
+export type WidgetTarget = WidgetContentOptions & {
+  content: ViewContent<unknown, unknown>;
 };
 
 export function addressableContent<Data, Input>(
@@ -81,8 +85,4 @@ export function addressableContent<Data, Input>(
     source => createElement(Widget, { source }),
     describeInput
   );
-}
-
-export function validWidgetId(id: string) {
-  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 }

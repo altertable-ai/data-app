@@ -10,6 +10,19 @@ export type WidgetCaptureRenderState =
   | Exclude<DataAppWidgetCaptureState, { state: 'ready' }>
   | { state: 'ready'; widgetId: string };
 
+export function isWidgetId(id: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
+}
+
+/** Returns undefined for normal navigation and null for an invalid widget link. */
+export function readWidgetId(
+  search: URLSearchParams
+): string | null | undefined {
+  const [id, ...duplicates] = search.getAll('widget');
+  if (id === undefined) return undefined;
+  return duplicates.length === 0 && isWidgetId(id) ? id : null;
+}
+
 export const reportWidgetCapture = Symbol.for('altertable.reportWidgetCapture');
 
 export function widgetCaptureRequest(state: unknown, search: string) {

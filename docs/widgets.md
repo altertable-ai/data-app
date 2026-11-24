@@ -19,41 +19,6 @@ Use `<Stack>` for reading order and `<Grid>` for peers. Read [layout](layout.md)
 only when changing spans or shell composition.
 `<Skeleton>` supports custom fallback content.
 
-## Link to one widget
-
-Give an existing `view.content()` declaration a stable ID when you need to link
-to it or capture it individually. Widgets used only in the full app can omit the ID.
-
-```tsx
-const eventLogContent = activityView.content(
-  source => (
-    <TableWidget title="Event log" dataset={eventLog} source={source} />
-  ),
-  { id: 'event-log' }
-);
-
-function App() {
-  return (
-    <DataApp view={activityView}>
-      <DataSection content={eventLogContent} />
-    </DataApp>
-  );
-}
-```
-
-Open `?widget=event-log` to show the content by itself with the owning view's URL
-filters. Focused mode omits the widget frame and interaction controls. Declare
-linkable content at module scope. IDs must be unique within the same
-`createDataHooks()` instance and use lowercase letters and digits separated by
-single hyphens. Keep them stable to preserve existing links.
-
-For a chart that draws asynchronously after React commits, add `waitForReady`
-alongside the ID in the options to `view.content()`.
-Resolve the promise when the widget is ready to capture, including when drawing
-has already completed. Reject it to report a rendering error. Use the signal to
-stop observing when the widget unmounts or its result changes. See
-[focused widget states](embed.md#focused-widget-states) for the capture contract.
-
 ## Choose a visualization
 
 Choose the component by the user's question. Compose dataset visuals inside

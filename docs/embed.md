@@ -88,7 +88,8 @@ opaque apps keep that state in memory rather than modifying their document URL.
 
 ## Focused widget states
 
-Use `?widget=event-log` on an app URL to open a [linkable visualization](widgets.md#link-to-one-widget).
+Use `?widget=event-log` on an app URL to open the visualization whose
+`view.content()` declaration has the ID `event-log`.
 For hosted bundles, pass `widget` in the search state shared through the navigation
 adapter. Add `theme=light` or `theme=dark` to set the focused view’s palette, including
 its background, for capture. A single valid value overrides the host or app theme
@@ -109,12 +110,10 @@ The focused `<main>` fills the iframe width from its top-left corner. Ready
 content determines its height. Loading, empty, error, and invalid-target states
 have a minimum height of 240 CSS pixels.
 
-For a Gotenberg capture, use a host page with a borderless, full-width,
-[content-sized iframe](#content-sizing) and no surrounding UI in the capture
-area. Set Gotenberg's `width` form field to the desired layout width, such as
-`640`. Leave `clip` off so tall widgets can extend below the initial viewport.
-When using an element selector for the screenshot, target the iframe or its
-wrapper in the host document.
+Use a borderless, full-width, [content-sized iframe](#content-sizing) for
+capture. Set the capture viewport to the desired layout width and target the
+iframe or its wrapper in the host document. Allow the capture area to grow with
+tall content.
 
 Set `onWidgetCaptureChange` on `attachDataAppBridge()` or React's
 `<DataAppBridge>` to read the focused state across the iframe boundary.
@@ -126,9 +125,9 @@ app reports readiness and the content-sized iframe reaches that height.
 
 For visualization-only capture, expose a host readiness flag that is true only
 while the active frame reports `state: 'ready'` for the requested widget ID.
-Use the flag in Gotenberg's `waitForExpression`. Treat `empty`, `error`, and
-`invalid-target` as terminal outcomes for your capture job. Bound the wait so an
-older bundle or iframe that cannot fit its content fails the job.
+Start capture when the flag is true. Treat `empty`, `error`, and `invalid-target`
+as terminal outcomes. Bound the wait so an older bundle or an iframe that cannot
+fit its content fails the job.
 
 ## External links
 

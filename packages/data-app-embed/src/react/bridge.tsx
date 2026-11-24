@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useImperativeHandle,
   useRef,
   useLayoutEffect,
@@ -10,7 +11,11 @@ import {
 } from 'react';
 
 import { attachDataAppBridge, type DataAppBridgeOptions } from '../bridge.ts';
-import { type DataAppConnection, type DataAppHost } from '../host.ts';
+import {
+  type DataAppConnection,
+  type DataAppHost,
+  type DataAppHostOptions,
+} from '../host.ts';
 import { type DataAppSource } from '../source.ts';
 
 export type DataAppBridgeProps = Pick<
@@ -97,32 +102,9 @@ function useBridgeState(props: DataAppBridgeProps) {
     hostRef.current?.setLogger(props.logger);
   });
 
-  return { hostRef, handlers };
-}
-
-function SourceBridge(props: SourceBridgeProps) {
-  const { source, title, iframeProps, startupTimeoutMs } = props;
-  const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
-  const { hostRef, handlers } = useBridgeState(props);
   const captureEnabled = props.onWidgetCaptureChange !== undefined;
-  const type = source.type;
-  const url = source.type === 'url' ? source.url : source.bootstrapUrl;
-  const javascript = source.type === 'bundle' ? source.javascript : undefined;
-
-  useEffect(() => {
-    if (!iframe) return;
-
-    const bridge = attachDataAppBridge({
-      iframe,
-      source:
-        type === 'url'
-          ? { type, url: url! }
-          : {
-              type,
-              bootstrapUrl: url,
-              javascript: javascript!,
-            },
-      startupTimeoutMs,
+  const bridgeOptions = useCallback(
+    (): Omit<DataAppHostOptions, 'iframe'> => ({
       repair: handlers.current.repair,
       presentation: handlers.current.presentation,
       logger: handlers.current.logger,
@@ -141,6 +123,36 @@ function SourceBridge(props: SourceBridgeProps) {
       onWidgetCaptureChange: captureEnabled
         ? capture => handlers.current.onWidgetCaptureChange?.(capture)
         : undefined,
+    }),
+    [captureEnabled]
+  );
+
+  return { hostRef, bridgeOptions };
+}
+
+function SourceBridge(props: SourceBridgeProps) {
+  const { source, title, iframeProps, startupTimeoutMs } = props;
+  const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
+  const { hostRef, bridgeOptions } = useBridgeState(props);
+  const type = source.type;
+  const url = source.type === 'url' ? source.url : source.bootstrapUrl;
+  const javascript = source.type === 'bundle' ? source.javascript : undefined;
+
+  useEffect(() => {
+    if (!iframe) return;
+
+    const bridge = attachDataAppBridge({
+      iframe,
+      source:
+        type === 'url'
+          ? { type, url: url! }
+          : {
+              type,
+              bootstrapUrl: url,
+              javascript: javascript!,
+            },
+      startupTimeoutMs,
+      ...bridgeOptions(),
     });
     hostRef.current = bridge;
 
@@ -155,8 +167,7 @@ function SourceBridge(props: SourceBridgeProps) {
     javascript,
     startupTimeoutMs,
     hostRef,
-    handlers,
-    captureEnabled,
+    bridgeOptions,
     props.repair?.session,
     props.repair?.revision,
   ]);
@@ -178,8 +189,7 @@ function SourceBridge(props: SourceBridgeProps) {
 
 function ConnectionBridge(props: ConnectionBridgeProps) {
   const { iframe, connection } = props;
-  const { hostRef, handlers } = useBridgeState(props);
-  const captureEnabled = props.onWidgetCaptureChange !== undefined;
+  const { hostRef, bridgeOptions } = useBridgeState(props);
   const identity =
     connection.type === 'origin' ? connection.origin : connection.token;
   const type = connection.type;
@@ -195,24 +205,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
           ? { type, origin: identity }
           : { type, token: identity },
       window: host,
-      repair: handlers.current.repair,
-      presentation: handlers.current.presentation,
-      logger: handlers.current.logger,
-      onMessage(request, context) {
-        return handlers.current.onMessage(request, context);
-      },
-      onStatusChange(status) {
-        return handlers.current.onStatusChange?.(status);
-      },
-      onDiagnostic(event) {
-        return handlers.current.onDiagnostic?.(event);
-      },
-      onActionsChange(actions) {
-        return handlers.current.onActionsChange?.(actions);
-      },
-      onWidgetCaptureChange: captureEnabled
-        ? capture => handlers.current.onWidgetCaptureChange?.(capture)
-        : undefined,
+      ...bridgeOptions(),
     });
     hostRef.current = bridge;
 
@@ -225,8 +218,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
     type,
     identity,
     hostRef,
-    handlers,
-    captureEnabled,
+    bridgeOptions,
     props.repair?.session,
     props.repair?.revision,
   ]);
