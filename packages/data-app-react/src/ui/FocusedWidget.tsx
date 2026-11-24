@@ -207,9 +207,7 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
               ? section.children(view.data, view.input)
               : section.loadingFallback}
           </DateFormattingContext>
-          {state === 'loading' && readiness?.widget.waitForReady && (
-            <LoadingStatus label="Loading widget" />
-          )}
+          {state === 'loading' && <LoadingStatus label="Loading widget" />}
           {readiness && (
             <WidgetReadiness
               element={element}

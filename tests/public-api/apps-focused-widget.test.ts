@@ -37,6 +37,38 @@ function widgetState(page: Page) {
 }
 
 describe('widget URL', () => {
+  test.for([
+    { state: 'loading', widget: 'event-log', hold: true },
+    { state: 'loading', widget: 'custom' },
+    { state: 'empty', widget: 'event-log', activity: [] },
+    { state: 'error', widget: 'event-log', status: 503 },
+    { state: 'invalid-target', widget: 'missing-widget' },
+  ])(
+    'keeps $widget ($state) in a compact capture area',
+    async ({ state, widget, ...response }, { page }) => {
+      const { release } = await serveData(page, response);
+      const main = page.getByRole('main');
+      try {
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.goto(`/focused-widget?widget=${widget}`);
+        await expect.poll(() => widgetState(page)).toBe(state);
+        if (state === 'loading')
+          await main.getByText('Loading widget').waitFor();
+        expect(await main.boundingBox()).toMatchObject({
+          width: 640,
+          height: 240,
+        });
+        await page.setViewportSize({ width: 375, height: 700 });
+        expect(await main.boundingBox()).toMatchObject({
+          width: 375,
+          height: 240,
+        });
+      } finally {
+        release();
+      }
+    }
+  );
+
   test('selects a widget outside the dashboard layout and queries only its view with the URL filters', async ({
     page,
   }) => {

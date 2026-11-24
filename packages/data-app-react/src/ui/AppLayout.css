@@ -69,10 +69,27 @@
 }
 
 .altertable-focused-widget {
+  position: relative;
+  box-sizing: border-box;
   display: grid;
-  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 640px);
+  margin-inline: auto;
   padding: var(--atbl-space-md);
   background: var(--atbl-background);
+}
+.altertable-focused-widget:not([data-widget-state='ready']) {
+  min-height: 240px;
+  align-content: center;
+}
+.altertable-focused-widget > .altertable-loading-status {
+  inset: var(--atbl-space-md);
+}
+.altertable-focused-widget > .altertable-status-panel[data-status='error'] {
+  width: fit-content;
+  max-width: 100%;
+  margin-block: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Custom visuals can include their own controls. Keep those out of the capture. */

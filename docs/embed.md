@@ -105,9 +105,13 @@ Valid targets also expose their ID as `data-focused-widget`.
 | `error`          | The view request or widget rendering failed.                                                                                                             |
 | `invalid-target` | The widget parameter is empty, malformed, repeated, or unknown.                                                                                          |
 
-For capture, wait for `[data-focused-widget="event-log"][data-widget-state="ready"]`.
-Handle `empty`, `error`, and `invalid-target` as separate outcomes. The bridge's
-connection status describes the iframe session.
+For a visualization screenshot, wait for and capture the element
+`[data-focused-widget="event-log"][data-widget-state="ready"]` inside the app
+frame. Its width is 640 CSS pixels when the app viewport allows it, and its
+height follows the visualization. Loading, empty, error, and invalid-target
+states use the same width and are at least 240 CSS pixels tall. Handle `empty`,
+`error`, and `invalid-target` as terminal outcomes. The bridge's connection
+status describes the iframe session.
 
 ## External links
 
