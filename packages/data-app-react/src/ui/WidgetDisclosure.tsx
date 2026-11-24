@@ -2,7 +2,6 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
-import { useStaticRender } from './static-render.ts';
 
 export type WidgetDisclosureProps = {
   label: ReactNode;
@@ -15,12 +14,9 @@ export function WidgetDisclosure({
   className,
   ...props
 }: WidgetDisclosureProps) {
-  const isStatic = useStaticRender();
   return (
     <details
       {...props}
-      // A capture shows the disclosed content; the isStatic surface blocks toggling.
-      {...(isStatic ? { open: true } : {})}
       className={classNames('altertable-widget-disclosure', className)}
     >
       <summary data-atbl-focus="ring" data-atbl-control="action">

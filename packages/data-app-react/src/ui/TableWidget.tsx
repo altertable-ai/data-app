@@ -25,7 +25,6 @@ import {
   type SearchItemsOptions,
 } from './searchItems.ts';
 import { Skeleton } from './Skeleton.tsx';
-import { useStaticRender } from './static-render.ts';
 import { Tooltip } from './Tooltip.tsx';
 import { VisualizationWidget } from './VisualizationWidget.tsx';
 import { type WidgetEvidence } from './WidgetEvidence.ts';
@@ -153,7 +152,6 @@ function TableWidgetContent<Row>({
   loading?: boolean;
   skeletonRows?: number;
 }) {
-  const isStatic = useStaticRender();
   const keys = rows.map(rowKey);
   invariant(
     keys.every(key =>
@@ -164,7 +162,7 @@ function TableWidgetContent<Row>({
   const rowKeys = JSON.stringify(keys);
 
   const pageSize =
-    isStatic || pagination === false || limit !== undefined
+    pagination === false || limit !== undefined
       ? null
       : (pagination?.pageSize ?? 10);
   const [pageState, setPageState] = useState({
@@ -263,10 +261,10 @@ function TableWidgetContent<Row>({
             rowKey={rowKey}
             rowCount={rows.length}
             matchCount={hits.length}
-            search={isStatic ? undefined : search}
+            search={search}
             emptyFallback={emptyFallback}
             noMatchesFallback={noMatchesFallback}
-            onClearFilters={isStatic ? undefined : onClearFilters}
+            onClearFilters={onClearFilters}
             loading={loading}
             skeletonRows={
               skeletonRows ??

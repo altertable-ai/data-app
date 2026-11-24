@@ -44,9 +44,7 @@
   padding-block-start: var(--atbl-space-sm);
 }
 /* Rows keep a hover gutter but their text lines up with the widget heading. */
-.altertable-pie-legend
-  .altertable-tooltip-trigger
-  :is(button, .altertable-pie-legend-value) {
+.altertable-pie-legend .altertable-tooltip-trigger button {
   --atbl-control-open-surface: var(--atbl-subtle);
   display: flex;
   align-items: center;
@@ -93,9 +91,7 @@
   width: 100%;
   min-width: 0;
 }
-.altertable-pie-legend
-  .altertable-tooltip-trigger
-  :is(button, .altertable-pie-legend-value) {
+.altertable-pie-legend .altertable-tooltip-trigger button {
   font: inherit;
 }
 

@@ -24,7 +24,7 @@ import {
   ReferenceLine,
   ReferenceArea,
   ReferenceDot,
-  Brush as RechartsBrush,
+  Brush,
   Cell,
   Line as NativeLine,
   Bar as NativeBar,
@@ -71,17 +71,11 @@ import {
 import { ChartValueFormat } from './chart-value-format.ts';
 import { classNames } from './classNames.ts';
 import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
-import { useStaticRender } from './static-render.ts';
 import {
   type ChartCursorGroup,
   ChartCursorChartContext,
   useLinkedChartCursor,
 } from './use-chart-cursor-group.tsx';
-
-function Brush(props: ComponentProps<typeof RechartsBrush>) {
-  const isStatic = useStaticRender();
-  return isStatic ? null : <RechartsBrush {...props} />;
-}
 
 function findNearestSeriesId(
   hoveredSeriesId: string | null,
@@ -505,7 +499,6 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
   fullAxisSpace,
   trackPlotOffsets,
 }: ComposedChartPlotProps<Row>) {
-  const isStatic = useStaticRender();
   const {
     data,
     ariaLabel,
@@ -540,9 +533,6 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
           <RechartsComposedChart
             data-atbl-focus="inset"
             {...rechartsProps}
-            accessibilityLayer={
-              isStatic ? false : rechartsProps.accessibilityLayer
-            }
             data={data}
             width={width}
             height={height}

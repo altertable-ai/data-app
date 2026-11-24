@@ -279,7 +279,7 @@ ComposedChart.Legend: (props: ComposedChartLegendProps)
 ComposedChart.ReferenceLine: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceArea: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceDot: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
-ComposedChart.Brush: (props: ComponentProps<typeof import('recharts').Brush>)
+ComposedChart.Brush: (outsideProps: Props)
 ComposedChart.Cell: (props: P): Promise<ReactNode> | ReactNode
 ComposedChart.Label: (outerProps: Props)
 ComposedChart.LabelList: (props: Props)

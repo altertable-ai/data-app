@@ -11,7 +11,6 @@ import {
 
 import { chartBarFill } from './chartColor.ts';
 import { classNames } from './classNames.ts';
-import { useStaticRender } from './static-render.ts';
 
 export type ChartLegendProps = {
   children: ReactNode;
@@ -33,7 +32,6 @@ function ChartLegendRoot({
   'aria-label': ariaLabel = 'Chart legend',
   ...props
 }: ChartLegendProps) {
-  const isStatic = useStaticRender();
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
   const containerRef = useRef<ComponentRef<'div'>>(null);
@@ -82,8 +80,8 @@ function ChartLegendRoot({
         data-align={align}
         className={classNames('altertable-chart-legend', className)}
       >
-        {isStatic || expanded ? items : items.slice(0, visibleCount)}
-        {!isStatic && hiddenCount > 0 && (
+        {expanded ? items : items.slice(0, visibleCount)}
+        {hiddenCount > 0 && (
           <li className="altertable-chart-legend-overflow">
             <button
               type="button"

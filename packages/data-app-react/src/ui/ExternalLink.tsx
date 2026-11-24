@@ -12,8 +12,6 @@ import {
   type MouseEvent,
 } from 'react';
 
-import { useStaticRender } from './static-render.ts';
-
 export type ExternalLinkProps = {
   href: string;
   children: ReactNode;
@@ -22,18 +20,7 @@ export type ExternalLinkProps = {
 };
 
 /** Open HTTPS links through the host when embedded, or a native new tab when standalone. */
-export function ExternalLink(props: ExternalLinkProps) {
-  const isStatic = useStaticRender();
-  if (!isStatic) return <InteractiveExternalLink {...props} />;
-  const { children, className, title } = props;
-  return (
-    <span className={className} title={title}>
-      {children}
-    </span>
-  );
-}
-
-function InteractiveExternalLink({
+export function ExternalLink({
   href,
   children,
   className,

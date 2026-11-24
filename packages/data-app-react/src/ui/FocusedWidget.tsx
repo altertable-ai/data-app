@@ -19,7 +19,6 @@ import {
   useSyncExternalStore,
   type ReactNode,
   type RefObject,
-  type SyntheticEvent,
 } from 'react';
 
 import { useDataApp } from '../app-context.ts';
@@ -30,11 +29,11 @@ import { errorPresentation } from './DataSectionBoundary.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { LoadingStatus } from './LoadingStatus.tsx';
 import { searchParams, subscribeSearch } from './search.ts';
-import { StaticRenderContext } from './static-render.ts';
 import { StatusPanel } from './StatusPanel.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
 import { useDataAppTransport } from './useDataAppTransport.ts';
+import { WidgetFrameContext } from './widget-frame.ts';
 
 /** What a `?_widget=` link selects: a registered widget, or why it cannot render. */
 export type FocusedTarget =
@@ -138,7 +137,7 @@ export function FocusedWidget({ target }: { target: FocusedTarget }) {
     );
   const { widget } = target;
   return (
-    <StaticRenderContext value={true}>
+    <WidgetFrameContext value={false}>
       <FocusedRenderBoundary
         id={widget.id}
         identity={identity}
@@ -146,7 +145,7 @@ export function FocusedWidget({ target }: { target: FocusedTarget }) {
       >
         <FocusedWidgetResult widget={widget} />
       </FocusedRenderBoundary>
-    </StaticRenderContext>
+    </WidgetFrameContext>
   );
 }
 
@@ -203,28 +202,6 @@ class FocusedRenderBoundary extends Component<
   }
 }
 
-function stopInteraction(event: SyntheticEvent) {
-  event.stopPropagation();
-}
-
-/** Keeps pointer, keyboard, and click handlers inside the widget from running. */
-const blockedInteraction = {
-  onPointerDownCapture: stopInteraction,
-  onPointerOverCapture: stopInteraction,
-  onPointerOutCapture: stopInteraction,
-  onPointerMoveCapture: stopInteraction,
-  onMouseOverCapture: stopInteraction,
-  onMouseOutCapture: stopInteraction,
-  onMouseMoveCapture: stopInteraction,
-  onTouchStartCapture: stopInteraction,
-  onKeyDownCapture: stopInteraction,
-  onContextMenuCapture: stopInteraction,
-  onClickCapture(event: SyntheticEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-  },
-};
-
 function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   const section = sectionContent(widget.content);
   const result = useDeclaredResult(section.view);
@@ -255,7 +232,8 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
       ref={element}
       capture={{ state, widgetId: widget.id }}
       aria-busy={state === 'loading'}
-      {...blockedInteraction}
+      // A capture shows the widget as it is; nothing inside responds to input.
+      inert
     >
       {requestError ? (
         <StatusPanel

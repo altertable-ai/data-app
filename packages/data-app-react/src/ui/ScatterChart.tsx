@@ -1,8 +1,6 @@
 import { validateScatterChartItems } from './chart-data.ts';
 import type { ScatterChartItem, HorizontalGridProps } from './chart-data.ts';
-import { useStaticRender } from './static-render.ts';
 import { Tooltip } from './Tooltip.tsx';
-
 export type { ScatterChartItem } from './chart-data.ts';
 export type ScatterChartProps = HorizontalGridProps & {
   items: readonly ScatterChartItem[];
@@ -58,7 +56,6 @@ export function ScatterChart({
   horizontalGrid = true,
 }: ScatterChartProps) {
   validateScatterChartItems(items);
-  const isStatic = useStaticRender();
   const xScale = scale(items.map(item => item.x));
   const yScale = scale(items.map(item => item.y));
   return (
@@ -118,27 +115,16 @@ export function ScatterChart({
                     bottom: `${yScale.position(item.y)}%`,
                   }}
                 >
-                  {isStatic ? (
-                    <span
-                      className="altertable-scatter-point"
-                      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This mark is drawn with CSS, without an image source.
-                      role="img"
-                      aria-label={`${item.label}: ${xLabel} ${formatX(item.x)} ${xUnit}, ${yLabel} ${formatY(item.y)} ${yUnit}`}
-                    >
-                      <span />
-                    </span>
-                  ) : (
-                    <button
-                      data-atbl-focus="ring"
-                      data-atbl-control="default"
-                      type="button"
-                      tabIndex={-1}
-                      className="altertable-scatter-point"
-                      aria-label={`${item.label}: ${xLabel} ${formatX(item.x)} ${xUnit}, ${yLabel} ${formatY(item.y)} ${yUnit}`}
-                    >
-                      <span />
-                    </button>
-                  )}
+                  <button
+                    data-atbl-focus="ring"
+                    data-atbl-control="default"
+                    type="button"
+                    tabIndex={-1}
+                    className="altertable-scatter-point"
+                    aria-label={`${item.label}: ${xLabel} ${formatX(item.x)} ${xUnit}, ${yLabel} ${formatY(item.y)} ${yUnit}`}
+                  >
+                    <span />
+                  </button>
                 </Tooltip>
               ))}
             </div>

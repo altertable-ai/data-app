@@ -32,7 +32,7 @@ import {
   WidgetStatusContext,
   type WidgetStatus,
 } from './RequestHint.tsx';
-import { useStaticRender } from './static-render.ts';
+import { WidgetFrameContext } from './widget-frame.ts';
 import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type DataWidgetBaseProps = {
@@ -118,7 +118,7 @@ function DataWidgetContent({
   emptyFallback?: EmptyContent;
   children: ReactNode;
 }) {
-  const isStatic = useStaticRender();
+  const framed = useContext(WidgetFrameContext);
   const titleId = useId();
   const sectionStatus = useContext(WidgetStatusContext);
   const status =
@@ -133,7 +133,7 @@ function DataWidgetContent({
     !loading &&
     (suppliedStatus?.kind === 'updating' || sectionStatus?.updating === true);
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
-  if (isStatic) return content;
+  if (!framed) return content;
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
@@ -396,13 +396,13 @@ function WidgetBoundary({
   mode?: 'widget' | 'body';
   shell?: DataWidgetBaseProps;
 }) {
-  const isStatic = useStaticRender();
+  const framed = useContext(WidgetFrameContext);
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
   const dimensions = useRef({ height: 0, width: 0 });
   useLayoutEffect(() => {
     const element = ref.current;
-    if (!element || isStatic) return;
+    if (!element || !framed) return;
     const frame =
       mode === 'body'
         ? element.parentElement!
@@ -423,9 +423,9 @@ function WidgetBoundary({
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [mode, isStatic]);
+  }, [mode, framed]);
 
-  if (isStatic) return children;
+  if (!framed) return children;
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary

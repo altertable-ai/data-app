@@ -20,7 +20,6 @@ import {
 } from 'react';
 
 import { classNames } from './classNames.ts';
-import { useStaticRender } from './static-render.ts';
 import { type TooltipProps } from './Tooltip.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
@@ -32,49 +31,7 @@ function chartPointerMoved(document: Document, x: number, y: number) {
   return !previous || previous.x !== x || previous.y !== y;
 }
 
-type ChartTooltipProps = TooltipProps & {
-  /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
-  anchorRect?: (trigger: Element | null) => DOMRect | null;
-  boundaryRefs?: readonly RefObject<Element | null>[];
-  mouseHover?: boolean;
-  touchInspection?: boolean;
-};
-
-export function ChartTooltip(props: ChartTooltipProps) {
-  const isStatic = useStaticRender();
-  if (!isStatic) return <InteractiveChartTooltip {...props} />;
-  return <StaticTooltipTrigger variant="chart" {...props} />;
-}
-
-/** A isStatic capture keeps the trigger wrapper and its native props without tooltip behavior. */
-export function StaticTooltipTrigger({
-  content: _content,
-  children,
-  onOpenChange: _onOpenChange,
-  variant = 'hint',
-  align: _align,
-  placement: _placement,
-  followCursor: _followCursor,
-  anchorRect: _anchorRect,
-  boundaryRefs: _boundaryRefs,
-  mouseHover: _mouseHover,
-  touchInspection: _touchInspection,
-  portalRoot: _portalRoot,
-  className,
-  ...props
-}: ChartTooltipProps) {
-  return (
-    <span
-      {...props}
-      data-variant={variant}
-      className={classNames('altertable-tooltip-trigger', className)}
-    >
-      {children}
-    </span>
-  );
-}
-
-function InteractiveChartTooltip({
+export function ChartTooltip({
   content,
   children,
   onOpenChange,
@@ -94,7 +51,13 @@ function InteractiveChartTooltip({
   onPointerLeave,
   onPointerDown,
   ...props
-}: ChartTooltipProps) {
+}: TooltipProps & {
+  /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
+  anchorRect?: (trigger: Element | null) => DOMRect | null;
+  boundaryRefs?: readonly RefObject<Element | null>[];
+  mouseHover?: boolean;
+  touchInspection?: boolean;
+}) {
   const tooltipId = useId();
   const describedBy = tooltipId;
   const [open, setOpen] = useState(false);

@@ -24,7 +24,6 @@ import {
 
 import { type DataAppStyleHooks } from '../style-contract.ts';
 import { classNames } from './classNames.ts';
-import { useStaticRender } from './static-render.ts';
 
 type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
@@ -52,14 +51,7 @@ export type HelpPopoverProps = {
 /** A supplemental explanation that opens on click, Enter, or a deliberate mouse hover. Tabbing
  * past the trigger does not open it, and a click keeps a hover-opened panel in place.
  * triggerProps and panelProps target its two surfaces. */
-export function HelpPopover(props: HelpPopoverProps) {
-  const isStatic = useStaticRender();
-  if (!isStatic) return <InteractiveHelpPopover {...props} />;
-  // A capture keeps the trigger's text without the disclosure control.
-  return <span className={props.triggerProps?.className}>{props.trigger}</span>;
-}
-
-function InteractiveHelpPopover({
+export function HelpPopover({
   trigger,
   triggerLabel,
   label,

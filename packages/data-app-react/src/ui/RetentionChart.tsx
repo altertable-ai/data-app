@@ -10,7 +10,6 @@ import { useChartLegendFocus } from './chart-legend-interaction.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
-import { useStaticRender } from './static-render.ts';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
 export type RetentionChartPoint = {
@@ -152,10 +151,8 @@ export function RetentionChart({
   className,
   formatValue = formatNumber,
   horizontalGrid = true,
-  interactiveLegend: interactive = true,
+  interactiveLegend = true,
 }: RetentionChartProps) {
-  const isStatic = useStaticRender();
-  const interactiveLegend = interactive && !isStatic;
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,

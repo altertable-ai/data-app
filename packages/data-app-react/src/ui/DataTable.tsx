@@ -7,7 +7,6 @@ import { DateTimeTooltip } from './DateTimeTooltip.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';
 import { SearchField, type SearchFieldProps } from './SearchField.tsx';
-import { useStaticRender } from './static-render.ts';
 
 export type DataTableSearch = Pick<
   SearchFieldProps,
@@ -28,11 +27,9 @@ export function DataTable({
   searchable,
   ...props
 }: DataTableProps) {
-  const isStatic = useStaticRender();
   return (
     <>
-      {!isStatic &&
-        searchable &&
+      {searchable &&
         (searchable.itemCount > 5 ||
           searchable.value !== (searchable.resetValue ?? '')) && (
           <SearchField

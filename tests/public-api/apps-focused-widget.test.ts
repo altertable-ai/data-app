@@ -106,7 +106,7 @@ describe('widget URL', () => {
     ]);
   });
 
-  test('shows every table row without a frame, inspection, or pagination', async ({
+  test('shows the table without its frame or inspection and ignores input', async ({
     page,
   }) => {
     await serveData(page);
@@ -115,23 +115,13 @@ describe('widget URL', () => {
     );
     await expect.poll(() => widgetState(page)).toBe('ready');
     const main = page.getByRole('main');
-    expect(await main.getByRole('row').count()).toBe(3);
-    expect(await main.getByRole('button').count()).toBe(0);
-    expect(await main.getByRole('searchbox').count()).toBe(0);
+    await main.getByRole('cell', { name: '3', exact: true }).waitFor();
     expect(await main.getByText('Event log').count()).toBe(0);
     expect(await page.getByRole('dialog').count()).toBe(0);
-  });
-
-  test('keeps dates and links as text without their controls', async ({
-    page,
-  }) => {
-    await serveData(page);
-    await page.goto('/focused-widget?_widget=annotated');
-    await expect.poll(() => widgetState(page)).toBe('ready');
-    const main = page.getByRole('main');
-    await expect.poll(() => main.innerText()).toMatch(/2026.*Acme Inc/s);
-    expect(await main.getByRole('button').count()).toBe(0);
-    expect(await main.getByRole('link').count()).toBe(0);
+    await page.keyboard.press('Tab');
+    expect(
+      await main.evaluate(element => element.contains(document.activeElement))
+    ).toBe(false);
   });
 
   test('rejects unknown, empty, repeated, and evidence IDs before requesting data', async ({
@@ -236,9 +226,6 @@ describe('widget URL', () => {
     await serveData(page);
     await page.goto('/focused-widget?_widget=custom');
     await page.locator('#chart-drawing').waitFor({ state: 'attached' });
-    expect(
-      await page.getByRole('button', { name: 'Finish drawing' }).count()
-    ).toBe(0);
     expect(await widgetState(page)).toBe('loading');
     await page.evaluate(() =>
       window.dispatchEvent(new Event('fixture-finish-drawing'))
@@ -518,10 +505,9 @@ describe('widget URL', () => {
       });
     }
     await expect.poll(tickIsInsidePlotSvg).toBe(true);
-    expect(await app.getByRole('img', { name: /^Alpha:/ }).isVisible()).toBe(
+    expect(await app.getByText('Alpha', { exact: true }).isVisible()).toBe(
       true
     );
-    expect(await app.getByRole('button').count()).toBe(0);
     expect(
       await app.getByText('Samples by group', { exact: true }).count()
     ).toBe(0);

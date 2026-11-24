@@ -3,7 +3,6 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { classNames } from './classNames.ts';
 import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';
-import { useStaticRender } from './static-render.ts';
 import {
   SegmentedTab,
   SegmentedTabList,
@@ -37,16 +36,7 @@ export function WidgetViewTabs<const Views extends readonly WidgetView[]>({
   className,
   ...props
 }: WidgetViewTabsProps<Views>) {
-  const isStatic = useStaticRender();
   validateWidgetViews(views, selectedKey);
-  if (isStatic) {
-    const selected = views.find(view => view.id === selectedKey)!;
-    return selected.isEmpty ? (
-      <EmptyState {...selected.emptyFallback} />
-    ) : (
-      selected.content
-    );
-  }
 
   return (
     <div

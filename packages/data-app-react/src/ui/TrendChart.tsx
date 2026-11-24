@@ -41,7 +41,6 @@ import {
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
-import { useStaticRender } from './static-render.ts';
 import {
   type LinkedChartCursor,
   useLinkedChartCursor,
@@ -114,7 +113,6 @@ const TrendChartItems = memo(function TrendChartItems<
   onInspectAction,
   'aria-describedby': describedBy,
 }: TrendChartItemsProps<Row>) {
-  const isStatic = useStaticRender();
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   return (
     <div
@@ -124,7 +122,7 @@ const TrendChartItems = memo(function TrendChartItems<
       onContextMenuCapture={onInspectAction}
     >
       {items.map((item, index) => {
-        const declaredActions = isStatic ? [] : (itemActions?.(item) ?? []);
+        const declaredActions = itemActions?.(item) ?? [];
         const actions = chartActions(
           declaredActions,
           item.label,
@@ -158,17 +156,7 @@ const TrendChartItems = memo(function TrendChartItems<
                 }
                 className="altertable-chart-column"
               >
-                {isStatic ? (
-                  <span
-                    className="altertable-trend-point"
-                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This mark is drawn with CSS, without an image source.
-                    role="img"
-                    aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
-                  >
-                    <span className="altertable-trend-hit" />
-                    <span className="altertable-trend-label">{item.label}</span>
-                  </span>
-                ) : action ? (
+                {action ? (
                   <button
                     data-atbl-focus="ring"
                     data-atbl-control="action"

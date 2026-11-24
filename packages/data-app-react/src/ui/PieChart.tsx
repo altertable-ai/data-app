@@ -13,7 +13,6 @@ import {
 } from './ExplorationActionControl.tsx';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
-import { useStaticRender } from './static-render.ts';
 import { Tooltip } from './Tooltip.tsx';
 
 export type PieChartItem = ChartItem;
@@ -35,7 +34,6 @@ export function PieChart<Row extends PieChartItem>({
   formatValue = formatNumber,
   itemActions,
 }: PieChartProps<Row>) {
-  const isStatic = useStaticRender();
   validateValueChartItems('pie', items);
   const chartActions = useChartActions();
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -87,7 +85,6 @@ export function PieChart<Row extends PieChartItem>({
     );
   }
   function actionsFor(slice: (typeof slices)[number]) {
-    if (isStatic) return [];
     const item = slice.row;
     return chartActions.actions(
       itemActions?.(item) ?? [],
@@ -140,9 +137,7 @@ export function PieChart<Row extends PieChartItem>({
                         actionsFor(slice)
                       );
                       const opensMenu =
-                        !isStatic &&
-                        !action &&
-                        (itemActions?.(item).length ?? 0) > 1;
+                        !action && (itemActions?.(item).length ?? 0) > 1;
                       return (
                         <path
                           key={item.id}
@@ -279,11 +274,7 @@ export function PieChart<Row extends PieChartItem>({
                         )
                       }
                     >
-                      {isStatic ? (
-                        <span className="altertable-pie-legend-value">
-                          {contents}
-                        </span>
-                      ) : actions.length ? (
+                      {actions.length ? (
                         <MenuTrigger>
                           <MenuButton
                             {...explorationMenuEvents(menuTrigger)}

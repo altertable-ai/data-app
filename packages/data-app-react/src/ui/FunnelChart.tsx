@@ -12,7 +12,6 @@ import { ChartTooltipContent } from './chart-primitives.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
-import { useStaticRender } from './static-render.ts';
 import { useSvgId } from './useSvgId.ts';
 
 /** Ordered step with a unique, nonblank ID. */
@@ -136,10 +135,8 @@ export function FunnelChart({
   className,
   formatValue = formatNumber,
   horizontalGrid = true,
-  interactiveLegend: interactive = true,
+  interactiveLegend = true,
 }: FunnelChartProps) {
-  const isStatic = useStaticRender();
-  const interactiveLegend = interactive && !isStatic;
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
   const chartId = useSvgId();
   const [highlighted, setHighlighted] = useState<{

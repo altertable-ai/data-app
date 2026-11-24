@@ -11,7 +11,6 @@ import {
   type JourneyChartPath,
   type JourneyNode,
 } from './journey-flow.ts';
-import { useStaticRender } from './static-render.ts';
 
 export type { JourneyChartPath } from './journey-flow.ts';
 export type JourneyChartProps = CountChartProps & {
@@ -78,7 +77,6 @@ function JourneyFlow({
 }: Pick<JourneyChartProps, 'paths' | 'unit'> & {
   formatValue: (value: number) => string;
 }) {
-  const isStatic = useStaticRender();
   const [expandedBranch, setExpandedBranch] = useState<string[]>([]);
   const [visibleEventsByDepth, setVisibleEventsByDepth] = useState<
     Record<number, number>
@@ -270,7 +268,7 @@ function JourneyFlow({
                 </span>
               ) : null}
             </section>
-            {!isStatic && node.expandable && (
+            {node.expandable && (
               <Button
                 variant="outline"
                 size="icon-compact"
@@ -296,7 +294,7 @@ function JourneyFlow({
                 {node.expanded ? '−' : '›'}
               </Button>
             )}
-            {!isStatic && node.outcome === 'other' && (
+            {node.outcome === 'other' && (
               <Button
                 size="compact"
                 variant="ghost"
