@@ -121,6 +121,13 @@ export function createContentSizing({
   }
 
   return {
+    fits(height: number) {
+      if (!observer || height !== appliedHeight) return false;
+      const style = host.getComputedStyle(iframe);
+      const inset =
+        parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      return iframe.clientHeight === Math.round(height + inset);
+    },
     setEnabled(value: boolean) {
       if (value) enable();
       else disable();

@@ -111,3 +111,10 @@ export type {
 } from './core/date-time-range.ts';
 
 export { fixedUnitMilliseconds } from './core/time-units.ts';
+
+export {
+  reportWidgetCapture,
+  widgetCaptureRequest,
+  type DataAppWidgetCaptureState,
+  type WidgetCaptureRenderState,
+} from './core/widget-capture.ts';

@@ -21,7 +21,8 @@ only when changing spans or shell composition.
 
 ## Link to one widget
 
-Give an existing `view.content()` declaration a stable ID to make it linkable.
+Give an existing `view.content()` declaration a stable ID when you need to link
+to it or capture it individually. Widgets used only in the full app can omit the ID.
 
 ```tsx
 const eventLogContent = activityView.content(

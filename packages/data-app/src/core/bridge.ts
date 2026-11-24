@@ -1,6 +1,7 @@
 import { parseDataAppAction, parseDataAppActions } from './actions.ts';
 import { isLogEntry } from './logger.ts';
 import { isRecord } from './record.ts';
+import { type DataAppWidgetCaptureState } from './widget-capture.ts';
 
 /** Data app delivery protocol. IDs identify a document, a shell session, and an individual call. */
 const BRIDGE = 'altertable:data-app';
@@ -175,6 +176,36 @@ export const bridgeProtocol = {
       from: 'app',
       session: 'current',
       parse: fields => ({ height: length(fields, 'height') }),
+    }),
+    widgetCapture: event({
+      wire: 'widget:capture',
+      from: 'app',
+      session: 'current',
+      parse(fields): {
+        captureRequest: string;
+        capture: DataAppWidgetCaptureState;
+      } {
+        const captureRequest = string(fields, 'captureRequest');
+        if (!validId(captureRequest))
+          throw new Error('Invalid capture request.');
+        const capture = fields.capture;
+        if (!isRecord(capture)) throw new Error('Invalid widget capture.');
+        const state = string(capture, 'state');
+        if (state === 'invalid-target')
+          return { captureRequest, capture: { state } };
+        const widgetId = string(capture, 'widgetId');
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(widgetId))
+          throw new Error('Invalid widget ID.');
+        if (state === 'ready') {
+          const height = length(capture, 'height');
+          if (height === 0 || !Number.isSafeInteger(height))
+            throw new Error('Invalid capture height.');
+          return { captureRequest, capture: { state, widgetId, height } };
+        }
+        if (state === 'loading' || state === 'empty' || state === 'error')
+          return { captureRequest, capture: { state, widgetId } };
+        throw new Error('Invalid widget capture state.');
+      },
     }),
     /** The page actions the app currently offers; replaces the previous set. */
     actionsUpdate: event({

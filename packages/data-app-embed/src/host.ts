@@ -12,6 +12,7 @@ import {
   randomUuid,
   createBridgeEndpoint,
   type DataAppPresentation,
+  type DataAppWidgetCaptureState,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
   validId,
@@ -52,6 +53,11 @@ export type DataAppHostOptions = {
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   /** The page actions the connected app offers; empty while disconnected or when it offers none. */
   onActionsChange?: (actions: DataAppActions) => void;
+  /** Focused capture state for the current URL and frame, or `undefined` when unavailable.
+   * Use `sizing: 'content'` so the bridge can report a fitted `ready` state. */
+  onWidgetCaptureChange?: (
+    capture: DataAppWidgetCaptureState | undefined
+  ) => void;
   onMessage: MessageDispatcher;
 };
 
@@ -78,6 +84,7 @@ export function attachDataAppConnection({
   onStatusChange,
   onDiagnostic,
   onActionsChange,
+  onWidgetCaptureChange,
   onMessage,
   repair,
   window: host = window,
@@ -140,6 +147,23 @@ export function attachDataAppConnection({
     onDiagnostic(event);
   }
 
+  let captureRequest: { search: string; id: string } | undefined;
+  let publishedCapture: DataAppWidgetCaptureState | undefined;
+
+  function resetCapture() {
+    captureRequest = undefined;
+    if (!publishedCapture) return;
+    publishedCapture = undefined;
+    onWidgetCaptureChange?.(undefined);
+  }
+
+  function updateCaptureRequest(search: string) {
+    if (!onWidgetCaptureChange || captureRequest?.search === search) return;
+    resetCapture();
+    if (new URLSearchParams(search).has('widget'))
+      captureRequest = { search, id: randomUuid() };
+  }
+
   function hostState() {
     let presentation =
       currentPresentation?.annotations && annotationDismissal
@@ -153,8 +177,11 @@ export function attachDataAppConnection({
         : currentPresentation;
     if (presentation && contentSizingFailed)
       presentation = { ...presentation, sizing: 'frame' };
+    const search = host.location.search;
+    updateCaptureRequest(search);
     return {
-      search: host.location.search,
+      search,
+      ...(captureRequest ? { widgetCaptureRequest: captureRequest.id } : {}),
       hash: host.location.hash,
       ...(presentation ? { presentation } : {}),
       logging: logger !== undefined,
@@ -179,8 +206,10 @@ export function attachDataAppConnection({
       identity === undefined
         ? undefined
         : (JSON.parse(identity) as DataAppPresentation);
-    if (previousSizing !== currentPresentation?.sizing)
+    if (previousSizing !== currentPresentation?.sizing) {
       contentSizingFailed = false;
+      resetCapture();
+    }
     contentSizing.setEnabled(
       currentPresentation?.sizing === 'content' && !contentSizingFailed
     );
@@ -293,6 +322,7 @@ export function attachDataAppConnection({
         if (message.documentId !== documentId) {
           cancelAll();
           publishActions({});
+          resetCapture();
           if (documentId)
             repairLease = repair?.session.connect(repair.revision);
           documentId = message.documentId;
@@ -318,6 +348,7 @@ export function attachDataAppConnection({
         onStatusChange?.('ready');
       },
       runtimeError() {
+        resetCapture();
         onStatusChange?.('failed');
       },
       actionsUpdate({ actions }) {
@@ -325,6 +356,39 @@ export function attachDataAppConnection({
       },
       runtimeResize({ height }) {
         contentSizing.resize(height);
+        if (
+          publishedCapture?.state === 'ready' &&
+          !contentSizing.fits(publishedCapture.height)
+        ) {
+          publishedCapture = {
+            state: 'loading',
+            widgetId: publishedCapture.widgetId,
+          };
+          onWidgetCaptureChange?.(publishedCapture);
+        }
+      },
+      widgetCapture({ captureRequest: requestId, capture }) {
+        if (
+          captureRequest?.id !== requestId ||
+          captureRequest.search !== host.location.search
+        )
+          return;
+        const ids = new URLSearchParams(captureRequest.search).getAll('widget');
+        if (
+          'widgetId' in capture &&
+          (ids.length !== 1 || ids[0] !== capture.widgetId)
+        )
+          return;
+        if (capture.state === 'ready' && !contentSizing.fits(capture.height))
+          return;
+        if (
+          capture.state === 'loading' &&
+          publishedCapture?.state === 'loading' &&
+          capture.widgetId === publishedCapture.widgetId
+        )
+          return;
+        publishedCapture = capture;
+        onWidgetCaptureChange?.(capture);
       },
       request(message) {
         void request(message);
@@ -334,6 +398,7 @@ export function attachDataAppConnection({
         pending.delete(message.id);
       },
       disconnect() {
+        resetCapture();
         cancelAll();
         publishActions({});
         documentId = undefined;
@@ -353,6 +418,7 @@ export function attachDataAppConnection({
     fallback() {
       contentSizingFailed = true;
       contentSizing.setEnabled(false);
+      resetCapture();
       publishState();
     },
   });
@@ -416,6 +482,12 @@ export function attachDataAppConnection({
                 { route: message.route, payload: message.payload },
                 { signal: controller.signal }
               );
+      if (
+        message.route === 'navigation:update' &&
+        captureRequest?.search !== host.location.search &&
+        onWidgetCaptureChange
+      )
+        publishState();
       if (pending.get(id) === controller) send('result', { id, response });
     } catch (failure) {
       if (pending.get(id) === controller) {
@@ -453,6 +525,7 @@ export function attachDataAppConnection({
   }
 
   function load() {
+    resetCapture();
     if (connection.type === 'opaque') token = randomUuid();
     cancelAll();
     repairLease = repair?.session.connect(repair.revision);
@@ -470,6 +543,7 @@ export function attachDataAppConnection({
       closeStoryOnFullscreenExit
     );
     disposed = true;
+    resetCapture();
     unsubscribeRepair?.();
     repairLease?.dispose();
     endpoint.dispose();

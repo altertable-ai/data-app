@@ -19,6 +19,7 @@ export type DataAppBridgeProps = Pick<
   | 'onStatusChange'
   | 'onDiagnostic'
   | 'onActionsChange'
+  | 'onWidgetCaptureChange'
   | 'presentation'
   | 'logger'
   | 'repair'
@@ -103,6 +104,7 @@ function SourceBridge(props: SourceBridgeProps) {
   const { source, title, iframeProps, startupTimeoutMs } = props;
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
   const { hostRef, handlers } = useBridgeState(props);
+  const captureEnabled = props.onWidgetCaptureChange !== undefined;
   const type = source.type;
   const url = source.type === 'url' ? source.url : source.bootstrapUrl;
   const javascript = source.type === 'bundle' ? source.javascript : undefined;
@@ -136,6 +138,9 @@ function SourceBridge(props: SourceBridgeProps) {
       onActionsChange(actions) {
         return handlers.current.onActionsChange?.(actions);
       },
+      onWidgetCaptureChange: captureEnabled
+        ? capture => handlers.current.onWidgetCaptureChange?.(capture)
+        : undefined,
     });
     hostRef.current = bridge;
 
@@ -151,6 +156,7 @@ function SourceBridge(props: SourceBridgeProps) {
     startupTimeoutMs,
     hostRef,
     handlers,
+    captureEnabled,
     props.repair?.session,
     props.repair?.revision,
   ]);
@@ -173,6 +179,7 @@ function SourceBridge(props: SourceBridgeProps) {
 function ConnectionBridge(props: ConnectionBridgeProps) {
   const { iframe, connection } = props;
   const { hostRef, handlers } = useBridgeState(props);
+  const captureEnabled = props.onWidgetCaptureChange !== undefined;
   const identity =
     connection.type === 'origin' ? connection.origin : connection.token;
   const type = connection.type;
@@ -203,6 +210,9 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
       onActionsChange(actions) {
         return handlers.current.onActionsChange?.(actions);
       },
+      onWidgetCaptureChange: captureEnabled
+        ? capture => handlers.current.onWidgetCaptureChange?.(capture)
+        : undefined,
     });
     hostRef.current = bridge;
 
@@ -216,6 +226,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
     identity,
     hostRef,
     handlers,
+    captureEnabled,
     props.repair?.session,
     props.repair?.revision,
   ]);

@@ -103,6 +103,10 @@ the session. Resolve system preference in the parent to `'light'` or `'dark'`.
 Inside an embedded surface, `<DataApp>` hides its header, footer, and page
 toolbar. See [parent presentation](embed.md#parent-presentation).
 
+For widget screenshots, combine `presentation.sizing: 'content'` with
+`onWidgetCaptureChange`. See [focused widget states](embed.md#focused-widget-states)
+for the capture contract.
+
 ## Page actions
 
 Render the app's page actions in the parent with `onActionsChange`, and run them

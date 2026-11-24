@@ -1,6 +1,13 @@
 import { appDiagnostics } from '@altertable/data-app/client';
 import {
+  reportWidgetCapture,
+  widgetCaptureRequest,
+  type WidgetCaptureRenderState,
+} from '@altertable/data-app/internal';
+import {
   Component,
+  useCallback,
+  type ComponentPropsWithRef,
   Suspense,
   useId,
   useLayoutEffect,
@@ -50,6 +57,41 @@ function widgetTheme() {
   return undefined;
 }
 
+function currentSearch() {
+  return searchParams().toString();
+}
+
+function CaptureMain({
+  capture,
+  ...props
+}: ComponentPropsWithRef<'main'> & { capture: WidgetCaptureRenderState }) {
+  const transport = useDataAppTransport();
+  const subscribe = useCallback(
+    (listener: () => void) => transport?.subscribe(listener) ?? (() => {}),
+    [transport]
+  );
+  const search = useSyncExternalStore(subscribeSearch, currentSearch, () => '');
+  const request = useSyncExternalStore(
+    subscribe,
+    () => widgetCaptureRequest(transport?.snapshot(), search),
+    () => undefined
+  );
+  const { state } = capture;
+  const widgetId = 'widgetId' in capture ? capture.widgetId : undefined;
+  useLayoutEffect(() => {
+    if (request) transport?.[reportWidgetCapture]?.(request, capture);
+  });
+
+  return (
+    <main
+      {...props}
+      className="altertable-focused-widget"
+      data-widget-state={state}
+      data-focused-widget={widgetId}
+    />
+  );
+}
+
 function widgetSearch() {
   const ids = searchParams().getAll('widget');
   if (ids.length > 1) return false;
@@ -82,16 +124,13 @@ export function FocusedWidgetFrame({ target }: { target: Target }) {
   useAppAppearance(app.appearance, theme ?? presentation?.theme);
   if (!target.widget)
     return (
-      <main
-        className="altertable-focused-widget"
-        data-widget-state="invalid-target"
-      >
+      <CaptureMain capture={{ state: 'invalid-target' }}>
         <StatusPanel
           status="error"
           title="Widget unavailable"
           description={target.reason}
         />
-      </main>
+      </CaptureMain>
     );
   const { widget } = target;
   return (
@@ -123,13 +162,9 @@ class FocusedRenderBoundary extends Component<
 
   override render() {
     return this.state.failed ? (
-      <main
-        className="altertable-focused-widget"
-        data-widget-state="error"
-        data-focused-widget={this.props.id}
-      >
+      <CaptureMain capture={{ state: 'error', widgetId: this.props.id }}>
         <StatusPanel status="error" title="This widget couldn’t render" />
-      </main>
+      </CaptureMain>
     ) : (
       this.props.children
     );
@@ -164,11 +199,9 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   else if (readiness && settled?.readiness === readiness) state = settled.state;
 
   return (
-    <main
+    <CaptureMain
       ref={element}
-      className="altertable-focused-widget"
-      data-widget-state={state}
-      data-focused-widget={widget.id}
+      capture={{ state, widgetId: widget.id }}
       aria-busy={state === 'loading'}
       onPointerDownCapture={stopInteraction}
       onPointerOverCapture={stopInteraction}
@@ -217,7 +250,7 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
           )}
         </Suspense>
       )}
-    </main>
+    </CaptureMain>
   );
 }
 

@@ -7,7 +7,8 @@ import { isRecord } from '../core/record.ts';
  * The root attribute and inset properties let fixed overlays stay within the parent's visible area. */
 export function createFrameSizing(
   document: Document,
-  report: (height: number) => void
+  report: (height: number) => void,
+  measured: (height: number, fitted: boolean) => void
 ) {
   const root = document.documentElement;
   const frame = document.defaultView;
@@ -19,12 +20,15 @@ export function createFrameSizing(
 
   function measure() {
     const height = Math.ceil(root.getBoundingClientRect().height);
+    const fitted = height > 0 && height === frame?.innerHeight;
     // A matching viewport acknowledges convergence after the parent resized us.
     // Resend it even if the content did not change, so independent updates do
     // not accumulate as one feedback loop in the host.
-    if (height === reported && height !== frame?.innerHeight) return;
-    reported = height;
-    report(height);
+    if (height !== reported || fitted) {
+      reported = height;
+      report(height);
+    }
+    measured(height, fitted);
   }
 
   function stop() {
@@ -54,6 +58,11 @@ export function createFrameSizing(
   }
 
   return {
+    measure() {
+      if (!observer) return false;
+      measure();
+      return true;
+    },
     /** A new session starts with a parent that has not received the current height. */
     update(state: unknown, session: 'new' | 'current') {
       const presentation = isRecord(state) ? state.presentation : undefined;

@@ -116,12 +116,19 @@ area. Set Gotenberg's `width` form field to the desired layout width, such as
 When using an element selector for the screenshot, target the iframe or its
 wrapper in the host document.
 
-For a visualization image, have the host expose a readiness signal that reflects
-both the exact widget's `ready` state and the resized frame. Pass that signal to
-Gotenberg's `waitForExpression`. For sandboxed or cross-origin iframes, relay
-widget readiness through messaging because the host cannot inspect the app DOM.
-The bridge's connection status describes the iframe session. Handle `empty`,
-`error`, and `invalid-target` as terminal outcomes.
+Set `onWidgetCaptureChange` on `attachDataAppBridge()` or React's
+`<DataAppBridge>` to read the focused state across the iframe boundary.
+The callback receives `DataAppWidgetCaptureState` from `@altertable/data-app-embed`.
+Bridge `ready` includes `widgetId` and `height` in CSS pixels. It fires after the
+app reports readiness and the content-sized iframe reaches that height.
+`undefined` clears a previous result when the search changes or the bridge resets.
+`onStatusChange` reports iframe connection status independently.
+
+For visualization-only capture, expose a host readiness flag that is true only
+while the active frame reports `state: 'ready'` for the requested widget ID.
+Use the flag in Gotenberg's `waitForExpression`. Treat `empty`, `error`, and
+`invalid-target` as terminal outcomes for your capture job. Bound the wait so an
+older bundle or iframe that cannot fit its content fails the job.
 
 ## External links
 

@@ -289,6 +289,87 @@ describe('widget URL', () => {
     await expect.poll(theme).toBe('light');
   });
 
+  test('publishes the fitted widget to the host and resets when navigation changes the target', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/starter-data-app?widget=samples-by-group&content-sizing&capture-state'
+    );
+    const capture = page.getByTestId('widget-capture-state');
+    await expect
+      .poll(() => capture.textContent())
+      .toMatch(/"state":"ready","widgetId":"samples-by-group"/);
+    const report = JSON.parse((await capture.textContent()) ?? 'null');
+    expect(report.height).toBe(
+      await page.locator('iframe').evaluate(frame => frame.clientHeight)
+    );
+
+    await page.evaluate(() => {
+      const url = new URL(location.href);
+      url.searchParams.set('widget', 'missing-widget');
+      history.pushState(null, '', url);
+      dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect
+      .poll(() => capture.textContent())
+      .toMatch('{"state":"invalid-target"}');
+    await page.evaluate(() => history.back());
+    await expect
+      .poll(() => capture.textContent())
+      .toMatch(/"state":"ready","widgetId":"samples-by-group"/);
+  });
+
+  test('clears ready while a filter change reloads the same widget', async ({
+    page,
+  }) => {
+    const { promise, resolve } = Promise.withResolvers<void>();
+    await page.route('**/api/query', async route => {
+      if (route.request().postDataJSON().params.groupName === 'Beta') {
+        await promise;
+        await route.fulfill({ status: 503 });
+      } else {
+        await route.continue();
+      }
+    });
+    const capture = page.getByTestId('widget-capture-state');
+    try {
+      await page.goto(
+        '/starter-data-app?widget=samples-by-group&content-sizing&capture-state'
+      );
+      await expect
+        .poll(() => capture.textContent())
+        .toContain('"state":"ready"');
+      await page.evaluate(() => {
+        const url = new URL(location.href);
+        url.searchParams.set('group', 'Beta');
+        history.pushState(null, '', url);
+        dispatchEvent(new PopStateEvent('popstate'));
+      });
+      await expect
+        .poll(() => capture.textContent())
+        .toBe('{"state":"loading","widgetId":"samples-by-group"}');
+      resolve();
+      await expect
+        .poll(() => capture.textContent())
+        .toBe('{"state":"error","widgetId":"samples-by-group"}');
+    } finally {
+      resolve();
+    }
+  });
+
+  test('keeps capture pending when the frame cannot apply content sizing', async ({
+    page,
+  }) => {
+    await page.goto('/starter-data-app?widget=samples-by-group&capture-state');
+    const main = page.frameLocator('iframe').getByRole('main');
+    await expect
+      .poll(() => main.getAttribute('data-widget-state'))
+      .toBe('ready');
+    await expect
+      .poll(() => page.getByTestId('widget-capture-state').textContent())
+      .toBe('{"state":"loading","widgetId":"samples-by-group"}');
+  });
+
   test('receives a focused widget ID from the hosted app URL', async ({
     page,
   }) => {
