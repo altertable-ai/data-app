@@ -88,46 +88,22 @@ opaque apps keep that state in memory rather than modifying their document URL.
 
 ## Focused widget states
 
-Use `?widget=event-log` on an app URL to open the visualization whose
-`view.content()` declaration has the ID `event-log`.
-For hosted bundles, pass `widget` in the search state shared through the navigation
-adapter. Add `theme=light` or `theme=dark` to set the focused view’s palette, including
-its background, for capture. A single valid value overrides the host or app theme
-for that view. Other query parameters can supply filters for the selected view.
+Open `?widget=event-log` to render the visualization declared with
+`view.content(..., { id: 'event-log' })`. For hosted bundles, pass the query
+through the navigation adapter. The query also accepts the selected view’s
+filters and a theme override (`theme=light` or `theme=dark`).
 
-Inside the app document, read `data-widget-state` on the focused `<main>`.
-Valid targets also expose their ID as `data-focused-widget`.
+Use a borderless, full-width, [content-sized iframe](#content-sizing) and
+set the capture viewport to the desired layout width. Subscribe to
+`onWidgetCaptureChange` on `attachDataAppBridge()` or `<DataAppBridge>`.
+Capture the iframe or its wrapper when the active frame reports `ready` for
+the requested `widgetId`. The callback reports the fitted `height` in CSS pixels.
 
-| State            | Meaning                                                                                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loading`        | The view is loading or the widget is still rendering.                                                                                                    |
-| `ready`          | The view has data, the widget has committed, its readiness callback (if supplied) has resolved, and the SDK has waited for fonts and an animation frame. |
-| `empty`          | The owning view returned an empty result.                                                                                                                |
-| `error`          | The view request or widget rendering failed.                                                                                                             |
-| `invalid-target` | The widget parameter is empty, malformed, repeated, or unknown.                                                                                          |
+Wait through `loading` with a timeout. Clear readiness on `undefined` and
+end the capture attempt on `empty`, `error`, or `invalid-target`.
 
-The focused `<main>` fills the iframe width from its top-left corner. Ready
-content determines its height. Loading, empty, error, and invalid-target states
-have a minimum height of 240 CSS pixels.
-
-Use a borderless, full-width, [content-sized iframe](#content-sizing) for
-capture. Set the capture viewport to the desired layout width and target the
-iframe or its wrapper in the host document. Allow the capture area to grow with
-tall content.
-
-Set `onWidgetCaptureChange` on `attachDataAppBridge()` or React's
-`<DataAppBridge>` to read the focused state across the iframe boundary.
-The callback receives `DataAppWidgetCaptureState` from `@altertable/data-app-embed`.
-Bridge `ready` includes `widgetId` and `height` in CSS pixels. It fires after the
-app reports readiness and the content-sized iframe reaches that height.
-`undefined` clears a previous result when the search changes or the bridge resets.
-`onStatusChange` reports iframe connection status independently.
-
-For visualization-only capture, expose a host readiness flag that is true only
-while the active frame reports `state: 'ready'` for the requested widget ID.
-Start capture when the flag is true. Treat `empty`, `error`, and `invalid-target`
-as terminal outcomes. Bound the wait so an older bundle or an iframe that cannot
-fit its content fails the job.
+Inside the app document, the focused `<main>` exposes `data-widget-state`
+and, for a valid target, `data-focused-widget`.
 
 ## External links
 
