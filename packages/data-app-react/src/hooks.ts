@@ -4,8 +4,6 @@ import type { DataOperations } from '@altertable/data-app/contract';
 import {
   combineOperationFilters,
   displayedSnapshot,
-  invariant,
-  isWidgetId,
   randomUuid,
   resolveDataView,
   type ChoiceFilter,
@@ -30,7 +28,7 @@ import {
   type Metric,
 } from './bindings.ts';
 import {
-  addressableContent,
+  registerWidget,
   ViewContent,
   type DataContentState,
   type WidgetContentOptions,
@@ -412,20 +410,8 @@ export function createDataHooks<Operations extends DataOperations>(
           render: (state: DataContentState<Data, Input>) => ReactNode,
           options?: WidgetContentOptions
         ): ViewContent<Data, Input> {
-          if (!options)
-            return new ViewContent(view, render, resolved.describeInput);
-          const { id, waitForReady } = options;
-          invariant(
-            isWidgetId(id),
-            'Widget IDs must use lowercase letters, digits, and single hyphens.'
-          );
-          invariant(!widgets.has(id), `Duplicate widget ID “${id}”.`);
-          const content = addressableContent(
-            view,
-            render,
-            resolved.describeInput
-          );
-          widgets.set(id, { id, content, waitForReady });
+          const content = new ViewContent(view, render, resolved.describeInput);
+          if (options) registerWidget(widgets, { ...options, content });
           return content;
         },
       }

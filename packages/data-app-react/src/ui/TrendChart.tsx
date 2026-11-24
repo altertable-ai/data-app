@@ -40,8 +40,8 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
+import { useStaticRender } from './static-render.ts';
 import {
   type LinkedChartCursor,
   useLinkedChartCursor,
@@ -114,7 +114,7 @@ const TrendChartItems = memo(function TrendChartItems<
   onInspectAction,
   'aria-describedby': describedBy,
 }: TrendChartItemsProps<Row>) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   return (
     <div
@@ -124,7 +124,7 @@ const TrendChartItems = memo(function TrendChartItems<
       onContextMenuCapture={onInspectAction}
     >
       {items.map((item, index) => {
-        const declaredActions = focused ? [] : (itemActions?.(item) ?? []);
+        const declaredActions = isStatic ? [] : (itemActions?.(item) ?? []);
         const actions = chartActions(
           declaredActions,
           item.label,
@@ -158,7 +158,7 @@ const TrendChartItems = memo(function TrendChartItems<
                 }
                 className="altertable-chart-column"
               >
-                {focused ? (
+                {isStatic ? (
                   <span
                     className="altertable-trend-point"
                     // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This mark is drawn with CSS, without an image source.

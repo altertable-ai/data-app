@@ -1,5 +1,9 @@
-import { type DataReading } from '@altertable/data-app/internal';
-import { createElement, type ReactNode } from 'react';
+import {
+  invariant,
+  isWidgetId,
+  type DataReading,
+} from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
 
 import { ownedSource } from './source-owner.ts';
 import { type DeclaredView } from './view-runtime.tsx';
@@ -69,20 +73,18 @@ export type WidgetContentOptions = {
 };
 
 export type WidgetTarget = WidgetContentOptions & {
-  content: ViewContent<unknown, unknown>;
+  content: ViewContent<any, any>;
 };
 
-export function addressableContent<Data, Input>(
-  view: DeclaredView<Data, Input>,
-  render: (source: DataContentState<Data, Input>) => ReactNode,
-  describeInput: (input: Input) => string
+/** Adds addressable content to one `createDataHooks()` registry. */
+export function registerWidget(
+  widgets: Map<string, WidgetTarget>,
+  widget: WidgetTarget
 ) {
-  function Widget({ source }: { source: DataContentState<Data, Input> }) {
-    return render(source);
-  }
-  return new ViewContent(
-    view,
-    source => createElement(Widget, { source }),
-    describeInput
+  invariant(
+    isWidgetId(widget.id),
+    'Widget IDs must use lowercase letters, digits, and single hyphens.'
   );
+  invariant(!widgets.has(widget.id), `Duplicate widget ID “${widget.id}”.`);
+  widgets.set(widget.id, widget);
 }

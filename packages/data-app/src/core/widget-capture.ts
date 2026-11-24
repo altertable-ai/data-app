@@ -26,7 +26,8 @@ export function readWidgetId(
 
 export const reportWidgetCapture = Symbol.for('altertable.reportWidgetCapture');
 
-export function widgetCaptureRequest(state: unknown, search: string) {
+/** The host's capture request for this search, when the host state matches it. */
+export function readWidgetCaptureRequest(state: unknown, search: string) {
   if (
     isRecord(state) &&
     typeof state.search === 'string' &&

@@ -32,7 +32,7 @@ import {
   type DataAppBaseProps,
   type DataAppControlProps,
 } from './DataAppFrame.tsx';
-import { FocusedWidget, useWidgetTarget } from './FocusedWidget.tsx';
+import { FocusedWidget, useFocusedTarget } from './FocusedWidget.tsx';
 import type { StoryFinding } from './story.ts';
 
 /** A declared data or time view that `<DataApp>` can run and describe. */
@@ -110,8 +110,14 @@ export function DataApp(
     props.view &&
     (getViewDefinition(props.view) as { clientFilters: ClientFilters })
       .clientFilters;
-  const target = useWidgetTarget(clientFilters?.widgets);
-  if (target) return <FocusedWidget key={target.widget?.id} target={target} />;
+  const target = useFocusedTarget(clientFilters?.widgets);
+  if (target)
+    return (
+      <FocusedWidget
+        key={target.kind === 'widget' ? target.widget.id : undefined}
+        target={target}
+      />
+    );
   if (!props.view) return <DataAppFrame {...props} />;
   return <ViewDataApp {...props} />;
 }

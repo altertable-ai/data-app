@@ -2,7 +2,7 @@ import { appDiagnostics } from '@altertable/data-app/client';
 import {
   readWidgetId,
   reportWidgetCapture,
-  widgetCaptureRequest,
+  readWidgetCaptureRequest,
   type WidgetCaptureRenderState,
   appUrlKeys,
 } from '@altertable/data-app/internal';
@@ -28,27 +28,25 @@ import { DateFormattingContext } from '../date-formatting.ts';
 import { useDeclaredResult } from '../view-runtime.tsx';
 import { errorPresentation } from './DataSectionBoundary.tsx';
 import { EmptyState } from './EmptyState.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { LoadingStatus } from './LoadingStatus.tsx';
 import { searchParams, subscribeSearch } from './search.ts';
+import { StaticRenderContext } from './static-render.ts';
 import { StatusPanel } from './StatusPanel.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
 import { useDataAppTransport } from './useDataAppTransport.ts';
 
-type Target =
-  | { widget: WidgetTarget; reason?: never }
-  | { widget?: never; reason: string };
+/** What a `?_widget=` link selects: a registered widget, or why it cannot render. */
+export type FocusedTarget =
+  | { kind: 'widget'; widget: WidgetTarget }
+  | { kind: 'invalid'; reason: string };
 
 type WidgetState = Exclude<WidgetCaptureRenderState['state'], 'invalid-target'>;
-type Readiness = {
-  widget: WidgetTarget;
-  data: unknown;
-  input: unknown;
-};
-type Settled = { readiness: Readiness; state: 'ready' | 'error' };
+/** One committed result the widget draws; a new result starts a new drawing. */
+type Drawing = { widget: WidgetTarget; data: unknown; input: unknown };
+type DrawingOutcome = { drawing: Drawing; state: 'ready' | 'error' };
 
-function widgetTheme() {
+function readThemeOverride() {
   const [theme, ...rest] = searchParams().getAll(appUrlKeys.theme);
   if (rest.length === 0 && (theme === 'light' || theme === 'dark'))
     return theme;
@@ -71,7 +69,7 @@ function FocusedWidgetSurface({
   const search = useSyncExternalStore(subscribeSearch, currentSearch, () => '');
   const request = useSyncExternalStore(
     subscribe,
-    () => widgetCaptureRequest(transport?.snapshot(), search),
+    () => readWidgetCaptureRequest(transport?.snapshot(), search),
     () => undefined
   );
   const { state } = capture;
@@ -95,9 +93,9 @@ function FocusedWidgetSurface({
   );
 }
 
-export function useWidgetTarget(
+export function useFocusedTarget(
   registry?: ReadonlyMap<string, WidgetTarget>
-): Target | null {
+): FocusedTarget | null {
   const id = useSyncExternalStore(
     subscribeSearch,
     () => readWidgetId(searchParams()),
@@ -105,26 +103,30 @@ export function useWidgetTarget(
   );
   // Screens without a view cannot register widgets, so their URLs stay theirs.
   if (!registry || id === undefined) return null;
-  if (id === null) return { reason: 'Provide one valid widget ID in the URL.' };
+  if (id === null)
+    return {
+      kind: 'invalid',
+      reason: 'Provide one valid widget ID in the URL.',
+    };
   const widget = registry.get(id);
   return widget
-    ? { widget }
-    : { reason: `No widget is registered as “${id}”.` };
+    ? { kind: 'widget', widget }
+    : { kind: 'invalid', reason: `No widget is registered as “${id}”.` };
 }
 
-export function FocusedWidget({ target }: { target: Target }) {
+export function FocusedWidget({ target }: { target: FocusedTarget }) {
   const identity = useId();
   const app = useDataApp();
   const transport = useDataAppTransport();
   const presentation = useDataAppPresentation(transport);
   const theme = useSyncExternalStore(
     subscribeSearch,
-    widgetTheme,
+    readThemeOverride,
     () => undefined
   );
   const search = useSyncExternalStore(subscribeSearch, currentSearch, () => '');
   useAppAppearance(app.appearance, theme ?? presentation?.theme);
-  if (!target.widget)
+  if (target.kind === 'invalid')
     return (
       <FocusedWidgetSurface capture={{ state: 'invalid-target' }}>
         <StatusPanel
@@ -136,7 +138,7 @@ export function FocusedWidget({ target }: { target: Target }) {
     );
   const { widget } = target;
   return (
-    <FocusedWidgetContext value={true}>
+    <StaticRenderContext value={true}>
       <FocusedRenderBoundary
         id={widget.id}
         identity={identity}
@@ -144,7 +146,7 @@ export function FocusedWidget({ target }: { target: Target }) {
       >
         <FocusedWidgetResult widget={widget} />
       </FocusedRenderBoundary>
-    </FocusedWidgetContext>
+    </StaticRenderContext>
   );
 }
 
@@ -205,6 +207,24 @@ function stopInteraction(event: SyntheticEvent) {
   event.stopPropagation();
 }
 
+/** Keeps pointer, keyboard, and click handlers inside the widget from running. */
+const blockedInteraction = {
+  onPointerDownCapture: stopInteraction,
+  onPointerOverCapture: stopInteraction,
+  onPointerOutCapture: stopInteraction,
+  onPointerMoveCapture: stopInteraction,
+  onMouseOverCapture: stopInteraction,
+  onMouseOutCapture: stopInteraction,
+  onMouseMoveCapture: stopInteraction,
+  onTouchStartCapture: stopInteraction,
+  onKeyDownCapture: stopInteraction,
+  onContextMenuCapture: stopInteraction,
+  onClickCapture(event: SyntheticEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+  },
+};
+
 function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   const section = sectionContent(widget.content);
   const result = useDeclaredResult(section.view);
@@ -213,11 +233,13 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   const data = result.snapshot?.data;
   const input = result.snapshot?.input;
   const element = useRef<HTMLElement>(null);
-  const readiness = useMemo(
+  const drawing = useMemo(
     () => (kind === 'ready' ? { widget, data, input } : undefined),
     [kind, data, input, widget]
   );
-  const [settled, setSettled] = useState<Settled>();
+  const [outcome, setOutcome] = useState<DrawingOutcome>();
+  const drawn =
+    drawing && outcome?.drawing === drawing ? outcome.state : undefined;
 
   const requestError =
     kind === 'error' || kind === 'stale-error'
@@ -226,27 +248,14 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
   let state: WidgetState = 'loading';
   if (requestError) state = 'error';
   else if (kind === 'empty') state = 'empty';
-  else if (readiness && settled?.readiness === readiness) state = settled.state;
+  else if (drawn) state = drawn;
 
   return (
     <FocusedWidgetSurface
       ref={element}
       capture={{ state, widgetId: widget.id }}
       aria-busy={state === 'loading'}
-      onPointerDownCapture={stopInteraction}
-      onPointerOverCapture={stopInteraction}
-      onPointerOutCapture={stopInteraction}
-      onPointerMoveCapture={stopInteraction}
-      onMouseOverCapture={stopInteraction}
-      onMouseOutCapture={stopInteraction}
-      onMouseMoveCapture={stopInteraction}
-      onTouchStartCapture={stopInteraction}
-      onKeyDownCapture={stopInteraction}
-      onContextMenuCapture={stopInteraction}
-      onClickCapture={event => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
+      {...blockedInteraction}
     >
       {requestError ? (
         <StatusPanel
@@ -256,26 +265,29 @@ function FocusedWidgetResult({ widget }: { widget: WidgetTarget }) {
         />
       ) : kind === 'empty' ? (
         <EmptyState {...result.emptyFallback} />
-      ) : readiness &&
-        settled?.readiness === readiness &&
-        settled.state === 'error' ? (
+      ) : drawn === 'error' ? (
         <StatusPanel
           status="error"
           title="This widget couldn’t finish rendering"
         />
       ) : (
-        <Suspense fallback={<WidgetLoading reset={setSettled} />}>
+        <Suspense fallback={<WidgetLoading reset={setOutcome} />}>
           <DateFormattingContext value={{ timeZone: result.timeZone }}>
-            {kind === 'ready'
-              ? section.children(view.data, view.input)
-              : section.loadingFallback}
+            {/* A component keeps a suspending renderer under this boundary. */}
+            <WidgetContent
+              render={() =>
+                kind === 'ready'
+                  ? section.children(view.data, view.input)
+                  : section.loadingFallback
+              }
+            />
           </DateFormattingContext>
           {state === 'loading' && <LoadingStatus label="Loading widget" />}
-          {readiness && (
-            <WidgetReadiness
+          {drawing && (
+            <DrawingObserver
               element={element}
-              readiness={readiness}
-              settle={setSettled}
+              drawing={drawing}
+              settle={setOutcome}
             />
           )}
         </Suspense>
@@ -289,14 +301,19 @@ function WidgetLoading({ reset }: { reset: (state: undefined) => void }) {
   return <LoadingStatus label="Loading widget" />;
 }
 
-function WidgetReadiness({
+function WidgetContent({ render }: { render: () => ReactNode }) {
+  return render();
+}
+
+/** Settles a drawing once custom rendering, fonts, and the next frame are done. */
+function DrawingObserver({
   element,
-  readiness,
+  drawing,
   settle,
 }: {
   element: RefObject<HTMLElement | null>;
-  readiness: Readiness;
-  settle: (settled: Settled) => void;
+  drawing: Drawing;
+  settle: (outcome: DrawingOutcome) => void;
 }) {
   useLayoutEffect(() => {
     const abort = new AbortController();
@@ -305,7 +322,7 @@ function WidgetReadiness({
       // Parent refs attach later in the same commit.
       await Promise.resolve();
       if (signal.aborted || !element.current) return;
-      await readiness.widget.waitForReady?.(element.current, signal);
+      await drawing.widget.waitForReady?.(element.current, signal);
       if (signal.aborted) return;
       await document.fonts.ready;
       if (signal.aborted) return;
@@ -315,13 +332,13 @@ function WidgetReadiness({
     }
     void wait().then(
       () => {
-        if (!signal.aborted) settle({ readiness, state: 'ready' });
+        if (!signal.aborted) settle({ drawing, state: 'ready' });
       },
       () => {
-        if (!signal.aborted) settle({ readiness, state: 'error' });
+        if (!signal.aborted) settle({ drawing, state: 'error' });
       }
     );
     return () => abort.abort();
-  }, [element, readiness, settle]);
+  }, [element, drawing, settle]);
   return null;
 }

@@ -153,6 +153,7 @@ export function attachDataAppConnection({
   }
 
   let captureListener = initialCaptureListener;
+  /** One request per URL with `?_widget=`; `widgetId` is null for an invalid link. */
   let captureRequest:
     | { search: string; id: string; widgetId: string | null }
     | undefined;
@@ -175,12 +176,15 @@ export function attachDataAppConnection({
     publishCapture(undefined);
   }
 
-  function updateCaptureRequest(search: string) {
-    if (!captureListener || captureRequest?.search === search) return;
+  /** Returns the request for this search, starting a new one when the search changed. */
+  function captureRequestFor(search: string) {
+    if (!captureListener) return undefined;
+    if (captureRequest?.search === search) return captureRequest;
     resetCapture();
     const widgetId = readWidgetId(new URLSearchParams(search));
     if (widgetId !== undefined)
       captureRequest = { search, id: randomUuid(), widgetId };
+    return captureRequest;
   }
 
   function hostState() {
@@ -197,10 +201,10 @@ export function attachDataAppConnection({
     if (presentation && contentSizingFailed)
       presentation = { ...presentation, sizing: 'frame' };
     const search = host.location.search;
-    updateCaptureRequest(search);
+    const request = captureRequestFor(search);
     return {
       search,
-      ...(captureRequest ? { widgetCaptureRequest: captureRequest.id } : {}),
+      ...(request ? { widgetCaptureRequest: request.id } : {}),
       hash: host.location.hash,
       ...(presentation ? { presentation } : {}),
       logging: logger !== undefined,
@@ -504,10 +508,11 @@ export function attachDataAppConnection({
                 { route: message.route, payload: message.payload },
                 { signal: controller.signal }
               );
+      // The app learns its new capture request only from published host state.
       if (
         message.route === 'navigation:update' &&
-        captureRequest?.search !== host.location.search &&
-        captureListener
+        captureListener &&
+        captureRequest?.search !== host.location.search
       )
         publishState();
       if (pending.get(id) === controller) send('result', { id, response });

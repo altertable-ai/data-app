@@ -7,7 +7,6 @@ import {
   memo,
   useState,
   useCallback,
-  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -72,7 +71,7 @@ import {
 import { ChartValueFormat } from './chart-value-format.ts';
 import { classNames } from './classNames.ts';
 import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
+import { useStaticRender } from './static-render.ts';
 import {
   type ChartCursorGroup,
   ChartCursorChartContext,
@@ -80,8 +79,8 @@ import {
 } from './use-chart-cursor-group.tsx';
 
 function Brush(props: ComponentProps<typeof RechartsBrush>) {
-  const focused = useContext(FocusedWidgetContext);
-  return focused ? null : <RechartsBrush {...props} />;
+  const isStatic = useStaticRender();
+  return isStatic ? null : <RechartsBrush {...props} />;
 }
 
 function findNearestSeriesId(
@@ -506,7 +505,7 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
   fullAxisSpace,
   trackPlotOffsets,
 }: ComposedChartPlotProps<Row>) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const {
     data,
     ariaLabel,
@@ -542,7 +541,7 @@ const ComposedChartPlot = memo(function ComposedChartPlot<Row>({
             data-atbl-focus="inset"
             {...rechartsProps}
             accessibilityLayer={
-              focused ? false : rechartsProps.accessibilityLayer
+              isStatic ? false : rechartsProps.accessibilityLayer
             }
             data={data}
             width={width}

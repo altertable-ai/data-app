@@ -1,5 +1,4 @@
 import {
-  useContext,
   type ComponentRef,
   Children,
   useId,
@@ -12,7 +11,7 @@ import {
 
 import { chartBarFill } from './chartColor.ts';
 import { classNames } from './classNames.ts';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
+import { useStaticRender } from './static-render.ts';
 
 export type ChartLegendProps = {
   children: ReactNode;
@@ -34,7 +33,7 @@ function ChartLegendRoot({
   'aria-label': ariaLabel = 'Chart legend',
   ...props
 }: ChartLegendProps) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
   const containerRef = useRef<ComponentRef<'div'>>(null);
@@ -83,8 +82,8 @@ function ChartLegendRoot({
         data-align={align}
         className={classNames('altertable-chart-legend', className)}
       >
-        {focused || expanded ? items : items.slice(0, visibleCount)}
-        {!focused && hiddenCount > 0 && (
+        {isStatic || expanded ? items : items.slice(0, visibleCount)}
+        {!isStatic && hiddenCount > 0 && (
           <li className="altertable-chart-legend-overflow">
             <button
               type="button"

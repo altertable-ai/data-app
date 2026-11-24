@@ -9,8 +9,8 @@ import {
 } from 'react';
 
 import { ChartTooltip, StaticTooltipTrigger } from './ChartTooltip.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { HintTooltip } from './HintTooltip.tsx';
+import { useStaticRender } from './static-render.ts';
 
 export type TooltipTiming = { delay: number; skipDelayDuration: number };
 const defaultTiming: TooltipTiming = { delay: 500, skipDelayDuration: 300 };
@@ -66,9 +66,9 @@ export type TooltipProps = {
  * and does not open on keyboard focus. Native span props and ref target the wrapper. */
 export function Tooltip(props: TooltipProps) {
   const timing = useContext(TooltipContext);
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   if (props.variant === 'chart') return <ChartTooltip {...props} />;
-  if (focused) return <StaticTooltipTrigger {...props} />;
+  if (isStatic) return <StaticTooltipTrigger {...props} />;
   return timing ? (
     <HintTooltip {...props} timing={timing} />
   ) : (

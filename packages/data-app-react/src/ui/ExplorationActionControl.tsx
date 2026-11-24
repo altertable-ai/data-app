@@ -15,7 +15,6 @@ import { RootMenuTriggerStateContext } from 'react-aria-components';
 
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import {
   Menu,
@@ -25,6 +24,7 @@ import {
   MenuTrigger,
   MenuSeparator,
 } from './Menu.tsx';
+import { useStaticRender } from './static-render.ts';
 
 const contextPoints = new WeakMap<
   HTMLButtonElement,
@@ -208,7 +208,7 @@ export function ExplorationActionMenu({
 
 /** Adds clipboard utilities derived only from the displayed chart item. */
 export function useChartActions() {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const [error, setError] = useState('');
   // Stable so memoized chart marks keep their actions across hover renders.
   const actions = useCallback(
@@ -217,7 +217,7 @@ export function useChartActions() {
       label: string,
       summary: string
     ): readonly ExplorationAction[] => {
-      if (focused) return [];
+      if (isStatic) return [];
       if (!declared.length) return declared;
       async function copy(text: string) {
         setError('');
@@ -244,7 +244,7 @@ export function useChartActions() {
         },
       ];
     },
-    [focused]
+    [isStatic]
   );
   return {
     actions,

@@ -5,7 +5,6 @@ import {
 } from '@altertable/data-app/client';
 import { parseExternalUrl } from '@altertable/data-app/contract';
 import {
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -13,7 +12,7 @@ import {
   type MouseEvent,
 } from 'react';
 
-import { FocusedWidgetContext } from './focused-widget-context.ts';
+import { useStaticRender } from './static-render.ts';
 
 export type ExternalLinkProps = {
   href: string;
@@ -24,8 +23,8 @@ export type ExternalLinkProps = {
 
 /** Open HTTPS links through the host when embedded, or a native new tab when standalone. */
 export function ExternalLink(props: ExternalLinkProps) {
-  const focused = useContext(FocusedWidgetContext);
-  if (!focused) return <InteractiveExternalLink {...props} />;
+  const isStatic = useStaticRender();
+  if (!isStatic) return <InteractiveExternalLink {...props} />;
   const { children, className, title } = props;
   return (
     <span className={className} title={title}>

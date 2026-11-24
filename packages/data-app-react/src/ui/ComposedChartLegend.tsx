@@ -12,7 +12,7 @@ import {
   chartLegendSeriesKey,
 } from './chart-legend-interaction.tsx';
 import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
+import { useStaticRender } from './static-render.ts';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {
   maxVisibleItems?: number;
@@ -102,9 +102,9 @@ function LegendContent({
   useLayoutEffect(() => {
     interaction?.reconcile(selectableKeys);
   });
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const canInteract =
-    !focused &&
+    !isStatic &&
     interactive &&
     !onClick &&
     interaction &&
@@ -184,7 +184,7 @@ function LegendContent({
               onMouseLeave?.(entry, index, event);
             }}
           >
-            {!focused && (canInteract || onClick) ? (
+            {!isStatic && (canInteract || onClick) ? (
               <button
                 type="button"
                 data-atbl-control="action"

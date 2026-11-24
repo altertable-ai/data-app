@@ -1,11 +1,5 @@
 import { formatNumber } from '@altertable/data-app/format';
-import {
-  useContext,
-  useRef,
-  useState,
-  type ComponentRef,
-  type RefObject,
-} from 'react';
+import { useRef, useState, type ComponentRef, type RefObject } from 'react';
 
 import type { ChartItem, ValueChartProps } from './chart-data.ts';
 import { validateValueChartItems } from './chart-data.ts';
@@ -17,9 +11,9 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
+import { useStaticRender } from './static-render.ts';
 import { Tooltip } from './Tooltip.tsx';
 
 export type PieChartItem = ChartItem;
@@ -41,7 +35,7 @@ export function PieChart<Row extends PieChartItem>({
   formatValue = formatNumber,
   itemActions,
 }: PieChartProps<Row>) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   validateValueChartItems('pie', items);
   const chartActions = useChartActions();
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -93,7 +87,7 @@ export function PieChart<Row extends PieChartItem>({
     );
   }
   function actionsFor(slice: (typeof slices)[number]) {
-    if (focused) return [];
+    if (isStatic) return [];
     const item = slice.row;
     return chartActions.actions(
       itemActions?.(item) ?? [],
@@ -146,7 +140,7 @@ export function PieChart<Row extends PieChartItem>({
                         actionsFor(slice)
                       );
                       const opensMenu =
-                        !focused &&
+                        !isStatic &&
                         !action &&
                         (itemActions?.(item).length ?? 0) > 1;
                       return (
@@ -285,7 +279,7 @@ export function PieChart<Row extends PieChartItem>({
                         )
                       }
                     >
-                      {focused ? (
+                      {isStatic ? (
                         <span className="altertable-pie-legend-value">
                           {contents}
                         </span>

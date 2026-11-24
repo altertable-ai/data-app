@@ -1,23 +1,17 @@
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
-import {
-  type ComponentRef,
-  useContext,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
 
 import { Button } from './Button.tsx';
 import type { CountChartProps } from './chart-data.ts';
 import { classNames } from './classNames.ts';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import {
   buildJourneyFlow,
   limitJourneyFlow,
   type JourneyChartPath,
   type JourneyNode,
 } from './journey-flow.ts';
+import { useStaticRender } from './static-render.ts';
 
 export type { JourneyChartPath } from './journey-flow.ts';
 export type JourneyChartProps = CountChartProps & {
@@ -84,7 +78,7 @@ function JourneyFlow({
 }: Pick<JourneyChartProps, 'paths' | 'unit'> & {
   formatValue: (value: number) => string;
 }) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const [expandedBranch, setExpandedBranch] = useState<string[]>([]);
   const [visibleEventsByDepth, setVisibleEventsByDepth] = useState<
     Record<number, number>
@@ -276,7 +270,7 @@ function JourneyFlow({
                 </span>
               ) : null}
             </section>
-            {!focused && node.expandable && (
+            {!isStatic && node.expandable && (
               <Button
                 variant="outline"
                 size="icon-compact"
@@ -302,7 +296,7 @@ function JourneyFlow({
                 {node.expanded ? '−' : '›'}
               </Button>
             )}
-            {!focused && node.outcome === 'other' && (
+            {!isStatic && node.outcome === 'other' && (
               <Button
                 size="compact"
                 variant="ghost"

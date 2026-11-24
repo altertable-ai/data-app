@@ -23,7 +23,6 @@ import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { InspectionVisual } from './InspectionProvider.tsx';
 import { LoadingStatus } from './LoadingStatus.tsx';
@@ -33,6 +32,7 @@ import {
   WidgetStatusContext,
   type WidgetStatus,
 } from './RequestHint.tsx';
+import { useStaticRender } from './static-render.ts';
 import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type DataWidgetBaseProps = {
@@ -118,7 +118,7 @@ function DataWidgetContent({
   emptyFallback?: EmptyContent;
   children: ReactNode;
 }) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const titleId = useId();
   const sectionStatus = useContext(WidgetStatusContext);
   const status =
@@ -133,7 +133,7 @@ function DataWidgetContent({
     !loading &&
     (suppliedStatus?.kind === 'updating' || sectionStatus?.updating === true);
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
-  if (focused) return content;
+  if (isStatic) return content;
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
@@ -396,13 +396,13 @@ function WidgetBoundary({
   mode?: 'widget' | 'body';
   shell?: DataWidgetBaseProps;
 }) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
   const dimensions = useRef({ height: 0, width: 0 });
   useLayoutEffect(() => {
     const element = ref.current;
-    if (!element || focused) return;
+    if (!element || isStatic) return;
     const frame =
       mode === 'body'
         ? element.parentElement!
@@ -423,9 +423,9 @@ function WidgetBoundary({
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [mode, focused]);
+  }, [mode, isStatic]);
 
-  if (focused) return children;
+  if (isStatic) return children;
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary

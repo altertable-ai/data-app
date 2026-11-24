@@ -1,8 +1,6 @@
-import { useContext } from 'react';
-
 import { classNames } from './classNames.ts';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { type EmptyContent } from './presentation.ts';
+import { useStaticRender } from './static-render.ts';
 
 export type EmptyStateProps = EmptyContent & {
   variant?: 'visual' | 'table';
@@ -16,7 +14,7 @@ export function EmptyState({
   variant = 'visual',
   className,
 }: EmptyStateProps) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   return (
     <div
       className={classNames('altertable-empty-state', className)}
@@ -32,7 +30,7 @@ export function EmptyState({
       ) : (
         <p>{title}</p>
       )}
-      {!focused && action && (
+      {!isStatic && action && (
         <div className="altertable-empty-state-action">{action}</div>
       )}
     </div>

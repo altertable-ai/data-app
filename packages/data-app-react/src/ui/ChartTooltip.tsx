@@ -8,7 +8,6 @@ import {
   useMergeRefs,
 } from '@floating-ui/react';
 import {
-  useContext,
   Children,
   cloneElement,
   isValidElement,
@@ -21,7 +20,7 @@ import {
 } from 'react';
 
 import { classNames } from './classNames.ts';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
+import { useStaticRender } from './static-render.ts';
 import { type TooltipProps } from './Tooltip.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
@@ -42,12 +41,12 @@ type ChartTooltipProps = TooltipProps & {
 };
 
 export function ChartTooltip(props: ChartTooltipProps) {
-  const focused = useContext(FocusedWidgetContext);
-  if (!focused) return <InteractiveChartTooltip {...props} />;
+  const isStatic = useStaticRender();
+  if (!isStatic) return <InteractiveChartTooltip {...props} />;
   return <StaticTooltipTrigger variant="chart" {...props} />;
 }
 
-/** A focused capture keeps the trigger wrapper and its native props without tooltip behavior. */
+/** A isStatic capture keeps the trigger wrapper and its native props without tooltip behavior. */
 export function StaticTooltipTrigger({
   content: _content,
   children,

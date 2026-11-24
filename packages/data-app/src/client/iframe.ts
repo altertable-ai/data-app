@@ -169,10 +169,12 @@ export function createIframeTransport({
   });
   const send = endpoint.send;
   const receive = endpoint.receive;
+  /** The focused widget's latest render state for the host's capture request. */
   let capture:
     | { request: string; render: WidgetCaptureRenderState }
     | undefined;
-  let publishedCapture: string | undefined;
+  /** Identity of the last report sent, so repeated renders do not resend it. */
+  let sentCapture: string | undefined;
 
   function publishCapture(request: string, state: DataAppWidgetCaptureState) {
     if (
@@ -183,8 +185,8 @@ export function createIframeTransport({
     )
       return;
     const identity = JSON.stringify([request, state]);
-    if (identity === publishedCapture) return;
-    publishedCapture = identity;
+    if (identity === sentCapture) return;
+    sentCapture = identity;
     send('widgetCapture', { captureRequest: request, capture: state });
   }
 
@@ -207,7 +209,7 @@ export function createIframeTransport({
 
   function receiveState(state: unknown, session: 'new' | 'current') {
     if (session === 'new') {
-      publishedCapture = undefined;
+      sentCapture = undefined;
       scheduleDiagnostics();
     }
     hostState = state;

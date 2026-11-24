@@ -2,7 +2,6 @@ import { formatCount, pluralize } from '@altertable/data-app/format';
 import { invariant, type DataReading } from '@altertable/data-app/internal';
 import { useMergeRefs } from '@floating-ui/react';
 import {
-  useContext,
   useRef,
   useState,
   type ComponentRef,
@@ -17,7 +16,6 @@ import {
   DataTableEmptyRow,
   type DataTableSearch,
 } from './DataTable.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { type EmptyContent } from './presentation.ts';
 import { type WidgetStatus } from './RequestHint.tsx';
@@ -27,6 +25,7 @@ import {
   type SearchItemsOptions,
 } from './searchItems.ts';
 import { Skeleton } from './Skeleton.tsx';
+import { useStaticRender } from './static-render.ts';
 import { Tooltip } from './Tooltip.tsx';
 import { VisualizationWidget } from './VisualizationWidget.tsx';
 import { type WidgetEvidence } from './WidgetEvidence.ts';
@@ -154,7 +153,7 @@ function TableWidgetContent<Row>({
   loading?: boolean;
   skeletonRows?: number;
 }) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const keys = rows.map(rowKey);
   invariant(
     keys.every(key =>
@@ -165,7 +164,7 @@ function TableWidgetContent<Row>({
   const rowKeys = JSON.stringify(keys);
 
   const pageSize =
-    focused || pagination === false || limit !== undefined
+    isStatic || pagination === false || limit !== undefined
       ? null
       : (pagination?.pageSize ?? 10);
   const [pageState, setPageState] = useState({
@@ -264,10 +263,10 @@ function TableWidgetContent<Row>({
             rowKey={rowKey}
             rowCount={rows.length}
             matchCount={hits.length}
-            search={focused ? undefined : search}
+            search={isStatic ? undefined : search}
             emptyFallback={emptyFallback}
             noMatchesFallback={noMatchesFallback}
-            onClearFilters={focused ? undefined : onClearFilters}
+            onClearFilters={isStatic ? undefined : onClearFilters}
             loading={loading}
             skeletonRows={
               skeletonRows ??

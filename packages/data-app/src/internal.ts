@@ -116,7 +116,7 @@ export {
   isWidgetId,
   readWidgetId,
   reportWidgetCapture,
-  widgetCaptureRequest,
+  readWidgetCaptureRequest,
   type DataAppWidgetCaptureState,
   type WidgetCaptureRenderState,
 } from './core/widget-capture.ts';

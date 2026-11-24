@@ -49,9 +49,9 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
-import { FocusedWidgetContext } from './focused-widget-context.ts';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
+import { useStaticRender } from './static-render.ts';
 import {
   type LinkedChartCursor,
   useLinkedChartCursor,
@@ -243,11 +243,11 @@ const BarChartItems = memo(function BarChartItems<Row extends BarChartItem>({
   canvasRef,
   scrollport,
 }: BarChartItemsProps<Row>) {
-  const focused = useContext(FocusedWidgetContext);
+  const isStatic = useStaticRender();
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   return items.map((item, index) => {
     const actions = chartActions(
-      focused ? [] : (itemActions?.(item) ?? []),
+      isStatic ? [] : (itemActions?.(item) ?? []),
       item.label,
       `${formatValue(item.value)} ${unit}`
     );
@@ -295,7 +295,7 @@ const BarChartItems = memo(function BarChartItems<Row extends BarChartItem>({
             }
             className="altertable-chart-column"
           >
-            {focused ? (
+            {isStatic ? (
               <span
                 className="altertable-selectable-bars-area"
                 // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- This label describes the chart mark.
