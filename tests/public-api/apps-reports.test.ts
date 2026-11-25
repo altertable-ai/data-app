@@ -291,7 +291,7 @@ test('a report formats missing values, precise ratios, localized numbers and cal
     'Rounded number 12.35',
     'Negative zero 0',
     'Compact count 12.3K',
-    'Fractional count —',
+    'Fractional count 12.5',
     'Negative count —',
     'Nonfinite value —',
     'Custom missing label Unknown',

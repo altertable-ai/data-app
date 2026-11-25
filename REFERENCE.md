@@ -838,7 +838,7 @@ FilterPresentation (type, @altertable/data-app/contract): Where a filter's or di
 FilterPresentation.control?: 'toolbar' | 'widget' — Widget controls render beside their visualization instead of in the toolbar. Scope filters remain available in the Filters sheet and active summaries.
 FilterPresentation.prominence?: 'primary' | 'secondary' — Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary.
 FilterValues (type, @altertable/data-app/contract): <Collection> = { [Key in keyof Collection]: Collection[Key] extends DimensionSelectionFilter<infer Value extends DimensionValue> ? DimensionSelection<...> : ...; }
-formatCount (function, @altertable/data-app/format): (value: number | null | undefined, options?: CommonOptions & { compact?: boolean; }): string — Negative and fractional counts render as missing. Compact notation is opt-in.
+formatCount (function, @altertable/data-app/format): (value: number | null | undefined, options?: CommonOptions & { compact?: boolean; }): string — Negative counts render as missing. Compact notation is opt-in.
 formatCount.options.locale?: string
 formatCount.options.missing?: string
 formatCount.options.compact?: boolean

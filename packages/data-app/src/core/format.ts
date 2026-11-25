@@ -102,24 +102,19 @@ export function formatNumber(
       );
 }
 
-/** Negative and fractional counts render as missing. Compact notation is opt-in. */
+/** Negative counts render as missing. Compact notation is opt-in. */
 export function formatCount(
   value: number | null | undefined,
   options: CommonOptions & { compact?: boolean } = {}
 ): string {
   const { compact = false, ...common } = options;
-  if (
-    value !== null &&
-    value !== undefined &&
-    (!Number.isInteger(value) || value < 0)
-  ) {
+  if (typeof value === 'number' && value < 0) {
     return common.missing ?? '—';
   }
 
   return formatNumber(value, {
     ...common,
-    notation: compact ? 'compact' : 'standard',
-    maximumFractionDigits: compact ? 1 : 0,
+    ...(compact && { notation: 'compact', maximumFractionDigits: 1 }),
   });
 }
 
