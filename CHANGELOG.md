@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.80.0](https://github.com/altertable-ai/data-app/compare/v0.79.0...v0.80.0) (2026-11-25)
+
+
+### Features
+
+* add focused widget links and prefix runtime URL keys ([#174](https://github.com/altertable-ai/data-app/issues/174)) ([c6ee0d6](https://github.com/altertable-ai/data-app/commit/c6ee0d6538ed35164ac7df00cf470771ec5dfe54))
+
+
+### Bug Fixes
+
+* align local query and date range validation ([#170](https://github.com/altertable-ai/data-app/issues/170)) ([b90a862](https://github.com/altertable-ai/data-app/commit/b90a86288a465548e270d18da8b1d226b75d9cb9))
+* **reference:** mark optional function parameters with ? ([#173](https://github.com/altertable-ai/data-app/issues/173)) ([35b4116](https://github.com/altertable-ai/data-app/commit/35b4116ffcc1179f6cb98bd2f0ca6bef0fe52f87))
+
 ## [0.79.0](https://github.com/altertable-ai/data-app/compare/v0.78.0...v0.79.0) (2026-11-20)
 
 
