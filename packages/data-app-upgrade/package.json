@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-upgrade",
-  "version": "0.80.0",
+  "version": "0.80.1",
   "description": "Versioned codemods and migration guides for Altertable data apps.",
   "keywords": [
     "altertable",
