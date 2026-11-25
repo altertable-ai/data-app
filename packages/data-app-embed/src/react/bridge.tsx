@@ -7,10 +7,15 @@ import {
   type ComponentRef,
   type ComponentPropsWithoutRef,
   type Ref,
+  type RefObject,
 } from 'react';
 
 import { attachDataAppBridge, type DataAppBridgeOptions } from '../bridge.ts';
-import { type DataAppConnection, type DataAppHost } from '../host.ts';
+import {
+  type DataAppConnection,
+  type DataAppHost,
+  type DataAppHostOptions,
+} from '../host.ts';
 import { type DataAppSource } from '../source.ts';
 
 export type DataAppBridgeProps = Pick<
@@ -19,6 +24,7 @@ export type DataAppBridgeProps = Pick<
   | 'onStatusChange'
   | 'onDiagnostic'
   | 'onActionsChange'
+  | 'onWidgetCaptureChange'
   | 'presentation'
   | 'logger'
   | 'repair'
@@ -94,9 +100,35 @@ function useBridgeState(props: DataAppBridgeProps) {
   useEffect(() => {
     hostRef.current?.setPresentation(props.presentation);
     hostRef.current?.setLogger(props.logger);
+    hostRef.current?.setWidgetCaptureListener(props.onWidgetCaptureChange);
   });
 
   return { hostRef, handlers };
+}
+
+/** Host options from the latest props. Callbacks read the latest handlers when they run;
+ * the bridge effect updates presentation, logger, and capture listener after each render. */
+function getHostOptions(
+  handlers: RefObject<DataAppBridgeProps>
+): Omit<DataAppHostOptions, 'iframe'> {
+  return {
+    repair: handlers.current.repair,
+    presentation: handlers.current.presentation,
+    logger: handlers.current.logger,
+    onMessage(request, context) {
+      return handlers.current.onMessage(request, context);
+    },
+    onStatusChange(status) {
+      return handlers.current.onStatusChange?.(status);
+    },
+    onDiagnostic(event) {
+      return handlers.current.onDiagnostic?.(event);
+    },
+    onActionsChange(actions) {
+      return handlers.current.onActionsChange?.(actions);
+    },
+    onWidgetCaptureChange: handlers.current.onWidgetCaptureChange,
+  };
 }
 
 function SourceBridge(props: SourceBridgeProps) {
@@ -121,21 +153,7 @@ function SourceBridge(props: SourceBridgeProps) {
               javascript: javascript!,
             },
       startupTimeoutMs,
-      repair: handlers.current.repair,
-      presentation: handlers.current.presentation,
-      logger: handlers.current.logger,
-      onMessage(request, context) {
-        return handlers.current.onMessage(request, context);
-      },
-      onStatusChange(status) {
-        return handlers.current.onStatusChange?.(status);
-      },
-      onDiagnostic(event) {
-        return handlers.current.onDiagnostic?.(event);
-      },
-      onActionsChange(actions) {
-        return handlers.current.onActionsChange?.(actions);
-      },
+      ...getHostOptions(handlers),
     });
     hostRef.current = bridge;
 
@@ -188,21 +206,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
           ? { type, origin: identity }
           : { type, token: identity },
       window: host,
-      repair: handlers.current.repair,
-      presentation: handlers.current.presentation,
-      logger: handlers.current.logger,
-      onMessage(request, context) {
-        return handlers.current.onMessage(request, context);
-      },
-      onStatusChange(status) {
-        return handlers.current.onStatusChange?.(status);
-      },
-      onDiagnostic(event) {
-        return handlers.current.onDiagnostic?.(event);
-      },
-      onActionsChange(actions) {
-        return handlers.current.onActionsChange?.(actions);
-      },
+      ...getHostOptions(handlers),
     });
     hostRef.current = bridge;
 

@@ -13,6 +13,11 @@ import {
 } from '../core/messages.ts';
 import { isRecord } from '../core/record.ts';
 import { randomUuid } from '../core/uuid.ts';
+import {
+  reportWidgetCapture,
+  type DataAppWidgetCaptureState,
+  type WidgetCaptureRenderState,
+} from '../core/widget-capture.ts';
 import { appDiagnostics } from './diagnostics.ts';
 import { createFrameSizing } from './frame-sizing.ts';
 import {
@@ -164,12 +169,49 @@ export function createIframeTransport({
   });
   const send = endpoint.send;
   const receive = endpoint.receive;
-  const frameSizing = createFrameSizing(frame.document, height => {
-    if (!disposed && sessionId) send('runtimeResize', { height });
-  });
+  /** The focused widget's latest render state for the host's capture request. */
+  let capture:
+    | { request: string; render: WidgetCaptureRenderState }
+    | undefined;
+  /** Identity of the last report sent, so repeated renders do not resend it. */
+  let sentCapture: string | undefined;
+
+  function publishCapture(request: string, state: DataAppWidgetCaptureState) {
+    if (
+      disposed ||
+      !sessionId ||
+      !isRecord(hostState) ||
+      hostState.widgetCaptureRequest !== request
+    )
+      return;
+    const identity = JSON.stringify([request, state]);
+    if (identity === sentCapture) return;
+    sentCapture = identity;
+    send('widgetCapture', { captureRequest: request, capture: state });
+  }
+
+  const frameSizing = createFrameSizing(
+    frame.document,
+    height => {
+      if (!disposed && sessionId) send('runtimeResize', { height });
+    },
+    (height, fitted) => {
+      if (capture?.render.state !== 'ready') return;
+      const { widgetId } = capture.render;
+      publishCapture(
+        capture.request,
+        fitted
+          ? { state: 'ready', widgetId, height }
+          : { state: 'loading', widgetId }
+      );
+    }
+  );
 
   function receiveState(state: unknown, session: 'new' | 'current') {
-    if (session === 'new') scheduleDiagnostics();
+    if (session === 'new') {
+      sentCapture = undefined;
+      scheduleDiagnostics();
+    }
     hostState = state;
     frameSizing.update(state, session);
     for (const listener of stateListeners) listener(state);
@@ -351,6 +393,20 @@ export function createIframeTransport({
       return () => {
         actionListeners.delete(listener);
       };
+    },
+    [reportWidgetCapture](request: string, render: WidgetCaptureRenderState) {
+      if (!isRecord(hostState) || hostState.widgetCaptureRequest !== request)
+        return;
+      capture = { request, render };
+      if (render.state === 'ready') {
+        if (frameSizing.measure()) return;
+        publishCapture(request, {
+          state: 'loading',
+          widgetId: render.widgetId,
+        });
+      } else {
+        publishCapture(request, render);
+      }
     },
     /** The UI owner calls this once its styles support content sizing; the parent's
      * `sizing: 'content'` presentation then applies until the returned release runs. */

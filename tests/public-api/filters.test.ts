@@ -45,6 +45,26 @@ test('filter collections reject malformed presentation metadata from JavaScript 
   }
 });
 
+test('runtime URL keys are reserved', () => {
+  for (const key of ['_widget', '_region']) {
+    function App() {
+      useAppFilters({ value: searchFilter({ key }) });
+      return null;
+    }
+    expect(() => renderToStaticMarkup(createElement(App))).toThrow(
+      `Filter value uses reserved URL key “${key}”. URL keys starting with “_” are reserved for the runtime; choose a key without the “_” prefix.`
+    );
+  }
+  function App() {
+    useAppFilters({
+      widget: searchFilter({ key: 'widget' }),
+      about: searchFilter({ key: 'about' }),
+    });
+    return null;
+  }
+  expect(() => renderToStaticMarkup(createElement(App))).not.toThrow();
+});
+
 test('presentation intent is retained by each filter constructor without changing URL values', () => {
   const presentation = { control: 'widget', prominence: 'secondary' } as const;
   const filters = [

@@ -218,7 +218,7 @@ Bun.serve({
     '/gallery': gallery,
     '/chart-legends': chartLegends,
     '/gallery/components': request =>
-      Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
+      Response.redirect(new URL('/gallery?_view=widgets', request.url), 302),
     '/styles': styles,
     '/appearance': appearance,
     '/style-stress': styleStress,

@@ -111,3 +111,14 @@ export type {
 } from './core/date-time-range.ts';
 
 export { fixedUnitMilliseconds } from './core/time-units.ts';
+
+export {
+  isWidgetId,
+  readWidgetId,
+  reportWidgetCapture,
+  readWidgetCaptureRequest,
+  type DataAppWidgetCaptureState,
+  type WidgetCaptureRenderState,
+} from './core/widget-capture.ts';
+
+export { appUrlKeys } from './core/app-url-keys.ts';

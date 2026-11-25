@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
   type ComponentRef,
+  type CSSProperties,
   type Dispatch,
   type ReactNode,
   type RefObject,
@@ -124,25 +125,30 @@ function PlotBoundsObserver({
 }) {
   const plot = usePlotArea();
   const left = plot?.x;
+  const top = plot?.y;
   const width = plot?.width;
 
   useLayoutEffect(() => {
     if (
       left === undefined ||
+      top === undefined ||
       width === undefined ||
       !Number.isFinite(left) ||
+      !Number.isFinite(top) ||
       !Number.isFinite(width) ||
       !overlayRef.current
     )
       return;
     const overlay = overlayRef.current;
+    overlay.style.top = `${top}px`;
     overlay.style.marginLeft = `${left}px`;
     overlay.style.width = `${width}px`;
     return () => {
+      overlay.style.top = '';
       overlay.style.marginLeft = '';
       overlay.style.width = '';
     };
-  }, [overlayRef, left, width]);
+  }, [overlayRef, left, top, width]);
 
   return null;
 }
@@ -385,7 +391,7 @@ export function BarChart<Row extends BarChartItem>({
         : formatNumber),
     [authoredFormatValue, valueFormat]
   );
-  // Leave space for the zero tick without moving the plot or its hit targets.
+  // Keep the centered endpoint ticks inside the SVG while preserving plot height.
   const axisLabelSpace = showYAxis ? 10 : 0;
   validateValueChartItems('bar', items);
   const chartActions = useChartActions();
@@ -440,8 +446,13 @@ export function BarChart<Row extends BarChartItem>({
           data={data}
           responsive
           width="100%"
-          height={220 + axisLabelSpace}
-          margin={{ top: 0, right: 0, bottom: axisLabelSpace, left: 0 }}
+          height={220 + 2 * axisLabelSpace}
+          margin={{
+            top: axisLabelSpace,
+            right: 0,
+            bottom: axisLabelSpace,
+            left: 0,
+          }}
           accessibilityLayer={false}
           tabIndex={-1}
           barCategoryGap="24%"
@@ -517,6 +528,11 @@ export function BarChart<Row extends BarChartItem>({
       <div
         className="altertable-selectable-bars-scroll"
         data-time-axis={compactTimeAxis || undefined}
+        style={
+          {
+            '--atbl-internal-bar-axis-space': `${axisLabelSpace}px`,
+          } as CSSProperties
+        }
         ref={scrollport}
       >
         <div

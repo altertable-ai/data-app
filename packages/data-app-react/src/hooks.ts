@@ -27,7 +27,13 @@ import {
   type Dataset,
   type Metric,
 } from './bindings.ts';
-import { ViewContent, type DataContentState } from './content.ts';
+import {
+  registerWidget,
+  ViewContent,
+  type DataContentState,
+  type WidgetContentOptions,
+  type WidgetTarget,
+} from './content.ts';
 import { DetailView, type DetailViewDefinition } from './details.tsx';
 import {
   createFilterTarget,
@@ -180,8 +186,10 @@ type BoundView<
       : { current: number; previous?: never }
   ): Metric<Data, FilterInput<Filters>>;
   scope(snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string;
+  /** Options are optional. For a read-only `?_widget=<id>` link, declare content at module scope with a stable `id`. Use `waitForReady` for custom asynchronous drawing. */
   content(
-    render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode
+    render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode,
+    options?: WidgetContentOptions
   ): ViewContent<Data, FilterInput<Filters>>;
 };
 
@@ -211,8 +219,10 @@ export function createDataHooks<Operations extends DataOperations>(
   const clientScope = getClientScope(client);
   const operationFilters = client.filters;
   const appFilters = combineOperationFilters(operationFilters);
+  const widgets = new Map<string, WidgetTarget>();
   const clientFilters: ClientFilters = {
     filters: appFilters,
+    widgets,
     useControls() {
       return useFilterControls(
         appFilters,
@@ -397,9 +407,12 @@ export function createDataHooks<Operations extends DataOperations>(
           return resolved.describeInput(snapshot.input);
         },
         content(
-          render: (state: DataContentState<Data, Input>) => ReactNode
+          render: (state: DataContentState<Data, Input>) => ReactNode,
+          options?: WidgetContentOptions
         ): ViewContent<Data, Input> {
-          return new ViewContent(view, render, resolved.describeInput);
+          const content = new ViewContent(view, render, resolved.describeInput);
+          if (options) registerWidget(widgets, { ...options, content });
+          return content;
         },
       }
     );

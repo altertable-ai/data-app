@@ -248,7 +248,7 @@ test('country filters apply independently and survive changing or clearing regio
 test('metric records use the existing inspection tabs and load only on Records', async ({
   page,
 }) => {
-  await page.goto('/exploration?about=total&tab=glossary');
+  await page.goto('/exploration?_about=total&_tab=glossary');
   const inspection = page.getByRole('dialog', {
     name: 'Order count',
     exact: true,
@@ -306,7 +306,7 @@ test('pie slice details retain displayed input while a refresh completes and res
     exact: true,
   });
   await expect.poll(() => detail.innerText()).toContain('order-1');
-  const route = JSON.parse(new URL(page.url()).searchParams.get('details')!);
+  const route = JSON.parse(new URL(page.url()).searchParams.get('_details')!);
   expect(route[0].input.search).toBe('');
   expect(route[0].input.placeId).toBe('eu');
   await detail
@@ -316,7 +316,7 @@ test('pie slice details retain displayed input while a refresh completes and res
     .poll(() => trigger.evaluate(element => document.activeElement === element))
     .toBe(true);
   expect(new URL(page.url()).searchParams.get('q')).toBe('delay');
-  expect(new URL(page.url()).searchParams.get('details')).toBeNull();
+  expect(new URL(page.url()).searchParams.get('_details')).toBeNull();
 });
 
 test('shared detail links reject malformed scope before the destination executes', async ({
@@ -366,7 +366,7 @@ for (const { size, depth } of [
     for (let index = 1; index < depth; index++) await open.click();
     const url = page.url();
     const historyLength = await page.evaluate(() => history.length);
-    expect(JSON.parse(new URL(url).searchParams.get('details')!)).toHaveLength(
+    expect(JSON.parse(new URL(url).searchParams.get('_details')!)).toHaveLength(
       depth
     );
     await open.click();
@@ -419,7 +419,7 @@ test('nested details replace one sheet and close to the original dashboard trigg
   await expect
     .poll(() => trigger.evaluate(element => document.activeElement === element))
     .toBe(true);
-  expect(new URL(page.url()).searchParams.has('details')).toBe(false);
+  expect(new URL(page.url()).searchParams.has('_details')).toBe(false);
 });
 
 test('a record inspection can replace itself with a detail and return to its metric trigger', async ({
@@ -490,7 +490,7 @@ for (const widget of ['chart', 'table'] as const) {
         trigger.evaluate(element => document.activeElement === element)
       )
       .toBe(true);
-    expect(new URL(page.url()).searchParams.has('about')).toBe(false);
+    expect(new URL(page.url()).searchParams.has('_about')).toBe(false);
     expect(errors).toEqual([]);
   });
 }
@@ -617,7 +617,7 @@ test('line and area day actions pass the selected calendar day', async ({
     await expect
       .poll(() => detail.getByRole('table').innerText())
       .toContain('2026-03-01');
-    const route = JSON.parse(new URL(page.url()).searchParams.get('details')!);
+    const route = JSON.parse(new URL(page.url()).searchParams.get('_details')!);
     expect(route[0].input.placeId).toBe('2026-03-01');
     await detail
       .getByRole('button', { name: 'Close panel', exact: true })
@@ -630,7 +630,7 @@ test('shared metric records links select the dashboard metric when story visuals
 }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/exploration?about=total&tab=records');
+  await page.goto('/exploration?_about=total&_tab=records');
   const inspection = page.getByRole('dialog', {
     name: 'Order count',
     exact: true,

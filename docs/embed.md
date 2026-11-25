@@ -86,6 +86,25 @@ Host Back/Forward events publish opaque host state through the bridge. The app's
 optional navigation adapter interprets search/hash and synchronizes controls;
 opaque apps keep that state in memory rather than modifying their document URL.
 
+## Focused widget states
+
+Open `?_widget=event-log` to render the visualization declared with
+`view.content(..., { id: 'event-log' })`. For hosted bundles, pass the query
+through the navigation adapter. The query also accepts the selected view’s
+filters and a theme override (`_theme=light` or `_theme=dark`).
+
+Use a borderless, full-width, [content-sized iframe](#content-sizing) and
+set the capture viewport to the desired layout width. Subscribe to
+`onWidgetCaptureChange` on `attachDataAppBridge()` or `<DataAppBridge>`.
+Capture the iframe or its wrapper when the active frame reports `ready` for
+the requested `widgetId`. The callback reports the fitted `height` in CSS pixels.
+
+Wait through `loading` with a timeout. Clear readiness on `undefined` and
+end the capture attempt on `empty`, `error`, or `invalid-target`.
+
+Inside the app document, the focused `<main>` exposes `data-widget-state`
+and, for a valid target, `data-focused-widget`.
+
 ## External links
 
 Register the external link route to let apps request HTTPS navigation without

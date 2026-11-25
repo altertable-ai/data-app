@@ -2,6 +2,7 @@ import {
   invariant,
   resolveFilterInput,
   type FilterCollection,
+  appUrlKeys,
 } from '@altertable/data-app/internal';
 import {
   createContext,
@@ -152,7 +153,7 @@ type DetailEntry = {
 };
 
 type RoutedDetail = { id: string; input: unknown };
-const detailsParam = 'details';
+const detailsParam = appUrlKeys.details;
 const maxDetailRouteLength = 16_384;
 const maxDetailRouteDepth = 20;
 
@@ -209,7 +210,9 @@ function writeRoute(
   writeSearch(
     {
       [detailsParam]: entries.length ? serialized : null,
-      ...(entries.length ? { about: null, tab: null } : {}),
+      ...(entries.length
+        ? { [appUrlKeys.about]: null, [appUrlKeys.tab]: null }
+        : {}),
     },
     mode
   );

@@ -1,3 +1,4 @@
+import { APP_URL_KEY_PREFIX } from './app-url-keys.ts';
 import type { DateTimeRangeFilter } from './date-time-filter.ts';
 import type { SourceDimensionFilter } from './dimension-source.ts';
 import type {
@@ -97,8 +98,8 @@ export function defineAppFilters<const Collection extends FilterCollection>(
     );
     for (const key of filter.urlKeys) {
       invariant(
-        !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
-        `Filter ${name} uses reserved URL key: ${key}.`
+        !key.startsWith(APP_URL_KEY_PREFIX),
+        `Filter ${name} uses reserved URL key “${key}”. URL keys starting with “_” are reserved for the runtime; choose a key without the “_” prefix.`
       );
       invariant(
         !!key && !owners.has(key),

@@ -13,7 +13,10 @@ export {
 export { type DataAppSource } from './source.ts';
 export { startDataAppBootstrap } from './bootstrap.ts';
 export { createNavigationHandler } from './navigation.ts';
-export { type DataAppPresentation } from '@altertable/data-app/internal';
+export {
+  type DataAppPresentation,
+  type DataAppWidgetCaptureState,
+} from '@altertable/data-app/internal';
 export {
   type DataAppAction,
   type DataAppActions,

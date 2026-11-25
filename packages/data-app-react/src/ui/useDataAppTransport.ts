@@ -6,7 +6,7 @@ import { localFrameBridge } from '@altertable/data-app/internal';
 import { useEffect, useState } from 'react';
 
 /** The parent bridge, once installed or verified; undefined for standalone pages. */
-export function useDataAppTransport() {
+export function useDataAppTransport(): IframeTransport | undefined {
   const [transport, setTransport] = useState<IframeTransport | undefined>(
     getDataAppTransport
   );

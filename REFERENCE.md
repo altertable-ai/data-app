@@ -320,7 +320,7 @@ createDataHooks().defineView().breakdown: <Key extends DisplayChoiceName<Filters
 createDataHooks().defineView().dataset: <Row = DatasetRows<Data>, const Columns extends Record<string, object> = Record<string, object>>(definition: BoundDatasetDefinition<Data, FilterInput<Filters>, Row, Columns, Context>): Dataset<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>, Row>
 createDataHooks().defineView().metric: (definition: Parameters<Context['metric']>[0], select: (data: Data, input: FilterInput<Filters>) => HasPeriod<Filters> extends true ? MetricValues : { current: number; previous?: never; }): Metric<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
 createDataHooks().defineView().scope: (snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string
-createDataHooks().defineView().content: (render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode): ViewContent<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
+createDataHooks().defineView().content: (render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode, options?: WidgetContentOptions): ViewContent<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>> — Options are optional. For a read-only `?_widget=<id>` link, declare content at module scope with a stable `id`. Use `waitForReady` for custom asynchronous drawing.
 createDataHooks().defineDetailView: <Name extends keyof Operations & string, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: DetailViewDefinition<OutputOf<Operations[Name]>, InputOf<Operations[Name]>> & { operation: Name; dataContext: Context; }): BoundDetailView<OutputOf<Operations[Name]>, InputOf<Oper…
 createDataHooks().defineDetailView.definition.id: string
 createDataHooks().defineDetailView.definition.title: ReactNode
@@ -1252,7 +1252,7 @@ PieChartItem.label: string
 PieChartItem.value: number
 PieChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as PieChart.*
 pluralize (function, @altertable/data-app/format): (count: number, singular: string, plural?: string): string
-PresentStory (component, @altertable/data-app-react/ui): (props: PresentStoryProps) — Uses an already loaded snapshot. Navigation is stored in `?present=1&step=`, and step inspection uses `?about=`. The presentation owns its modal structure.
+PresentStory (component, @altertable/data-app-react/ui): (props: PresentStoryProps) — Uses an already loaded snapshot. Navigation is stored in `?_present=1&_step=`, and step inspection uses `?_about=`. The presentation owns its modal structure.
 PresentStory.title: string
 PresentStory.findings: readonly StoryFinding[]
 PresentStory.empty?: AboutEmpty
@@ -1261,7 +1261,7 @@ PresentStory.dataContext: DataContext
 PresentStory.theme?: ThemeController
 PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
-PresentStory.trigger?: boolean — False renders only the presentation, which `?present=1&step=` opens.
+PresentStory.trigger?: boolean — False renders only the presentation, which `?_present=1&_step=` opens.
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
 queryDateTimeRangeParams (function, @altertable/data-app/contract): <const Prefix extends string>(filter: Pick<DateTimeRangeFilter, 'request'>, input: DateTimeRangeInput, prefix: Prefix, now?: Date): { current: Record<`${Prefix}_from` | `${Prefix}_to`, string>; comparison: Record<`${Prefix}_from` | `${Prefix}_to`, string> | null; combined: Record<`${Prefix}_from` |… — Bind one date selection immediately before dispatching a query. Both periods share one clock.
@@ -1636,7 +1636,7 @@ useDateFormatting.options.locale?: string
 useDateFormatting.options.timeZone?: string
 useDetailNavigation (hook, @altertable/data-app-react): (): DetailNavigation — Resolve a detail target from an interaction. The destination validates input before fetching.
 useSvgId (hook, @altertable/data-app-react/ui): (): string — Stable React ID for SVG definitions and their URL references; safe with identifier prefixes.
-useViewTab (hook, @altertable/data-app-react/ui): <View extends string>(views: readonly View[], fallback: View): [View, (key: string | number) => void] — Keep a page-level tab in `?view=`; reserve `?tab=` for the inspect sheet.
+useViewTab (hook, @altertable/data-app-react/ui): <View extends string>(views: readonly View[], fallback: View): [View, (key: string | number) => void] — Keep a page-level tab in `?_view=`; reserve `?_tab=` for the inspect sheet.
 ViewSource (type, @altertable/data-app-react): <Data, Input> — A view's displayed data and input, or its loading state; widgets and bindings read it.
 ViewSource.loading: true [variant 1 of 2]
 ViewSource.loading?: false [variant 2 of 2]

@@ -67,3 +67,29 @@
 .altertable-app-layout:has(.altertable-active-filters) {
   padding-block-end: var(--atbl-active-filters-clearance);
 }
+
+:root[data-atbl-appearance]:has(.altertable-focused-widget) {
+  scrollbar-gutter: auto;
+}
+
+.altertable-focused-widget {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--atbl-space-md);
+  background: var(--atbl-background);
+}
+.altertable-focused-widget:not([data-widget-state='ready']) {
+  min-height: 240px;
+  align-content: center;
+}
+.altertable-focused-widget > .altertable-loading-status {
+  inset: var(--atbl-space-md);
+}
+.altertable-focused-widget > .altertable-status-panel[data-status='error'] {
+  width: fit-content;
+  max-width: 100%;
+  margin-block: 0;
+  overflow-wrap: anywhere;
+}

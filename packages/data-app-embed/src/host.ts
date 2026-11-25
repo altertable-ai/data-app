@@ -10,8 +10,10 @@ import {
 } from '@altertable/data-app/contract';
 import {
   randomUuid,
+  readWidgetId,
   createBridgeEndpoint,
   type DataAppPresentation,
+  type DataAppWidgetCaptureState,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
   validId,
@@ -38,6 +40,10 @@ export type DataAppHost = {
   dispose: () => void;
   setPresentation: (presentation?: DataAppPresentation) => void;
   setLogger: (logger?: DataAppLogger) => void;
+  /** Replaces the focused capture listener; `undefined` stops capture reporting. */
+  setWidgetCaptureListener: (
+    listener?: (capture: DataAppWidgetCaptureState | undefined) => void
+  ) => void;
   /** Runs an action the app offered through `onActionsChange`; ignored while disconnected.
    * Call it from a user gesture so `presentStory` can show the frame fullscreen. */
   runAction: (action: DataAppAction) => void;
@@ -52,6 +58,11 @@ export type DataAppHostOptions = {
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   /** The page actions the connected app offers; empty while disconnected or when it offers none. */
   onActionsChange?: (actions: DataAppActions) => void;
+  /** Focused capture state for the current URL and frame, or `undefined` when unavailable.
+   * Use `sizing: 'content'` so the bridge can report a fitted `ready` state. */
+  onWidgetCaptureChange?: (
+    capture: DataAppWidgetCaptureState | undefined
+  ) => void;
   onMessage: MessageDispatcher;
 };
 
@@ -78,6 +89,7 @@ export function attachDataAppConnection({
   onStatusChange,
   onDiagnostic,
   onActionsChange,
+  onWidgetCaptureChange: initialCaptureListener,
   onMessage,
   repair,
   window: host = window,
@@ -140,6 +152,41 @@ export function attachDataAppConnection({
     onDiagnostic(event);
   }
 
+  let captureListener = initialCaptureListener;
+  /** One request per URL with `?_widget=`; `widgetId` is null for an invalid link. */
+  let captureRequest:
+    | { search: string; id: string; widgetId: string | null }
+    | undefined;
+  let publishedCapture: DataAppWidgetCaptureState | undefined;
+
+  function publishCapture(capture: DataAppWidgetCaptureState | undefined) {
+    if (capture === publishedCapture) return;
+    if (
+      capture?.state === 'loading' &&
+      publishedCapture?.state === 'loading' &&
+      capture.widgetId === publishedCapture.widgetId
+    )
+      return;
+    publishedCapture = capture;
+    captureListener?.(capture);
+  }
+
+  function resetCapture() {
+    captureRequest = undefined;
+    publishCapture(undefined);
+  }
+
+  /** Returns the request for this search, starting a new one when the search changed. */
+  function captureRequestFor(search: string) {
+    if (!captureListener) return undefined;
+    if (captureRequest?.search === search) return captureRequest;
+    resetCapture();
+    const widgetId = readWidgetId(new URLSearchParams(search));
+    if (widgetId !== undefined)
+      captureRequest = { search, id: randomUuid(), widgetId };
+    return captureRequest;
+  }
+
   function hostState() {
     let presentation =
       currentPresentation?.annotations && annotationDismissal
@@ -153,8 +200,11 @@ export function attachDataAppConnection({
         : currentPresentation;
     if (presentation && contentSizingFailed)
       presentation = { ...presentation, sizing: 'frame' };
+    const search = host.location.search;
+    const request = captureRequestFor(search);
     return {
-      search: host.location.search,
+      search,
+      ...(request ? { widgetCaptureRequest: request.id } : {}),
       hash: host.location.hash,
       ...(presentation ? { presentation } : {}),
       logging: logger !== undefined,
@@ -169,6 +219,18 @@ export function attachDataAppConnection({
     if (wasEnabled !== (logger !== undefined)) publishState();
   }
 
+  function setWidgetCaptureListener(
+    value:
+      | ((capture: DataAppWidgetCaptureState | undefined) => void)
+      | undefined
+  ) {
+    if (disposed || value === captureListener) return;
+    const wasEnabled = captureListener !== undefined;
+    if (!value) resetCapture();
+    captureListener = value;
+    if (wasEnabled !== (value !== undefined)) publishState();
+  }
+
   function setPresentation(value: DataAppPresentation | undefined) {
     if (disposed) return;
     const identity = JSON.stringify(value);
@@ -179,8 +241,10 @@ export function attachDataAppConnection({
       identity === undefined
         ? undefined
         : (JSON.parse(identity) as DataAppPresentation);
-    if (previousSizing !== currentPresentation?.sizing)
+    if (previousSizing !== currentPresentation?.sizing) {
       contentSizingFailed = false;
+      resetCapture();
+    }
     contentSizing.setEnabled(
       currentPresentation?.sizing === 'content' && !contentSizingFailed
     );
@@ -293,6 +357,7 @@ export function attachDataAppConnection({
         if (message.documentId !== documentId) {
           cancelAll();
           publishActions({});
+          resetCapture();
           if (documentId)
             repairLease = repair?.session.connect(repair.revision);
           documentId = message.documentId;
@@ -318,6 +383,7 @@ export function attachDataAppConnection({
         onStatusChange?.('ready');
       },
       runtimeError() {
+        resetCapture();
         onStatusChange?.('failed');
       },
       actionsUpdate({ actions }) {
@@ -325,6 +391,30 @@ export function attachDataAppConnection({
       },
       runtimeResize({ height }) {
         contentSizing.resize(height);
+        if (
+          publishedCapture?.state === 'ready' &&
+          !contentSizing.fits(publishedCapture.height)
+        ) {
+          publishCapture({
+            state: 'loading',
+            widgetId: publishedCapture.widgetId,
+          });
+        }
+      },
+      widgetCapture({ captureRequest: requestId, capture }) {
+        if (
+          captureRequest?.id !== requestId ||
+          captureRequest.search !== host.location.search
+        )
+          return;
+        if (
+          'widgetId' in capture &&
+          capture.widgetId !== captureRequest.widgetId
+        )
+          return;
+        if (capture.state === 'ready' && !contentSizing.fits(capture.height))
+          return;
+        publishCapture(capture);
       },
       request(message) {
         void request(message);
@@ -334,6 +424,7 @@ export function attachDataAppConnection({
         pending.delete(message.id);
       },
       disconnect() {
+        resetCapture();
         cancelAll();
         publishActions({});
         documentId = undefined;
@@ -353,6 +444,7 @@ export function attachDataAppConnection({
     fallback() {
       contentSizingFailed = true;
       contentSizing.setEnabled(false);
+      resetCapture();
       publishState();
     },
   });
@@ -416,6 +508,13 @@ export function attachDataAppConnection({
                 { route: message.route, payload: message.payload },
                 { signal: controller.signal }
               );
+      // The app learns its new capture request only from published host state.
+      if (
+        message.route === 'navigation:update' &&
+        captureListener &&
+        captureRequest?.search !== host.location.search
+      )
+        publishState();
       if (pending.get(id) === controller) send('result', { id, response });
     } catch (failure) {
       if (pending.get(id) === controller) {
@@ -453,6 +552,7 @@ export function attachDataAppConnection({
   }
 
   function load() {
+    resetCapture();
     if (connection.type === 'opaque') token = randomUuid();
     cancelAll();
     repairLease = repair?.session.connect(repair.revision);
@@ -470,6 +570,7 @@ export function attachDataAppConnection({
       closeStoryOnFullscreenExit
     );
     disposed = true;
+    resetCapture();
     unsubscribeRepair?.();
     repairLease?.dispose();
     endpoint.dispose();
@@ -496,5 +597,11 @@ export function attachDataAppConnection({
   onStatusChange?.('connecting');
   send('connect', {});
 
-  return { dispose, setPresentation, setLogger, runAction };
+  return {
+    dispose,
+    setPresentation,
+    setLogger,
+    setWidgetCaptureListener,
+    runAction,
+  };
 }

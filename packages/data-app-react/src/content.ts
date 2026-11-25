@@ -1,4 +1,8 @@
-import { type DataReading } from '@altertable/data-app/internal';
+import {
+  invariant,
+  isWidgetId,
+  type DataReading,
+} from '@altertable/data-app/internal';
 import { type ReactNode } from 'react';
 
 import { ownedSource } from './source-owner.ts';
@@ -56,4 +60,31 @@ export class ViewContent<Data, Input> {
 }
 export function sectionContent<Data, Input>(content: ViewContent<Data, Input>) {
   return ViewContent.section(content);
+}
+
+export type WidgetContentOptions = {
+  /** Stable ID for `?_widget=<id>`. Use lowercase letters and digits separated by single hyphens. IDs must be unique within this `createDataHooks()` instance. */
+  id: string;
+  /** Wait for custom asynchronous drawing after the selected data commits. Return when ready, including if drawing already finished. Reject on render failure and stop observing when the signal aborts. */
+  waitForReady?: (
+    element: HTMLElement,
+    signal: AbortSignal
+  ) => void | Promise<void>;
+};
+
+export type WidgetTarget = WidgetContentOptions & {
+  content: ViewContent<any, any>;
+};
+
+/** Adds addressable content to one `createDataHooks()` registry. */
+export function registerWidget(
+  widgets: Map<string, WidgetTarget>,
+  widget: WidgetTarget
+) {
+  invariant(
+    isWidgetId(widget.id),
+    'Widget IDs must use lowercase letters, digits, and single hyphens.'
+  );
+  invariant(!widgets.has(widget.id), `Duplicate widget ID “${widget.id}”.`);
+  widgets.set(widget.id, widget);
 }

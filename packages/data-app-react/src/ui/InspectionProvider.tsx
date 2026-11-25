@@ -1,3 +1,4 @@
+import { appUrlKeys } from '@altertable/data-app/internal';
 import {
   type ComponentRef,
   createContext,
@@ -54,12 +55,12 @@ function createInspectionStore() {
   }
   function sync() {
     const params = searchParams();
-    const id = params.get('about');
+    const id = params.get(appUrlKeys.about);
     const inspection =
       selection && subjects.get(selection.inspection.key)?.id === id
         ? subjects.get(selection.inspection.key)
         : [...subjects.values()].find(subject => subject.id === id);
-    const tab = resolveAboutTab(params.get('tab'));
+    const tab = resolveAboutTab(params.get(appUrlKeys.tab));
     if (inspection?.props.open === false) inspection.props.onOpenChange?.(true);
     else if (inspection) publish({ inspection, open: true, tab });
     else if (selection?.open) {
@@ -74,15 +75,17 @@ function createInspectionStore() {
       (inspection.props.records ? 'records' : 'glossary');
     publish({ inspection, open: true, tab });
     writeSearch(
-      { about: inspection.id, tab },
-      searchParams().get('about') === inspection.id ? 'replace' : 'push'
+      { [appUrlKeys.about]: inspection.id, [appUrlKeys.tab]: tab },
+      searchParams().get(appUrlKeys.about) === inspection.id
+        ? 'replace'
+        : 'push'
     );
   }
   function dismiss(key: string) {
     if (!selection?.open || selection.inspection.key !== key) return;
     publish({ ...selection, open: false });
-    if (searchParams().get('about') === selection.inspection.id)
-      writeSearch({ about: null, tab: null });
+    if (searchParams().get(appUrlKeys.about) === selection.inspection.id)
+      writeSearch({ [appUrlKeys.about]: null, [appUrlKeys.tab]: null });
   }
   return {
     subscribe(this: void, listener: () => void) {
@@ -101,7 +104,7 @@ function createInspectionStore() {
       else if (
         (!previous || previous.id !== inspection.id) &&
         !selection?.open &&
-        searchParams().get('about') === inspection.id
+        searchParams().get(appUrlKeys.about) === inspection.id
       )
         sync();
     },
@@ -128,7 +131,11 @@ function createInspectionStore() {
     selectTab(this: void, tab: AboutTab) {
       if (!selection) return;
       publish({ ...selection, tab });
-      if (selection.open) writeSearch({ about: selection.inspection.id, tab });
+      if (selection.open)
+        writeSearch({
+          [appUrlKeys.about]: selection.inspection.id,
+          [appUrlKeys.tab]: tab,
+        });
     },
   };
 }

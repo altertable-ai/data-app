@@ -31,6 +31,7 @@ export function attachDataAppSource({
   onStatusChange,
   onDiagnostic,
   onActionsChange,
+  onWidgetCaptureChange,
   repair,
   startupTimeoutMs = 30_000,
 }: DataAppSourceOptions): DataAppHost {
@@ -88,6 +89,7 @@ export function attachDataAppSource({
     onStatusChange: status,
     onDiagnostic,
     onActionsChange,
+    onWidgetCaptureChange,
     repair,
     window: host,
   });
@@ -109,6 +111,7 @@ export function attachDataAppSource({
     dispose,
     setPresentation: bridge.setPresentation,
     setLogger: bridge.setLogger,
+    setWidgetCaptureListener: bridge.setWidgetCaptureListener,
     runAction: bridge.runAction,
   };
 }
