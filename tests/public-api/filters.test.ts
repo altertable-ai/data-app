@@ -52,7 +52,7 @@ test('runtime URL keys are reserved', () => {
       return null;
     }
     expect(() => renderToStaticMarkup(createElement(App))).toThrow(
-      `Filter value uses reserved URL key: ${key}.`
+      `Filter value uses reserved URL key “${key}”. URL keys starting with “_” are reserved for the runtime; choose a key without the “_” prefix.`
     );
   }
   function App() {

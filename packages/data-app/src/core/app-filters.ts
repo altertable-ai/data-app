@@ -99,7 +99,7 @@ export function defineAppFilters<const Collection extends FilterCollection>(
     for (const key of filter.urlKeys) {
       invariant(
         !key.startsWith(APP_URL_KEY_PREFIX),
-        `Filter ${name} uses reserved URL key: ${key}. Keys starting with “_” belong to the runtime.`
+        `Filter ${name} uses reserved URL key “${key}”. URL keys starting with “_” are reserved for the runtime; choose a key without the “_” prefix.`
       );
       invariant(
         !!key && !owners.has(key),
