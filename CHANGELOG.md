@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.1](https://github.com/altertable-ai/data-app/compare/v0.80.0...v0.80.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* format fractional count metrics ([#176](https://github.com/altertable-ai/data-app/issues/176)) ([7bb26e0](https://github.com/altertable-ai/data-app/commit/7bb26e0f3c5672c47c9801fb6d5f790966e2cc37))
+
 ## [0.80.0](https://github.com/altertable-ai/data-app/compare/v0.79.0...v0.80.0) (2026-11-25)
 
 
